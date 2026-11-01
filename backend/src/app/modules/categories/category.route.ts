@@ -5,28 +5,28 @@ import { categoryValidation } from './category.validations';
 
 const router = express.Router()
 
-
+// create a category
 router.post(
   '/create-category',
   validationRequest(categoryValidation.createCategoryValidation),
   CategoryController.createCategory
 );
 
-router.get(
-  '/',
-  CategoryController.getAllCategories
+// get all categories
+router.get( '/',CategoryController.getAllCategories
 );
 
+// get single category
 router.get('/:id', CategoryController.getSingleCategory);
 
-router.patch(
-  '/:id',
+// update category
+router.patch('/:id',
   validationRequest(categoryValidation.createCategoryValidation),
   CategoryController.updateCategory
 );
-router.delete(
-  '/:id',
-  CategoryController.deleteCategory
+
+// delete category
+router.delete('/:id', CategoryController.deleteCategory
 );
 
 export const CategoryRoutes = router;

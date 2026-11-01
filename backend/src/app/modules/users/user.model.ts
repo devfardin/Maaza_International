@@ -90,6 +90,6 @@ const userSchema = new Schema<Tuser>(
 userSchema.post("save", function (doc: any, next: any) {
     doc.passwordHash = '';
     next();
-
 });
+
 export const UserModel = model<Tuser>("User", userSchema);
