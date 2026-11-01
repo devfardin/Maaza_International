@@ -14,13 +14,3 @@ async function main() {
   }
 }
 main();
-
-//  async function main() {
-//   const client = new MongoClient(config.database_url as string);
-//   await client.connect();
-//   console.log('Connected to MongoDB');
-//   app.listen(config.port, () => {
-//     console.log(`Example app listening on port ${config.port}`);
-//   });
-// }
-// main()
