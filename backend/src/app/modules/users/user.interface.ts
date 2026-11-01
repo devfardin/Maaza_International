@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 export type Tuser = {
     fullName: string;
-    email?: string;
+    email: string;
     phone: string;
     passwordHash: string;
     referralCode: string;

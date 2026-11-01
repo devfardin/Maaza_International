@@ -15,6 +15,7 @@ const userSchema = new Schema<Tuser>(
             required: true,
             lowercase: true,
             trim: true,
+            unique: true,
             match: [
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 "Please provide a valid email address",
@@ -31,7 +32,6 @@ const userSchema = new Schema<Tuser>(
         passwordHash: {
             type: String,
             required: [true, "Password is required"],
-            minlength: [8, "Password must be at least 8 characters"],
         },
 
         referralCode: {
@@ -86,4 +86,10 @@ const userSchema = new Schema<Tuser>(
     }
 );
 
+//response sent empty pass
+userSchema.post("save", function (doc: any, next: any) {
+    doc.passwordHash = '';
+    next();
+
+});
 export const UserModel = model<Tuser>("User", userSchema);
