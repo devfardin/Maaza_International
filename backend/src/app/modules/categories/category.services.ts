@@ -3,6 +3,10 @@ import { CategoryModel } from "./category.model";
 
 // Create a new category
 const createCategory = async (payload: TCategory) => {
+    const isExist = await CategoryModel.findOne({ name: payload.name });
+    if (isExist) {
+        throw new Error('Category already exists');
+    }
     const result = await CategoryModel.create(payload);
     return result;
 }

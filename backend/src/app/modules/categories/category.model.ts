@@ -14,7 +14,7 @@ const categorySchema = new Schema<TCategory>({
     image: {
         type: String,
         trim: true,
-        default:'',
+        default: '',
     },
     isFeatured: {
         type: Boolean,
@@ -37,5 +37,6 @@ const categorySchema = new Schema<TCategory>({
         type: Number,
         default: 0
     }
-});
+}, { timestamps: true });
+
 export const CategoryModel = model<TCategory>("Category", categorySchema);
