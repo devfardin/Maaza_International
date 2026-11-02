@@ -4,6 +4,7 @@ import { CategoryRoutes } from '../modules/categories/category.route';
 import { ProductRoutes } from '../modules/products/product.route';
 import { PaymentAccountRoutes } from '../modules/paymentAccounts/paymentAccounts.route';
 import { TaskRoutes } from '../modules/tasks/tasks.route';
+import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.route';
 
 
 const router = Router()
@@ -27,6 +28,9 @@ const moduelRoutes = [
     },{
         path: '/tasks',
         route: TaskRoutes,
+    },{
+        path: '/community-posts',
+        route: CommunityPostRoutes,
     },
 
 ]

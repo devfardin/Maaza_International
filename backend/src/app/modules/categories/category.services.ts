@@ -1,3 +1,5 @@
+import status from "http-status";
+import AppError from "../../errors/AppError";
 import { TCategory } from "./category.interface";
 import { CategoryModel } from "./category.model";
 
@@ -5,7 +7,7 @@ import { CategoryModel } from "./category.model";
 const createCategory = async (payload: TCategory) => {
     const isExist = await CategoryModel.findOne({ name: payload.name });
     if (isExist) {
-        throw new Error('Category already exists');
+        throw new AppError(status.CONFLICT, 'Category already exists');
     }
     const result = await CategoryModel.create(payload);
     return result;
