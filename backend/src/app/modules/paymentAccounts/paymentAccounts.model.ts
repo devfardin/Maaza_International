@@ -14,7 +14,7 @@ const paymentAccountsSchema = new Schema<TPaymentAccounts>(
             required: [true, "Payment method is required"],
         },
         accountNumber: {
-            type: Number,
+            type: String,
             required: [true, "Account number is required"],
             trim: true,
         },
