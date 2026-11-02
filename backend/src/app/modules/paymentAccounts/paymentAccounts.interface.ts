@@ -4,8 +4,9 @@ export type TPaymentAccounts = {
     // Basic information
     userId: Types.ObjectId;
     method: "bkash" | "nogod";
-    accountNumber: string;
+    accountNumber: number;
+    isPrimary: boolean;
     accountHolderName: string;
-    verifiedAt: boolean;
+    verifiedAt: Date | null;
     status: 'active' | 'pending';
 }

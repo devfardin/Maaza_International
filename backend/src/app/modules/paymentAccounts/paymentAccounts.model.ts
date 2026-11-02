@@ -14,9 +14,13 @@ const paymentAccountsSchema = new Schema<TPaymentAccounts>(
             required: [true, "Payment method is required"],
         },
         accountNumber: {
-            type: String,
+            type: Number,
             required: [true, "Account number is required"],
             trim: true,
+        },
+        isPrimary: {
+            type: Boolean,
+            default: true,
         },
         accountHolderName: {
             type: String,
@@ -24,9 +28,9 @@ const paymentAccountsSchema = new Schema<TPaymentAccounts>(
             trim: true,
         },
         verifiedAt: {
-            type: Boolean,
-            default: false,
-        },
+        type: Date,
+        default: null,
+    },
         status: {
             type: String,
             enum: ["active", "pending"],
