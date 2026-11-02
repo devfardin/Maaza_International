@@ -5,6 +5,7 @@ import { ProductRoutes } from '../modules/products/product.route';
 import { PaymentAccountRoutes } from '../modules/paymentAccounts/paymentAccounts.route';
 import { TaskRoutes } from '../modules/tasks/tasks.route';
 import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.route';
+import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.route';
 
 
 const router = Router()
@@ -31,6 +32,9 @@ const moduelRoutes = [
     },{
         path: '/community-posts',
         route: CommunityPostRoutes,
+    },{
+        path: '/payment-methods',
+        route: PaymentMethodRoutes,
     },
 
 ]
