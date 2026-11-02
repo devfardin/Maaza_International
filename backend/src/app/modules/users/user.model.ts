@@ -37,7 +37,6 @@ const userSchema = new Schema<Tuser>(
         referralCode: {
             type: String,
             required: [true, "Referral code is required"],
-            minlength: [4, "Referral code must be at least 4 characters"],
             unique: true,
             trim: true,
         },

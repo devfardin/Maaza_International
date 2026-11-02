@@ -8,7 +8,7 @@ const router = express.Router()
 
 // create router
 router.post(
-    '/create-paymentaccounts',
+    '/create-payment-accounts',
     validationRequest(PaymentAccountsValidations.createPaymentAccountValidation),
     PaymentAccountsController.createPaymentAccount
 );

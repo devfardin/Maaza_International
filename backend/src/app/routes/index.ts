@@ -3,6 +3,7 @@ import { UserRoutes } from '../modules/users/user.route';
 import { CategoryRoutes } from '../modules/categories/category.route';
 import { ProductRoutes } from '../modules/products/product.route';
 import { PaymentAccountRoutes } from '../modules/paymentAccounts/paymentAccounts.route';
+import { TaskRoutes } from '../modules/tasks/tasks.route';
 
 
 const router = Router()
@@ -23,6 +24,9 @@ const moduelRoutes = [
     {
         path: '/paymentaccounts',
         route: PaymentAccountRoutes,
+    },{
+        path: '/tasks',
+        route: TaskRoutes,
     },
 
 ]
