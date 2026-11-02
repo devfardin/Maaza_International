@@ -8,8 +8,8 @@ const router = express.Router()
 router.post('/create-task', TaskControllers.createTask);
 router.get('/', TaskControllers.getAllTasks);
 router.get('/:id', TaskControllers.getSingleTask);
-router.patch('/:id', TaskControllers.updateTask);
-router.delete('/:id', TaskControllers.deleteTask);
+router.put('/:id', TaskControllers.updateTask);
+router.patch('/:id', TaskControllers.deleteTask);
 
 
 export const TaskRoutes = router;
