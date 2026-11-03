@@ -10,8 +10,7 @@ const createUserValidation = z.object({
         email: z
             .string()
             .email("Please provide a valid email address")
-            .optional()
-            .or(z.literal("")),
+            .optional(),
 
         phone: z
             .string()
@@ -24,29 +23,15 @@ const createUserValidation = z.object({
             .string()
             .min(8, "Password must be at least 8 characters"),
 
-        referralCode: z
-            .string()
-            .min(4, "Referral code must be at least 4 characters"),
-
         referredBy: z.string().optional(),
 
-        role: z
-            .enum(["user", "admin", "super_admin"])
-            .default("user"),
+        role: z.enum(["user", "admin", "super_admin"]).default("user"),
 
-        status: z
-            .enum(["active", "suspended", "blocked"])
-            .default("active"),
+        status: z.enum(["active", "suspended", "blocked"]).default("active"),
 
-        membershipLevel: z
-            .number("Membership level must be a number",)
-            .int("Membership level must be a whole number")
-            .min(0, "Membership level cannot be negative"),
+        membershipLevel: z.number().int().min(1).default(1).optional(),
 
-        avatar: z
-            .string()
-            .url("Avatar must be a valid URL"),
-        isDeleted: z.boolean().default(false),
+        avatar: z.string().url("Avatar must be a valid URL").optional(),
     }),
 });
 

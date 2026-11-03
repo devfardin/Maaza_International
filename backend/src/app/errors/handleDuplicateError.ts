@@ -3,9 +3,8 @@ import { TErrorSources, TGeneracErrorResponse } from '../interface/error';
 
 const handleDuplicateError = (error: any): TGeneracErrorResponse => {
   const statusCode = 400;
-  const messageExtract = error.message
-    .math(/"(.*?)"/g)
-    .map((text: string) => text.replace(/"/g, ''));
+  const match = error.message.match(/"(.*?)"/g) || [];
+  const messageExtract = match.map((text: string) => text.replace(/"/g, ''));
   const errorSources: TErrorSources = [
     {
       path: '',

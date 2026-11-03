@@ -3,6 +3,7 @@ import AppError from "../../errors/AppError";
 import { UserModel } from "../users/user.model";
 import { TDepositRequest } from "./depositRequests.interface";
 import { DepositRequestModel } from "./depositRequests.model";
+import { WalletModel } from "../wallets/wallet.model";
 
 // create a new deposit request
 const createDepositRequest = async (payload: TDepositRequest) => {
@@ -45,6 +46,7 @@ const getDepositRequestsByUser = async (userId: string) => {
     return result;
 };
 
+
 // update deposit request status (admin approve/reject)
 const updateDepositRequestStatus = async (
     id: string,
@@ -57,11 +59,31 @@ const updateDepositRequestStatus = async (
     }
 
     // only pending requests can be reviewed
-    if (isExist.status !== "pending") {
-        throw new AppError(status.BAD_REQUEST, "This request has already been reviewed!");
+    // if (isExist.status !== "pending") {
+    //     throw new AppError(status.BAD_REQUEST, "This request has already been reviewed!");
+    // }
+
+    const updateData = {
+        status: payload.status,
+        adminNote: payload.status === "approved" ? "Recharge approved by admin" : (payload.adminNote || ""),
+        approvedBy: payload.approvedBy,
+    };
+
+    const result = await DepositRequestModel.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (payload.status === "approved") {
+        await WalletModel.findOneAndUpdate(
+            { userId: isExist.userId },
+            { $inc: { rechargeBalance: isExist.amount } }
+        );
+    } else if(payload.status === "rejected"){
+        await WalletModel.findOneAndUpdate(
+            { userId: isExist.userId },
+            { $inc: { rechargeBalance: -isExist.amount } }
+        );
+
     }
 
-    const result = await DepositRequestModel.findByIdAndUpdate(id, payload, { new: true });
     return result;
 };
 

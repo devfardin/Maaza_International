@@ -7,6 +7,7 @@ import { TaskRoutes } from '../modules/tasks/tasks.route';
 import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.route';
 import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.route';
 import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests.route';
+import { WalletRoutes } from '../modules/wallets/wallet.route';
 
 
 const router = Router()
@@ -44,7 +45,10 @@ const moduelRoutes = [
         path: '/deposit-requests',
         route: DepositRequestRoutes,
     },
-
+    {
+        path: '/wallets',
+        route: WalletRoutes,
+    },
 ]
 moduelRoutes.forEach(route => router.use(route.path, route.route))
 
