@@ -46,7 +46,44 @@ const createUser = async (payload: Tuser) => {
         await session.endSession();
     }
 };
+const getMe = async (id: string) => {
+    const result = await UserModel.findById(id).select('-password');
+    return result;
+}
+const getAllUsers = async () => {
+    const result = await UserModel.find();
+    return result;
+}
+
+const getSingleUser = async (id: string) => {
+    const result = await UserModel.findById(id);
+    return result;
+}
+
+const updateUser = async (id: string, payload: Partial<Tuser>) => {
+    const isUserExists = await UserModel.findById(id);
+    if (!isUserExists) {
+        throw new AppError(status.NOT_FOUND, 'User not found');
+    }
+    const result = await UserModel.findByIdAndUpdate(id, payload, { new: true });
+    return result;
+}
+
+const deleteUser = async (id: string) => {
+    const isUserExists = await UserModel.findById(id);
+    if (!isUserExists) {
+        throw new AppError(status.NOT_FOUND, 'User not found');
+    }
+    const result = await UserModel.findByIdAndUpdate({ id }, { isDeleted: true }, { new: true  /* if session */ });
+    return result;
+}
+
 
 export const UserServices = {
     createUser,
+    getMe,
+    getAllUsers,
+    getSingleUser,
+    updateUser,
+    deleteUser
 }
