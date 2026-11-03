@@ -4,6 +4,7 @@ import { UserModel } from "../users/user.model";
 import { TDepositRequest } from "./depositRequests.interface";
 import { DepositRequestModel } from "./depositRequests.model";
 import { WalletModel } from "../wallets/wallet.model";
+import mongoose from 'mongoose';
 
 // create a new deposit request
 const createDepositRequest = async (payload: TDepositRequest) => {
@@ -52,37 +53,57 @@ const updateDepositRequestStatus = async (
     id: string,
     payload: { status: "approved" | "rejected"; adminNote?: string; approvedBy: string }
 ) => {
-    // check request exists
-    const isExist = await DepositRequestModel.findById(id);
-    if (!isExist) {
-        throw new AppError(status.NOT_FOUND, "Deposit request not found!");
+
+    // defined transition session
+    const session = await mongoose.startSession();
+
+    try {
+        
+        session.startTransaction();
+
+        // check request exists
+        const isExist = await DepositRequestModel.findById(id).session(session);
+        if (!isExist) {
+            throw new AppError(status.NOT_FOUND, "Deposit request not found!");
+        }
+
+        // only pending or approved requests can be reviewed
+        // if (isExist.status === "rejected") {
+        //     throw new AppError(status.BAD_REQUEST, "This request has already been rejected!");
+        // }
+
+        const updateData = {
+            status: payload.status,
+            adminNote: payload.status === "approved" ? "Recharge approved by admin" : (payload.adminNote || ""),
+            approvedBy: payload.approvedBy,
+        };
+
+        const result = await DepositRequestModel.findByIdAndUpdate(id, updateData, { new: true, session });
+
+        if (payload.status === "approved") {
+            await WalletModel.findOneAndUpdate(
+                { userId: isExist.userId },
+                { $inc: { rechargeBalance: isExist.amount } },
+                { session }
+            );
+        } else if (payload.status === "rejected") {
+            await WalletModel.findOneAndUpdate(
+                { userId: isExist.userId },
+                { $inc: { rechargeBalance: -isExist.amount } },
+                { session }
+            );
+        }
+
+        await session.commitTransaction();
+        await session.endSession();
+        return result;
+
+    } catch (error) {
+        await session.abortTransaction();
+        await session.endSession();
+        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update deposit request status!");
     }
 
-    // only pending requests can be reviewed
-    // if (isExist.status !== "pending") {
-    //     throw new AppError(status.BAD_REQUEST, "This request has already been reviewed!");
-    // }
-
-    const updateData = {
-        status: payload.status,
-        adminNote: payload.status === "approved" ? "Recharge approved by admin" : (payload.adminNote || ""),
-        approvedBy: payload.approvedBy,
-    };
-
-    const result = await DepositRequestModel.findByIdAndUpdate(id, updateData, { new: true });
-
-    if (payload.status === "approved") {
-        await WalletModel.findOneAndUpdate(
-            { userId: isExist.userId },
-            { $inc: { rechargeBalance: isExist.amount } }
-        );
-    } else if(payload.status === "rejected"){
-        await WalletModel.findOneAndUpdate(
-            { userId: isExist.userId },
-            { $inc: { rechargeBalance: -isExist.amount } }
-        );
-    }
-    return result;
 };
 
 export const DepositRequestServices = {
