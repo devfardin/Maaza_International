@@ -81,9 +81,7 @@ const updateDepositRequestStatus = async (
             { userId: isExist.userId },
             { $inc: { rechargeBalance: -isExist.amount } }
         );
-
     }
-
     return result;
 };
 
