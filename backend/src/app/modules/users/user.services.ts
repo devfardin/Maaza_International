@@ -12,34 +12,34 @@ const createUser = async (payload: Tuser) => {
     try {
         session.startTransaction();
 
-        // const userExist = await UserModel.findOne({ $or: [{ email: payload.email }, { phone: payload.phone }] });
+        const userExist = await UserModel.findOne({ $or: [{ email: payload.email }, { phone: payload.phone }] });
 
-        // if (userExist) {
-        //     throw new AppError(status.CONFLICT, 'User already exists with this email or phone number');
-        // }
+        if (userExist) {
+            throw new AppError(status.CONFLICT, 'User already exists with this email or phone number');
+        }
 
-        // Generate Referl id
+        // generate unique referral code
         const referralCode = await generateUniqueReferralCode(payload.phone);
 
-        // first transition
+        // create user inside the session
         const result = await UserModel.create([{ ...payload, referralCode }], { session });
         if (!result.length) {
             throw new AppError(status.INTERNAL_SERVER_ERROR, 'Failed to create user');
         }
 
-        // second transition — create both recharge and balance wallets
+        // create both recharge and balance wallets for the new user
         await WalletServices.createWalletsForUser(result[0]._id, session);
 
-        // session Commit
         await session.commitTransaction();
 
-        // end session
-        await session.endSession();
-
-        return result;
+        return result[0];
 
     } catch (error) {
         await session.abortTransaction();
+        // re-throw so the global error handler formats and returns the correct response
+        throw error;
+    } finally {
+        // always close the session whether it succeeded or failed
         await session.endSession();
     }
 };

@@ -8,6 +8,7 @@ import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.ro
 import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.route';
 import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests.route';
 import { WalletRoutes } from '../modules/wallets/wallet.route';
+import { TransactionRoutes } from '../modules/transactions/transaction.route';
 
 
 const router = Router()
@@ -48,6 +49,10 @@ const moduelRoutes = [
     {
         path: '/wallets',
         route: WalletRoutes,
+    },
+    {
+        path: '/transactions',
+        route: TransactionRoutes,
     },
 ]
 moduelRoutes.forEach(route => router.use(route.path, route.route))

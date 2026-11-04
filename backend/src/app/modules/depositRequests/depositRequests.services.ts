@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import AppError from "../../errors/AppError";
 import { UserModel } from "../users/user.model";
 import { WalletModel } from "../wallets/wallet.model";
+import { TransactionServices } from "../transactions/transaction.services";
 import { TDepositRequest } from "./depositRequests.interface";
 import { DepositRequestModel } from "./depositRequests.model";
 
@@ -83,7 +84,7 @@ const updateDepositRequestStatus = async (
             { new: true, session }
         );
 
-        // if approved → credit the user's recharge wallet
+        // if approved → credit the user's recharge wallet and log the transaction
         if (payload.status === "approved") {
             const wallet = await WalletModel.findOneAndUpdate(
                 { userId: depositRequest.userId, walletType: "recharge" },
@@ -95,6 +96,19 @@ const updateDepositRequestStatus = async (
             if (!wallet) {
                 throw new AppError(status.NOT_FOUND, "User recharge wallet not found!");
             }
+
+            // record the deposit transaction for the user's history
+            await TransactionServices.recordTransaction({
+                userId: depositRequest.userId,
+                type: "deposit",
+                flow: "credit",
+                amount: depositRequest.amount,
+                walletAffected: "recharge",
+                balanceAfter: wallet.balance,
+                note: "Recharge wallet top-up via deposit request",
+                referenceId: depositRequest._id as mongoose.Types.ObjectId,
+                session,
+            });
         }
 
         await session.commitTransaction();

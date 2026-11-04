@@ -9,9 +9,7 @@ import { UserModel } from '../users/user.model';
 const getMyWallets = catchAsync(async (req, res) => {
     const { userId } = req.params;
     const existUser = UserModel.findById({ _id: userId })
-    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
-    console.log(existUser);
-    
+    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized'); 
 
     const result = await WalletServices.getUserWallets(userId);
     sendResponse(res, {
@@ -49,7 +47,7 @@ const getMyWalletByType = catchAsync(async (req, res) => {
 
     if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
 
-    const { walletType } = req.params;
+    const { walletType } = req.query;
     if (walletType !== 'recharge' && walletType !== 'balance') {
         throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
     }

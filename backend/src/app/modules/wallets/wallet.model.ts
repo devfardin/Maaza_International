@@ -35,6 +35,6 @@ const walletSchema = new Schema<TWallet>(
 );
 
 // Prevent duplicate wallet types per user
-walletSchema.index({ user: 1, walletType: 1 }, { unique: true });
+walletSchema.index({ userId: 1, walletType: 1 }, { unique: true });
 
 export const WalletModel = model<TWallet>('Wallet', walletSchema);
