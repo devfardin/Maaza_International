@@ -112,7 +112,7 @@ const debitWallet = async (
 
     // Atomic conditional update — prevents concurrent overspend
     const updated = await WalletModel.findOneAndUpdate(
-        { user: userId, walletType, balance: { $gte: amount } },
+        { userId, walletType, balance: { $gte: amount } },
         { $inc: { balance: -amount } },
         { new: true, session, runValidators: true }
     );

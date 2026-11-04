@@ -9,6 +9,7 @@ import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.ro
 import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests.route';
 import { WalletRoutes } from '../modules/wallets/wallet.route';
 import { TransactionRoutes } from '../modules/transactions/transaction.route';
+import { ProductPurchaseRoutes } from '../modules/productPurchages/productPurchases.route';
 
 
 const router = Router()
@@ -53,6 +54,10 @@ const moduelRoutes = [
     {
         path: '/transactions',
         route: TransactionRoutes,
+    },
+    {
+        path: '/product-purchases',
+        route: ProductPurchaseRoutes,
     },
 ]
 moduelRoutes.forEach(route => router.use(route.path, route.route))
