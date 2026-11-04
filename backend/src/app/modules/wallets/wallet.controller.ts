@@ -2,50 +2,69 @@ import status from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { WalletServices } from './wallet.services';
+import AppError from '../../errors/AppError';
+import { TWalletType } from './wallet.interface';
+import { UserModel } from '../users/user.model';
 
-const getAllWallets = catchAsync(async (_req, res) => {
-    const result = await WalletServices.getAllWallets();
+const getMyWallets = catchAsync(async (req, res) => {
+    const { userId } = req.params;
+    const existUser = UserModel.findById({ _id: userId })
+    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
+    console.log(existUser);
+    
+
+    const result = await WalletServices.getUserWallets(userId);
     sendResponse(res, {
         statusCode: status.OK,
         success: true,
         message: 'Wallets retrieved successfully',
-        data: result
+        data: result,
     });
 });
 
-const getWalletByUser = catchAsync(async (req, res) => {
-    const result = await WalletServices.getWalletByUser(req.params.userId);
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: 'Wallet retrieved successfully',
-        data: result
-    });
-});
+const checkBalance = catchAsync(async (req, res) => {
+    const { userId } = req.params;
+    const existUser = UserModel.findById(userId)
+    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
 
-const updateWallet = catchAsync(async (req, res) => {
-    const result = await WalletServices.updateWallet(req.params.userId, req.body);
-    sendResponse(res, {
-        statusCode: status.OK,
-        success: true,
-        message: 'Wallet updated successfully',
-        data: result
-    });
-});
 
-const deleteWallet = catchAsync(async (req, res) => {
-    await WalletServices.deleteWallet(req.params.userId);
+    const { walletType } = req.params;
+    if (walletType !== 'recharge' && walletType !== 'balance') {
+        throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
+    }
+
+    const result = await WalletServices.getWalletByType(userId, walletType as TWalletType);
     sendResponse(res, {
         statusCode: status.OK,
         success: true,
-        message: 'Wallet deleted successfully',
-        data: null
+        message: `${walletType} wallet retrieved successfully`,
+        data: result,
+    });
+})
+
+const getMyWalletByType = catchAsync(async (req, res) => {
+
+    const { userId } = req.params;
+    const existUser = UserModel.findById(userId)
+
+    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
+
+    const { walletType } = req.params;
+    if (walletType !== 'recharge' && walletType !== 'balance') {
+        throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
+    }
+
+    const result = await WalletServices.getWalletByType(userId, walletType as TWalletType);
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: `${walletType} wallet retrieved successfully`,
+        data: result,
     });
 });
 
 export const WalletController = {
-    getAllWallets,
-    getWalletByUser,
-    updateWallet,
-    deleteWallet,
+    getMyWallets,
+    getMyWalletByType,
+    checkBalance
 };

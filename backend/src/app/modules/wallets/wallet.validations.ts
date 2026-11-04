@@ -1,12 +1,9 @@
 import z from 'zod';
 
-const updateWalletValidation = z.object({
-    body: z.object({
-        rechargeBalance: z.number().min(0).optional(),
-        balance: z.number().min(0).optional(),
-        currency: z.string().optional(),
-        status: z.enum(['active', 'suspended', 'closed']).optional(),
+const walletTypeParamValidation = z.object({
+    params: z.object({
+        walletType: z.enum(['recharge', 'balance']),
     }),
 });
 
-export const WalletValidations = { updateWalletValidation };
+export const WalletValidations = { walletTypeParamValidation };

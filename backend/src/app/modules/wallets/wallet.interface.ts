@@ -1,9 +1,13 @@
 import { Types } from 'mongoose';
 
+export type TWalletType = 'recharge' | 'balance';
+
 export type TWallet = {
     userId: Types.ObjectId;
-    rechargeBalance: number;
-    withdrawBalance: number;
-    currency: string;
-    status: 'active' | 'suspended' | 'closed';
+    walletType: TWalletType;
+    balance: number;
+    currency: 'BDT';
+    isActive: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
 };

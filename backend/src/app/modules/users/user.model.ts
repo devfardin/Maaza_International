@@ -79,6 +79,7 @@ const userSchema = new Schema<Tuser>(
             type: Boolean,
             default: false
         }
+        
     },
     {
         timestamps: true

@@ -6,15 +6,17 @@ const walletSchema = new Schema<TWallet>(
         userId: {
             type: Schema.Types.ObjectId,
             ref: 'User',
-            required: [true, 'User ID is required'],
-            unique: true,
+            required: [true, 'User reference is required'],
         },
-        rechargeBalance: {
-            type: Number,
-            default: 0,
-            min: [0, 'Recharge balance cannot be negative'],
+        walletType: {
+            type: String,
+            enum: {
+                values: ['recharge', 'balance'],
+                message: 'Wallet type must be either recharge or balance',
+            },
+            required: [true, 'Wallet type is required'],
         },
-        withdrawBalance: {
+        balance: {
             type: Number,
             default: 0,
             min: [0, 'Balance cannot be negative'],
@@ -22,15 +24,17 @@ const walletSchema = new Schema<TWallet>(
         currency: {
             type: String,
             default: 'BDT',
-            trim: true,
+            enum: ['BDT'],
         },
-        status: {
-            type: String,
-            enum: ['active', 'suspended', 'closed'],
-            default: 'active',
+        isActive: {
+            type: Boolean,
+            default: true,
         },
     },
     { timestamps: true }
 );
+
+// Prevent duplicate wallet types per user
+walletSchema.index({ user: 1, walletType: 1 }, { unique: true });
 
 export const WalletModel = model<TWallet>('Wallet', walletSchema);

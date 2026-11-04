@@ -3,8 +3,8 @@ import AppError from '../../errors/AppError';
 import { Tuser } from "./user.interface";
 import { UserModel } from "./user.model";
 import { generateUniqueReferralCode } from "./user.utils";
-import { WalletModel } from "../wallets/wallet.model";
 import mongoose from 'mongoose';
+import { WalletServices } from '../wallets/wallet.services';
 
 const createUser = async (payload: Tuser) => {
     const session = await mongoose.startSession();
@@ -27,11 +27,8 @@ const createUser = async (payload: Tuser) => {
             throw new AppError(status.INTERNAL_SERVER_ERROR, 'Failed to create user');
         }
 
-        // second transition
-        const userWallet = await WalletModel.create([{ userId: result[0]._id }], { session });
-        if (!userWallet.length) {
-            throw new AppError(status.INTERNAL_SERVER_ERROR, 'Failed to create user wallet');
-        }
+        // second transition — create both recharge and balance wallets
+        await WalletServices.createWalletsForUser(result[0]._id, session);
 
         // session Commit
         await session.commitTransaction();
