@@ -45,19 +45,13 @@ const getUserWallets = async (userId: string) => {
 };
 
 const getWalletByType = async (userId: string, walletType: TWalletType) => {
-    
+
     const wallet = await WalletModel.findOne({ userId, walletType });
 
     if (!wallet) {
         throw new AppError(status.NOT_FOUND, `${walletType} wallet not found`);
     }
-
-    return {
-        balance: wallet.balance,
-        formattedBalance: (wallet.balance / 100).toFixed(2),
-        currency: wallet.currency,
-        isActive: wallet.isActive,
-    };
+    return wallet;
 };
 
 const validateWallet = async (userId: string, walletType: TWalletType, session?: ClientSession) => {

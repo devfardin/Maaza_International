@@ -1,29 +1,29 @@
 import status from "http-status";
+import mongoose from "mongoose";
 import AppError from "../../errors/AppError";
 import { UserModel } from "../users/user.model";
+import { WalletModel } from "../wallets/wallet.model";
 import { TDepositRequest } from "./depositRequests.interface";
 import { DepositRequestModel } from "./depositRequests.model";
-import { WalletModel } from "../wallets/wallet.model";
-import mongoose from 'mongoose';
 
-// create a new deposit request
+// ─── User: Submit a new deposit request ───────────────────────────────────────
 const createDepositRequest = async (payload: TDepositRequest) => {
 
     // check user exists
-    const isUserExist = await UserModel.findById(payload.userId);
-    if (!isUserExist) {
+    const user = await UserModel.findById(payload.userId);
+    if (!user) {
         throw new AppError(status.NOT_FOUND, "User not found!");
     }
 
     // only regular users can submit deposit requests
-    if (isUserExist.role !== "user") {
-        throw new AppError(status.UNAUTHORIZED, "Only users can submit deposit requests!");
+    if (user.role !== "user") {
+        throw new AppError(status.FORBIDDEN, "Only users can submit deposit requests!");
     }
 
     // prevent duplicate transaction ID
     const isDuplicate = await DepositRequestModel.findOne({ transactionId: payload.transactionId });
     if (isDuplicate) {
-        throw new AppError(status.BAD_REQUEST, "This transaction ID already submited!");
+        throw new AppError(status.BAD_REQUEST, "This transaction ID has already been submitted!");
     }
 
     // validate sender number as a valid BD mobile number
@@ -35,75 +35,79 @@ const createDepositRequest = async (payload: TDepositRequest) => {
     return result;
 };
 
-// get all deposit requests (admin)
+// ─── Admin: Get all deposit requests ──────────────────────────────────────────
 const getAllDepositRequests = async () => {
-    const result = await DepositRequestModel.find().populate("userId", "fullName email phone").populate("approvedBy", "fullName email");
+    const result = await DepositRequestModel
+        .find()
+        .populate("userId", "fullName email phone")
+        .populate("approvedBy", "fullName email")
+        .sort({ createdAt: -1 });
     return result;
 };
 
-// get deposit requests by user ID
+// ─── User: Get own deposit requests by user ID ────────────────────────────────
 const getDepositRequestsByUser = async (userId: string) => {
     const result = await DepositRequestModel.find({ userId }).sort({ createdAt: -1 });
     return result;
 };
 
-
-// update deposit request status (admin approve/reject)
+// ─── Admin: Approve or reject a deposit request ───────────────────────────────
 const updateDepositRequestStatus = async (
     id: string,
     payload: { status: "approved" | "rejected"; adminNote?: string; approvedBy: string }
 ) => {
-
-    // defined transition session
     const session = await mongoose.startSession();
 
     try {
-        
         session.startTransaction();
 
-        // check request exists
-        const isExist = await DepositRequestModel.findById(id).session(session);
-        if (!isExist) {
+        // check the deposit request exists
+        const depositRequest = await DepositRequestModel.findById(id).session(session);
+        if (!depositRequest) {
             throw new AppError(status.NOT_FOUND, "Deposit request not found!");
         }
 
-        // only pending or approved requests can be reviewed
-        // if (isExist.status === "rejected") {
-        //     throw new AppError(status.BAD_REQUEST, "This request has already been rejected!");
-        // }
+        // prevent re-processing an already reviewed request
+        if (depositRequest.status !== "pending") {
+            throw new AppError(status.BAD_REQUEST, `This request has already been ${depositRequest.status}!`);
+        }
 
-        const updateData = {
-            status: payload.status,
-            adminNote: payload.status === "approved" ? "Recharge approved by admin" : (payload.adminNote || ""),
-            approvedBy: payload.approvedBy,
-        };
+        // update the deposit request with new status, admin note, and reviewer
+        const updatedRequest = await DepositRequestModel.findByIdAndUpdate(
+            id,
+            {
+                status: payload.status,
+                adminNote: payload.adminNote ?? (payload.status === "approved" ? "Approved by admin" : "Rejected by admin"),
+                approvedBy: payload.approvedBy,
+            },
+            { new: true, session }
+        );
 
-        const result = await DepositRequestModel.findByIdAndUpdate(id, updateData, { new: true, session });
-
+        // if approved → credit the user's recharge wallet
         if (payload.status === "approved") {
-            await WalletModel.findOneAndUpdate(
-                { userId: isExist.userId },
-                { $inc: { rechargeBalance: isExist.amount } },
-                { session }
+            const wallet = await WalletModel.findOneAndUpdate(
+                { userId: depositRequest.userId, walletType: "recharge" },
+                { $inc: { balance: depositRequest.amount } },
+                { new: true, session }
             );
-        } else if (payload.status === "rejected") {
-            await WalletModel.findOneAndUpdate(
-                { userId: isExist.userId },
-                { $inc: { rechargeBalance: -isExist.amount } },
-                { session }
-            );
+
+            // wallet must exist (created during user registration)
+            if (!wallet) {
+                throw new AppError(status.NOT_FOUND, "User recharge wallet not found!");
+            }
         }
 
         await session.commitTransaction();
-        await session.endSession();
-        return result;
+        return updatedRequest;
 
     } catch (error) {
         await session.abortTransaction();
+        // re-throw AppErrors as-is so the global handler formats them correctly
+        throw error;
+    } finally {
+        // always close the session
         await session.endSession();
-        throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to update deposit request status!");
     }
-
 };
 
 export const DepositRequestServices = {

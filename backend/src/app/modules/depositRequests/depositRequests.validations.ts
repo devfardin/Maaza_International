@@ -1,6 +1,7 @@
 import z from "zod";
 
-// validation for creating a deposit request
+// user submits: userId, amount, methodCode, senderNumber, transactionId
+// status / adminNote / approvedBy are set by the server — not accepted from the client
 const createDepositRequestValidation = z.object({
     body: z.object({
         userId: z.string({ message: "User ID is required" }),
@@ -9,18 +10,15 @@ const createDepositRequestValidation = z.object({
         methodCode: z.string({ message: "Method code is required" }).trim(),
         senderNumber: z.string({ message: "Sender number is required" }).trim(),
         transactionId: z.string({ message: "Transaction ID is required" }).trim(),
-        status: z.enum(["pending", "approved", "rejected"]).default("pending"),
-        adminNote: z.string().trim().default(""),
-        approvedBy: z.string().nullable().default(null),
     }),
 });
 
-// validation for updating deposit request status (admin)
+// admin submits: status (approved/rejected), optional adminNote, approvedBy (admin ID)
 const updateDepositRequestStatusValidation = z.object({
     body: z.object({
         status: z.enum(["approved", "rejected"], { message: "Status must be approved or rejected" }),
         adminNote: z.string().trim().optional(),
-        approvedBy: z.string({ message: "Approved by (admin ID) is required" }),
+        approvedBy: z.string({ message: "Admin ID (approvedBy) is required" }),
     }),
 });
 
