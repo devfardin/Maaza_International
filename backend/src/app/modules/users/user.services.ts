@@ -71,7 +71,27 @@ const deleteUser = async (id: string) => {
     if (!isUserExists) {
         throw new AppError(status.NOT_FOUND, 'User not found');
     }
-    const result = await UserModel.findByIdAndUpdate({ id }, { isDeleted: true }, { new: true  /* if session */ });
+    const result = await UserModel.findByIdAndUpdate(
+        id,
+        { isDeleted: true },
+        { new: true, runValidators: true }
+    );
+    if (!result) {
+        throw new AppError(status.BAD_REQUEST, 'Failed to delete user');
+    }
+    return result;
+}
+
+const changeUserStatus = async (id: string, payload: string) => {
+    const isUserExists = await UserModel.findById(id);
+    if (!isUserExists) {
+        throw new AppError(status.NOT_FOUND, 'User not found');
+    }
+    const result = await UserModel.findByIdAndUpdate(
+        id,
+        { status: payload },
+        { new: true, runValidators: true }
+    );
     return result;
 }
 
@@ -82,5 +102,6 @@ export const UserServices = {
     getAllUsers,
     getSingleUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    changeUserStatus,
 }
