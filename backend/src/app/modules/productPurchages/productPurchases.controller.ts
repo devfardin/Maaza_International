@@ -7,12 +7,12 @@ import { UserModel } from '../users/user.model';
 
 const purchaseProduct = catchAsync(async (req, res) => {
     // const userId = req.user?.userId;
-    const { userId } = req.params;
+    const { userId } = req.body;
     // const userId = await UserModel.findOne({_id: user});
     if (!userId) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
 
     const { productId, paymentSource } = req.body;
-    const result = await ProductPurchaseServices.purchaseProduct(userId as string, productId, paymentSource);
+    const result = await ProductPurchaseServices.purchaseProduct(userId, productId, paymentSource);
 
     sendResponse(res, {
         statusCode: status.CREATED,

@@ -8,7 +8,7 @@ const router = express.Router();
 
 // All routes require authentication
 router.post(
-    '/purchase/:userId',
+    '/purchase',
     // auth('user'),
     validationRequest(ProductPurchaseValidations.purchaseProductValidation),
     ProductPurchaseController.purchaseProduct

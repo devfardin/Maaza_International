@@ -10,6 +10,7 @@ import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests
 import { WalletRoutes } from '../modules/wallets/wallet.route';
 import { TransactionRoutes } from '../modules/transactions/transaction.route';
 import { ProductPurchaseRoutes } from '../modules/productPurchages/productPurchases.route';
+import { AuthRoutes } from '../modules/Auth/auth.route';
 
 
 const router = Router()
@@ -59,6 +60,11 @@ const moduelRoutes = [
         path: '/product-purchases',
         route: ProductPurchaseRoutes,
     },
+    {
+        path: '/auth',
+        route: AuthRoutes,
+    },
+
 ]
 moduelRoutes.forEach(route => router.use(route.path, route.route))
 
