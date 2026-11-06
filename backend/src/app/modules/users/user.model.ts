@@ -1,6 +1,8 @@
 import { model, Schema } from "mongoose";
 import { Tuser, User, } from "./user.interface";
 import { ObjectId } from "mongodb";
+import config from "../../config";
+import bcrypt from 'bcrypt';
 
 const userSchema = new Schema<Tuser, User>(
     {
@@ -86,6 +88,14 @@ const userSchema = new Schema<Tuser, User>(
         timestamps: true
     }
 );
+// make Encrypt password
+userSchema.pre('save', async function (next) {
+    const user = this;
+    user.passwordHash = await bcrypt.hash(
+        user.passwordHash,
+        Number(config.bcrypt_salt_rounds)
+    );
+});
 
 //response sent empty pass
 userSchema.post("save", function (doc: any, next: any) {
@@ -93,16 +103,16 @@ userSchema.post("save", function (doc: any, next: any) {
     next();
 });
 
-userSchema.statics.isUserExistsByEmail = async function ( email: string ) {
+userSchema.statics.isUserExistsByEmail = async function (email: string) {
     return await UserModel.findOne({ email });
 }
 
-userSchema.statics.isUserExistsByPhone = async function ( phone: string ) {
+userSchema.statics.isUserExistsByPhone = async function (phone: string) {
     return await UserModel.findOne({ phone });
 }
 
-userSchema.statics.isUserExistsById = async function ( id: ObjectId ) {
-    return await UserModel.findById( id );
+userSchema.statics.isUserExistsById = async function (id: ObjectId) {
+    return await UserModel.findById(id);
 }
 
 export const UserModel = model<Tuser, User>("User", userSchema);
