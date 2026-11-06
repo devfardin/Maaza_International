@@ -2,12 +2,14 @@ import express from "express";
 import validationRequest from "../../middlewares/validateRequest";
 import { DepositRequestController } from "./depositRequests.controller";
 import { DepositRequestValidations } from "./depositRequests.validations";
+import auth from "../../middlewares/auth";
 
 const router = express.Router();
 
 // submit a new deposit request
 router.post(
-    "/create-deposit-request",
+    "/create-deposit-request", 
+    auth("admin"),
     validationRequest(DepositRequestValidations.createDepositRequestValidation),
     DepositRequestController.createDepositRequest
 );
