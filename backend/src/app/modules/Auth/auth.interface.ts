@@ -4,9 +4,9 @@ export type TLoginUser = {
 }
 export interface TJwtPayload {
   userId: string;
-  name: string;
+  fullName: string;
   email: string;
   phone: string;
-  role: 'user' | 'admin' | 'super-admin';
-  isActive: boolean;
+  role: 'user' | 'admin' | 'super_admin';
+  status: 'active' | 'suspended' | 'blocked';
 }
