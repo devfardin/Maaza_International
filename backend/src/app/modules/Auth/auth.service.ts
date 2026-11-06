@@ -58,31 +58,29 @@ const changePassword = async (
     payload: { oldPassword: string; newPassword: string }
 ) => {
     // Re-fetch from DB — never trust JWT payload for sensitive operations
-    // const user = await UserModel.isUserExistsByPhone(userData.phone);
-    console.log(userData);
-    
+    const user = await validateActiveUser(userData.phone as string);
 
     // Verify old password against stored hash
-    // const isOldPasswordMatch = await bcrypt.compare(payload.oldPassword, user.passwordHash);
-    // if (!isOldPasswordMatch) {
-    //     throw new AppError(status.UNAUTHORIZED, 'Old password is incorrect');
-    // }
+    const isOldPasswordMatch = await bcrypt.compare(payload.oldPassword, user.passwordHash);
+    if (!isOldPasswordMatch) {
+        throw new AppError(status.UNAUTHORIZED, 'Old password is incorrect');
+    }
 
-    // // Prevent reusing the same password
-    // const isSamePassword = await bcrypt.compare(payload.newPassword, user.passwordHash);
-    // if (isSamePassword) {
-    //     throw new AppError(status.BAD_REQUEST, 'New password must be different from the old password');
-    // }
+    // Prevent reusing the same password
+    const isSamePassword = await bcrypt.compare(payload.newPassword, user.passwordHash);
+    if (isSamePassword) {
+        throw new AppError(status.BAD_REQUEST, 'New password must be different from the old password');
+    }
 
-    // const newHash = await bcrypt.hash(payload.newPassword, SALT_ROUNDS);
+    const newHash = await bcrypt.hash(payload.newPassword, SALT_ROUNDS);
 
-    // await UserModel.findByIdAndUpdate(
-    //     user._id,
-    //     { passwordHash: newHash },
-    //     { new: true, runValidators: true }
-    // );
+    await UserModel.findByIdAndUpdate(
+        user._id,
+        { passwordHash: newHash },
+        { new: true, runValidators: true }
+    );
 
-    // return null;
+    return null;
 };
 
 export const AuthServices = {

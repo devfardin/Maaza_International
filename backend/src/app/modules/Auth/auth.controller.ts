@@ -10,19 +10,14 @@ const loginUser = catchAsync(
             statusCode: 200,
             message: 'User logged in successfully',
             data: result,
-        }
-        )
-
+        })
     }
 )
 
 const chagnePassword = catchAsync(
     async (req, res) => {
         const { ...passwordData } = req.body;
-
-        console.log(req.user, passwordData);
         
-
         const result = await AuthServices.changePassword(req.user!, passwordData)
         sendResponse(res, {
             success: true,
@@ -30,7 +25,6 @@ const chagnePassword = catchAsync(
             message: 'User password changed successfully',
             data: result,
         })
-
     }
 )
 
