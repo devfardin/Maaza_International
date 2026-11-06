@@ -1,5 +1,6 @@
 import { Model, Types } from "mongoose";
 import { is } from "zod/locales";
+import { USER_ROLE } from "./user.constant";
 
 export interface Tuser  {
     fullName: string;
@@ -22,3 +23,5 @@ export interface User extends Model<Tuser> {
     isUserExistsByEmail(email: string): Promise<TuserDocument | null>;
     isUserExistsByPhone(phone: string): Promise<TuserDocument | null>;
 }
+
+export type TUserRole = keyof typeof USER_ROLE;
