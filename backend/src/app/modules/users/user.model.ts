@@ -1,7 +1,8 @@
 import { model, Schema } from "mongoose";
-import { Tuser } from "./user.interface";
+import { Tuser, User, } from "./user.interface";
+import { ObjectId } from "mongodb";
 
-const userSchema = new Schema<Tuser>(
+const userSchema = new Schema<Tuser, User>(
     {
         fullName: {
             type: String,
@@ -79,7 +80,7 @@ const userSchema = new Schema<Tuser>(
             type: Boolean,
             default: false
         }
-        
+
     },
     {
         timestamps: true
@@ -92,4 +93,16 @@ userSchema.post("save", function (doc: any, next: any) {
     next();
 });
 
-export const UserModel = model<Tuser>("User", userSchema);
+userSchema.statics.isUserExistsByEmail = async function ( email: string ) {
+    return await UserModel.findOne({ email });
+}
+
+userSchema.statics.isUserExistsByPhone = async function ( phone: string ) {
+    return await UserModel.findOne({ phone });
+}
+
+userSchema.statics.isUserExistsById = async function ( id: ObjectId ) {
+    return await UserModel.findById( id );
+}
+
+export const UserModel = model<Tuser, User>("User", userSchema);

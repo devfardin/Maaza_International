@@ -1,7 +1,7 @@
-import { Types } from "mongoose";
+import { Model, Types } from "mongoose";
 import { is } from "zod/locales";
 
-export type Tuser = {
+export interface Tuser  {
     fullName: string;
     email: string;
     phone: string;
@@ -13,4 +13,12 @@ export type Tuser = {
     membershipLevel: number;
     avatar?: string;
     isDeleted: boolean;
+}
+
+export type TuserDocument = Tuser & { _id: Types.ObjectId };
+
+export interface User extends Model<Tuser> {
+    isUserExistsById(id: string): Promise<TuserDocument | null>;
+    isUserExistsByEmail(email: string): Promise<TuserDocument | null>;
+    isUserExistsByPhone(phone: string): Promise<TuserDocument | null>;
 }
