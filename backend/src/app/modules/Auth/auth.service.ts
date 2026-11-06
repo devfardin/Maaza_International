@@ -2,9 +2,10 @@ import status from 'http-status';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import AppError from '../../errors/AppError';
-import { UserModel } from '../users/user.model';
 import { TLoginUser } from './auth.interface';
 import config from '../../config';
+import { validateActiveUser } from '../../utils/userValidation';
+import { UserModel } from '../users/user.model';
 
 const SALT_ROUNDS = Number(config.bcrypt_salt_rounds) || 12;
 
@@ -21,16 +22,6 @@ const buildJwtPayload = (user: { _id: { toString(): string }; fullName: string; 
 
 const signToken = (payload: object, secret: string, expiresIn: string) =>
     jwt.sign(payload, secret, { expiresIn } as SignOptions);
-
-// ─── Shared user validation ───────────────────────────────────────────────────
-
-const validateActiveUser = async (phone: string) => {
-    const user = await UserModel.isUserExistsByPhone(phone);
-    if (!user) throw new AppError(status.NOT_FOUND, 'User does not exist');
-    if (user.isDeleted) throw new AppError(status.FORBIDDEN, 'User is deleted');
-    if (user.status !== 'active') throw new AppError(status.FORBIDDEN, `User is ${user.status}`);
-    return user;
-};
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
