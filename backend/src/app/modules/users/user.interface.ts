@@ -14,6 +14,7 @@ export interface Tuser  {
     membershipLevel: number;
     avatar?: string;
     isDeleted: boolean;
+    passwordChangedAt?: Date;
 }
 
 export type TuserDocument = Tuser & { _id: Types.ObjectId };

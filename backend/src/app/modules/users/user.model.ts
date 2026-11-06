@@ -81,6 +81,9 @@ const userSchema = new Schema<Tuser, User>(
         isDeleted: {
             type: Boolean,
             default: false
+        },
+        passwordChangedAt: {
+            type: Date
         }
 
     },

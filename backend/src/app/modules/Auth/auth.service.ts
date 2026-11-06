@@ -23,8 +23,8 @@ const buildJwtPayload = (user: { _id: { toString(): string }; fullName: string; 
 const signToken = (payload: object, secret: string, expiresIn: string) =>
     jwt.sign(payload, secret, { expiresIn } as SignOptions);
 
-// ─── Login ────────────────────────────────────────────────────────────────────
 
+// ─── Login ────────────────────────────────────────────────────────────────────
 const loginUser = async (payload: TLoginUser) => {
     const user = await validateActiveUser(payload.phone);
 
@@ -67,7 +67,10 @@ const changePassword = async (
 
     await UserModel.findByIdAndUpdate(
         user._id,
-        { passwordHash: newHash },
+        {
+            passwordHash: newHash,
+            passwordChangedAt: new Date()
+        },
         { new: true, runValidators: true }
     );
 
