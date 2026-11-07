@@ -4,43 +4,43 @@ import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import AppError from '../../errors/AppError';
 import { TLoginUser } from './auth.interface';
 import config from '../../config';
-import { validateActiveUser } from '../../utils/userValidation';
+import { validateActiveUserByPhone } from '../../utils/userValidation';
 import { UserModel } from '../users/user.model';
+import { buildJwtPayload, createToken } from './auth.utils';
 
 const SALT_ROUNDS = Number(config.bcrypt_salt_rounds) || 12;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const buildJwtPayload = (user: { _id: { toString(): string }; fullName: string; email: string; phone: string; role: string; status: string }) => ({
-    userId: user._id.toString(),
-    fullName: user.fullName,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-    status: user.status,
-});
-
-const signToken = (payload: object, secret: string, expiresIn: string) =>
-    jwt.sign(payload, secret, { expiresIn } as SignOptions);
 
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 const loginUser = async (payload: TLoginUser) => {
-    const user = await validateActiveUser(payload.phone);
+    const user = await validateActiveUserByPhone(payload.phone);
 
     const isPasswordMatch = await bcrypt.compare(payload.password, user.passwordHash);
     if (!isPasswordMatch) {
         throw new AppError(status.UNAUTHORIZED, 'Password is incorrect');
     }
 
-    const accessToken = signToken(
+    // access token
+    const accessToken = createToken(
         buildJwtPayload(user),
         config.jwt_access_secret as string,
-        config.jwt_access_expires_in ?? '7d'
+        config.jwt_access_expires_in ?? '1d'
     );
 
-    return { accessToken };
+    // create refresh token
+    const refreshToken = createToken(
+        buildJwtPayload(user),
+        config.jwt_refresh_secret as string,
+        config.jwt_refresh_expires_in ?? '90d'
+    );
+
+    return {
+        accessToken,
+        refreshToken
+    };
 };
+
+
 
 // ─── Change Password ──────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ const changePassword = async (
     payload: { oldPassword: string; newPassword: string }
 ) => {
     // Re-fetch from DB — never trust JWT payload for sensitive operations
-    const user = await validateActiveUser(userData.phone as string);
+    const user = await validateActiveUserByPhone(userData.phone as string);
 
     // Verify old password against stored hash
     const isOldPasswordMatch = await bcrypt.compare(payload.oldPassword, user.passwordHash);
