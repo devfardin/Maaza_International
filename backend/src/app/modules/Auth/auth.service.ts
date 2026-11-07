@@ -40,6 +40,28 @@ const loginUser = async (payload: TLoginUser) => {
     };
 };
 
+const refreshToken = async (token: string) => {
+    // verify refresh token
+    let decoded; 
+    try {
+        decoded = jwt.verify(token, config.jwt_refresh_secret as string) as JwtPayload;
+    } catch (error) {
+        throw new AppError(status.UNAUTHORIZED, 'Invalid refresh token');
+    }
+
+    const user = await validateActiveUserByPhone(decoded.phone);
+
+    // generate new access token
+    const newAccessToken = createToken(
+        buildJwtPayload(user),
+        config.jwt_access_secret as string,
+        config.jwt_access_expires_in ?? '1d'
+    );
+
+    return {
+        accessToken: newAccessToken,
+    };
+};
 
 
 // ─── Change Password ──────────────────────────────────────────────────────────
@@ -80,4 +102,5 @@ const changePassword = async (
 export const AuthServices = {
     loginUser,
     changePassword,
+    refreshToken,
 };

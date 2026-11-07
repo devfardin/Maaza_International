@@ -13,6 +13,12 @@ router.post('/login',
     AuthControllers.loginUser
 );
 
+// Refresh Token router
+router.post('/refresh-token', 
+    validationRequest(AuthValidation.refreshTokenValidationSchema),
+    AuthControllers.refreshToken,
+);
+
 // Change Password router
 router.post('/change-password',
     auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
