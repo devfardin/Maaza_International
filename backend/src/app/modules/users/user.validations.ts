@@ -51,4 +51,11 @@ const updateUserValidation = z.object({
     }),
 });
 
-export const UserValidations = { createUserValidation, updateUserValidation };
+// chage user status validation
+const changeUserStatusValidation = z.object({
+    body: z.object({
+        status: z.enum(["active", "suspended", "blocked"]),
+    }),
+});
+
+export const UserValidations = { createUserValidation, updateUserValidation,changeUserStatusValidation };

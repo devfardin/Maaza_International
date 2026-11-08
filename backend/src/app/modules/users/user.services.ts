@@ -91,6 +91,9 @@ const changeUserStatus = async (id: string, payload: string) => {
     if (!isUserExists) {
         throw new AppError(status.NOT_FOUND, 'User not found');
     }
+    if (isUserExists.role === 'super_admin') {
+        throw new AppError(status.FORBIDDEN, 'You do not have permission to change the status of a super admin');
+    }
     const result = await UserModel.findByIdAndUpdate(
         id,
         { status: payload },
