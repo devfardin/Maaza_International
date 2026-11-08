@@ -34,7 +34,7 @@ const refreshToken = catchAsync(
         sendResponse(res, {
             statusCode: status.OK,
             success: true,
-            message: "User logged in successfully!",
+            message: 'Access token is retrived successfully!',
             data: result,
         });
     });
@@ -46,15 +46,27 @@ const chagnePassword = catchAsync(
         const result = await AuthServices.changePassword(req.user!, passwordData)
         sendResponse(res, {
             success: true,
-            statusCode: 200,
+            statusCode: status.OK,
             message: 'User password changed successfully',
             data: result,
         })
     }
 )
 
+// forget password
+const forgetPassword = catchAsync(async (req, res) => {
+    const { phone } = req.body;
+    await AuthServices.forgetPassword(phone);
+    sendResponse(res, {
+        success: true,
+        statusCode: status.OK,
+        message: 'Reset link is sent to your email address',
+    })
+})
+
 export const AuthControllers = {
     loginUser,
     chagnePassword,
-    refreshToken
+    refreshToken,
+    forgetPassword
 };

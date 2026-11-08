@@ -14,7 +14,7 @@ router.post('/login',
 );
 
 // Refresh Token router
-router.post('/refresh-token', 
+router.post('/refresh-token',
     validationRequest(AuthValidation.refreshTokenValidationSchema),
     AuthControllers.refreshToken,
 );
@@ -24,6 +24,11 @@ router.post('/change-password',
     auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
     validationRequest(AuthValidation.chagnePasswordValidationSchema),
     AuthControllers.chagnePassword,
+);
+
+// Forget Password router
+router.post('/forget-password', validationRequest(AuthValidation.forgetPasswordValidationSchema),
+    AuthControllers.forgetPassword,
 );
 
 

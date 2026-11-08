@@ -7,6 +7,7 @@ import config from '../../config';
 import { validateActiveUserByPhone } from '../../utils/userValidation';
 import { UserModel } from '../users/user.model';
 import { buildJwtPayload, createToken } from './auth.utils';
+import { sendEmail } from '../../utils/sendEmail';
 
 const SALT_ROUNDS = Number(config.bcrypt_salt_rounds) || 12;
 
@@ -42,7 +43,7 @@ const loginUser = async (payload: TLoginUser) => {
 
 const refreshToken = async (token: string) => {
     // verify refresh token
-    let decoded; 
+    let decoded;
     try {
         decoded = jwt.verify(token, config.jwt_refresh_secret as string) as JwtPayload;
     } catch (error) {
@@ -99,8 +100,39 @@ const changePassword = async (
     return null;
 };
 
+// forget password
+const forgetPassword = async (phone: string) => {
+    const user = await validateActiveUserByPhone(phone);
+
+
+    // generate reset token
+    const resetToken = createToken(
+        buildJwtPayload(user),
+        config.jwt_access_secret as string,
+        '10m'
+    );
+
+    const resetLink = `http://localhost:3000/reset-password?userId=${user?._id}&token=${resetToken}`;
+
+    // In a real app, you would send this token via email/SMS
+    await sendEmail({
+        to: 'contactfardin22@gmail.com',
+        subject: 'Reset Your Password',
+        heading: 'Password Reset Request',
+        subheading: 'Use the link below to reset your password.',
+        body: `<p>Click the button below to reset your password.</p>
+                <p>This OTP expires in <strong>10 minutes</strong>.</p>`,
+        footerNote: 'If you did not request a password reset, please secure your account.',
+        button: {
+            label: 'Reset Password',
+            url: resetLink,
+        }
+    });
+};
+
 export const AuthServices = {
     loginUser,
     changePassword,
     refreshToken,
+    forgetPassword
 };

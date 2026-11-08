@@ -31,8 +31,17 @@ const chagnePasswordValidationSchema = z.object({
     })
 })
 
+const forgetPasswordValidationSchema = z.object({
+    body: z.object({
+        phone: z.string({
+            message: 'Phone is required',
+        }),
+    })
+})
+
 export const AuthValidation = {
     loginValidationSchema,
     chagnePasswordValidationSchema,
     refreshTokenValidationSchema,
+    forgetPasswordValidationSchema,
 }
