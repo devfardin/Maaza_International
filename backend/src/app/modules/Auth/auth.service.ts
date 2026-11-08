@@ -112,7 +112,7 @@ const forgetPassword = async (phone: string) => {
         '10m'
     );
 
-    const resetLink = `http://localhost:3000/reset-password?userId=${user?._id}&token=${resetToken}`;
+    const resetLink = `${config.frontend_url}/reset-password?userId=${user?._id}&token=${resetToken}`;
 
     // In a real app, you would send this token via email/SMS
     await sendEmail({
@@ -130,9 +130,49 @@ const forgetPassword = async (phone: string) => {
     });
 };
 
+const resetPassword = async (
+    token: string,
+    payload: { phone: string; newPassword: string }
+) => {
+    // verify reset token
+    let decoded;
+    try {
+        decoded = jwt.verify(token, config.jwt_access_secret as string) as JwtPayload;
+    } catch (error) {
+        throw new AppError(status.UNAUTHORIZED, 'Invalid or expired reset token');
+    }
+    console.log(payload.phone, decoded.userId);
+    
+    
+
+    // verify user id
+    if (decoded.phone as string !== payload.phone) {
+        throw new AppError(status.FORBIDDEN, 'Forbidden: User ID mismatch');
+    }
+
+    // Re-fetch user to ensure they exist and are active
+    const user = await validateActiveUserByPhone(decoded.phone as string);
+
+    // hash new password
+    const newHash = await bcrypt.hash(payload.newPassword, SALT_ROUNDS);
+
+    // update password
+    await UserModel.findByIdAndUpdate(
+        user._id,
+        {
+            passwordHash: newHash,
+            passwordChangedAt: new Date()
+        },
+        { new: true, runValidators: true }
+    );
+
+    return null;
+};
+
 export const AuthServices = {
     loginUser,
     changePassword,
     refreshToken,
-    forgetPassword
+    forgetPassword,
+    resetPassword
 };

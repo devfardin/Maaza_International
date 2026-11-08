@@ -6,7 +6,7 @@ import config from '../config';
 export type TEmailButton = {
     label: string;
     url: string;
-};
+}; 
 
 export type TEmailPayload = {
     to: string;
@@ -153,8 +153,9 @@ const createTransporter = () =>
         port: 587,
         secure: config.NODE_ENV === 'production',
         auth: {
-            user: 'maazainternatinale@gmail.com',
-            pass: 'zgjl pash rhhs faas',
+            // user: 'maazainternatinale@gmail.com',
+            user: config.smtp_user,
+            pass: config.smtp_pass,
         },
     });
 
@@ -162,7 +163,6 @@ const createTransporter = () =>
 
 export const sendEmail = async (payload: TEmailPayload): Promise<void> => {
     const transporter = createTransporter();
-
     await transporter.sendMail({
         from: `"Maaza International" maazainternatinale@gmail.com`,
         to: payload.to,
