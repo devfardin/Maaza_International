@@ -11,6 +11,8 @@ declare global {
         role: string;
         status: string;
       };
+      file?: Express.Multer.File;
+      files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
     }
   }
 }

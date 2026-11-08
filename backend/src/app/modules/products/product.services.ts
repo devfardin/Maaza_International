@@ -2,9 +2,10 @@ import { is } from "zod/locales";
 import { TProduct } from "./product.interface";
 import { ProductModel } from "./product.model";
 import { CategoryModel } from "../categories/category.model";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 
 // create a product
-const createProduct = async (payload: TProduct) => {
+const createProduct = async (file: any, payload: TProduct) => {
     const isExist = await ProductModel.findOne({ name: payload.name });
     if (isExist) {
         throw new Error("Product already exists");
@@ -14,12 +15,19 @@ const createProduct = async (payload: TProduct) => {
     if (!iscatExit) {
         throw new Error("Category does not exist");
     }
+    const path = file?.path;
+    const imageName = `${payload?.name?.split(' ').join('_')}_${Date.now()}`;
+
+    // send image to cloudinary
+    const { secure_url } = await sendImageToCloudinary(imageName, path);
+    
+    payload.image = secure_url as string;
 
     const result = await ProductModel.create(payload);
     if (result) {
         // update category productcont value
         await CategoryModel.findByIdAndUpdate(payload.category, {
-            $inc: { productCount: iscatExit.productCount + 1 }
+            $inc: { productCount: 1 }
         })
     }
     return result;
