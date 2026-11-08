@@ -1,6 +1,6 @@
 import status from 'http-status';
 import bcrypt from 'bcrypt';
-import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import AppError from '../../errors/AppError';
 import { TLoginUser } from './auth.interface';
 import config from '../../config';
@@ -174,5 +174,5 @@ export const AuthServices = {
     changePassword,
     refreshToken,
     forgetPassword,
-    resetPassword
+    resetPassword,
 };

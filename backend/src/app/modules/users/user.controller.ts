@@ -3,6 +3,8 @@ import { Tuser } from "./user.interface";
 import { UserServices } from "./user.services";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
+import AppError from "../../errors/AppError";
+import { JwtPayload } from "jsonwebtoken";
 
 
 const createUser = catchAsync(
@@ -37,7 +39,7 @@ const changeUserStatus = catchAsync(
   async (req, res) => {
     const { id } = req.params;
     const payload = req.body;
-    
+
     const result = await UserServices.changeUserStatus(id, payload.status);
     sendResponse(res, {
       success: true,
@@ -48,8 +50,24 @@ const changeUserStatus = catchAsync(
   }
 )
 
+// get me
+const getMe = catchAsync(async (req, res) => {
+  const { userId, role } = req.user!;
+  const result = await UserServices.getMe( userId, role);
+  if (!result) {
+    throw new AppError(status.NOT_FOUND, 'User not found');
+  }
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: 'User retrieved successfully',
+    data: result,
+  })
+});
+
 export const UserController = {
   createUser,
   deleteUser,
-  changeUserStatus
+  changeUserStatus,
+  getMe
 }

@@ -5,6 +5,8 @@ import { UserModel } from "./user.model";
 import { generateUniqueReferralCode } from "./user.utils";
 import mongoose from 'mongoose';
 import { WalletServices } from '../wallets/wallet.services';
+import config from '../../config';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const createUser = async (payload: Tuser) => {
     const session = await mongoose.startSession();
@@ -43,10 +45,12 @@ const createUser = async (payload: Tuser) => {
         await session.endSession();
     }
 };
-const getMe = async (id: string) => {
-    const result = await UserModel.findById(id).select('-password');
+const getMe = async (userId: string, role: string) => {
+
+    const result = await UserModel.findOne({ _id: userId, role }).select('-passwordHash').populate('referredBy');
     return result;
 }
+
 const getAllUsers = async () => {
     const result = await UserModel.find();
     return result;

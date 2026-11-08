@@ -3,6 +3,7 @@ import config from "../../config";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AuthServices } from "./auth.service";
+import AppError from "../../errors/AppError";
 
 const loginUser = catchAsync(
     async (req, res) => {
@@ -76,6 +77,8 @@ const resetPassword = catchAsync(async (req, res) => {
         data: result,
     })
 })
+
+
 
 export const AuthControllers = {
     loginUser,
