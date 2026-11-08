@@ -1,6 +1,7 @@
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import config from '../config';
 import multer from 'multer';
+import fs from 'fs';
 
 cloudinary.config({
     cloud_name: config.cloudinary_cloud_name,
@@ -10,18 +11,25 @@ cloudinary.config({
 
 export const sendImageToCloudinary = async (imageName: string, path: string): Promise<UploadApiResponse> => {
     return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(path, 
-            { public_id: imageName }, 
+        cloudinary.uploader.upload(path,
+            { public_id: imageName },
             (error, result) => {
-            if (error) reject(error);
-            else resolve(result as UploadApiResponse);
-        });
+                if (error) reject(error);
+                else resolve(result as UploadApiResponse);
+
+                // delete a file asynchronously
+                fs.unlink(path, (err) => {
+                    if (err) reject(err)
+                    else console.log('file deleted successfully');
+
+                });
+            });
     });
 };
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, process.cwd()+'/uploads/');
+        cb(null, process.cwd() + '/uploads/');
     },
     filename: function (req, file, cb) {
         const uniqueName = `${file.fieldname}-${Date.now()}`;
