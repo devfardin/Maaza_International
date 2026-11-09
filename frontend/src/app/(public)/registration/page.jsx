@@ -1,15 +1,28 @@
 'use client';
+// src/app/(public)/registration/page.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Registration page — creates a new user account via the backend API.
+//
+// FLOW:
+//   1. User fills in name, phone, email, referral code, password.
+//   2. We call POST /auth/register via RTK Query useRegisterMutation.
+//   3. On success: save tokens to Redux + cookie, redirect to /dashboard.
+//   4. On failure: show the error message from the server.
+//
+// REFERRAL CODE:
+//   If the URL has ?refId=XXXX (e.g. from a referral link), the code is
+//   auto-filled and locked so the user cannot change it.
+//
+// TO CHANGE THE API ENDPOINT:
+//   Update the register endpoint in src/redux/features/apiSlice.js.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useRegisterMutation } from '@/redux/features/apiSlice';
 
-const HarvestLogo = () => (
-  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2">
-    <path d="M12 21V10M12 14C5 14 4 8 4 4c7 0 10 3 8 10ZM12 17c0-6 4-9 8-9 0 6-2 9-8 9Z"
-      strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
+// ── Reusable form field wrapper ───────────────────────────────────────────────
 const Field = ({ label, hint, children }) => (
   <div>
     <div className="mb-1.5 flex items-center justify-between">
@@ -20,51 +33,33 @@ const Field = ({ label, hint, children }) => (
   </div>
 );
 
+// Shared input class string — apply to all text inputs for consistency
 const inputCls = "h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15";
 
+const MaazaLogo = () => (
+  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <path d="M12 21V10M12 14C5 14 4 8 4 4c7 0 10 3 8 10ZM12 17c0-6 4-9 8-9 0 6-2 9-8 9Z"
+      strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// ── Registration form ─────────────────────────────────────────────────────────
+
 function RegistrationForm() {
-  const [showPw, setShowPw] = useState(false);
+  const [showPw, setShowPw]         = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]           = useState('');
+
+  const router       = useRouter();
   const searchParams = useSearchParams();
+
+  // Read referral code from URL query param (e.g. /registration?refId=ABC123)
   const refId = searchParams.get('refId') ?? '';
 
+  // RTK Query register mutation
+  const [register, { isLoading }] = useRegisterMutation();
 
-  function handleRegister(e) {
-    e.preventDefault();
-
-    try {
-      const formData = new FormData(e.target);
-      const name = formData.get('name');
-      const phone = formData.get('phone');
-      const email = formData.get('email');
-      const referralCode = formData.get('ref');
-      const password = formData.get('newpw');
-      const confirmPassword = formData.get('confirm');
-
-      console.log({
-        name,
-        phone,
-        email,
-        referralCode,
-        password,
-        confirmPassword
-      });
-
-
-    } catch (e) {
-      console.error(e);
-    }
-
-    // const form = e.target;
-
-    //   if (form.newpw.value !== form.confirm.value) {
-    //     setError('Passwords do not match');
-    //     return;
-    //   }
-    //   window.location.href = '/dashboard';
-  }
-
+  // Eye toggle button for password fields
   const EyeBtn = ({ show, toggle }) => (
     <button type="button" onClick={toggle}
       className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600">
@@ -81,6 +76,46 @@ function RegistrationForm() {
     </button>
   );
 
+  // Handle form submission — validates passwords match then calls the API
+  async function handleRegister(e) {
+    e.preventDefault();
+    setError('');
+
+    const formData = new FormData(e.target);
+    const name     = formData.get('name');
+    const phone    = formData.get('phone');
+    const email    = formData.get('email');
+    const referralCode = formData.get('ref');
+    const password = formData.get('newpw');
+    const confirm  = formData.get('confirm');
+
+    // Backend expects: { fullName, phone, email?, passwordHash, referredBy? }
+    // Note: the password field is named 'passwordHash' in the backend schema
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      // Call POST /users/create-user
+      const result = await register({
+        fullName: name,          // backend uses fullName, not name
+        phone,
+        email,                   // required by the backend Mongoose schema
+        passwordHash: password,  // backend field is passwordHash, not password
+        ...(referralCode && { referredBy: referralCode }), // backend uses referredBy
+      }).unwrap();
+
+      // Registration does not return tokens — the backend createUser
+      // endpoint only creates the account and returns the user object.
+      // Redirect to login so the user can sign in with their new credentials.
+      router.push('/login?registered=1');
+
+    } catch (err) {
+      setError(err?.data?.message || 'Registration failed. Please try again.');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f8f5]">
       <div className="min-h-screen lg:grid lg:grid-cols-[1.1fr_0.9fr]">
@@ -94,12 +129,13 @@ function RegistrationForm() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[20rem] w-[20rem] rounded-full bg-lime-400/5 blur-3xl" />
           </div>
 
-          <a href="#" className="relative z-10 flex items-center gap-3 text-white">
+          {/* Logo */}
+          <div className="relative z-10 flex items-center gap-3 text-white">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-lime-300 text-[#0d3d26] shadow-lg shadow-lime-400/30">
-              <HarvestLogo />
+              <MaazaLogo />
             </span>
             <span className="text-2xl font-extrabold tracking-tight">Maaza International</span>
-          </a>
+          </div>
 
           <div className="relative z-10 max-w-lg">
             <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm text-lime-200">
@@ -115,14 +151,8 @@ function RegistrationForm() {
             <p className="mt-5 text-lg leading-8 text-white/60">
               Create your free account and get access to all Maaza International tools in one place.
             </p>
-
-            {/* Benefits list */}
             <ul className="mt-8 space-y-3">
-              {[
-                'Track your products and activity',
-                'Secure, private member account',
-                'Referral rewards & bonuses',
-              ].map(item => (
+              {['Track your products and activity', 'Secure, private member account', 'Referral rewards & bonuses'].map(item => (
                 <li key={item} className="flex items-center gap-3 text-sm text-white/70">
                   <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lime-400/20 text-lime-300">
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3">
@@ -133,15 +163,6 @@ function RegistrationForm() {
                 </li>
               ))}
             </ul>
-
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              {[['10K+', 'Members'], ['99%', 'Uptime'], ['24/7', 'Support']].map(([n, l]) => (
-                <div key={l} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm">
-                  <p className="text-xl font-extrabold text-lime-300">{n}</p>
-                  <p className="mt-0.5 text-xs text-white/50">{l}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
           <p className="relative z-10 text-xs text-white/30">© 2026 Maaza International · Member portal</p>
@@ -154,14 +175,13 @@ function RegistrationForm() {
           <div className="relative overflow-hidden bg-[#0d3d26] px-6 pb-10 pt-8 lg:hidden">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/10" />
             <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-lime-400/10 blur-2xl" />
-
             <p className="relative z-10 mt-4 text-2xl font-extrabold text-white">Create account 🌱</p>
             <p className="relative z-10 mt-1 text-sm text-white/60">Join Maaza International and start your journey</p>
           </div>
 
-          {/* Form card */}
+          {/* Form area */}
           <div className="flex flex-1 items-start justify-center px-4 py-8 sm:px-6 lg:items-center lg:px-10 xl:px-16">
-            <div className="w-full ">
+            <div className="w-full">
 
               {/* Desktop heading */}
               <div className="mb-8 hidden lg:block">
@@ -185,7 +205,7 @@ function RegistrationForm() {
               <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100 sm:p-8">
                 <form onSubmit={handleRegister} className="space-y-4">
 
-                  {/* Name + Phone */}
+                  {/* Name + Phone — side by side on sm+ screens */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Full name">
                       <input name="name" required autoComplete="name" placeholder="Your full name" className={inputCls} />
@@ -195,21 +215,26 @@ function RegistrationForm() {
                     </Field>
                   </div>
 
-                  {/* Email */}
+                  {/* Email — required by the backend Mongoose schema */}
                   <Field label="Email address">
-                    <input name="email" type="email" autoComplete="email" placeholder="you@example.com" className={inputCls} />
+                    <input name="email" required type="email" autoComplete="email" placeholder="you@example.com" className={inputCls} />
                   </Field>
 
-                  {/* Referral */}
+                  {/* Referral code — auto-filled and locked if ?refId= is in URL */}
                   <Field label="Referral code" hint={refId ? 'auto-filled' : 'optional'}>
                     <div className="relative">
-                      <input name="ref" readOnly={!!refId} value={refId || undefined} defaultValue={refId || undefined} placeholder="Enter referral code"
-                        className={`${inputCls} pl-10 ${refId ? 'cursor-not-allowed bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : ''}`} />
+                      <input
+                        name="ref"
+                        readOnly={!!refId}
+                        defaultValue={refId || ''}
+                        placeholder="Enter referral code"
+                        className={`${inputCls} pl-10 ${refId ? 'cursor-not-allowed bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : ''}`}
+                      />
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 text-sm">🎁</span>
                     </div>
                   </Field>
 
-                  {/* Passwords */}
+                  {/* Password + Confirm — side by side on sm+ screens */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Create password">
                       <div className="relative">
@@ -229,7 +254,7 @@ function RegistrationForm() {
                     </Field>
                   </div>
 
-                  {/* Terms */}
+                  {/* Terms checkbox */}
                   <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-3.5 ring-1 ring-slate-100">
                     <input required type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-emerald-600 shrink-0" />
                     <span className="text-sm leading-5 text-slate-500">
@@ -240,6 +265,7 @@ function RegistrationForm() {
                     </span>
                   </label>
 
+                  {/* Error message from server or client validation */}
                   {error && (
                     <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
                       <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
@@ -249,12 +275,18 @@ function RegistrationForm() {
                     </div>
                   )}
 
-                  <button type="submit"
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d3d26] text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#0a3020] active:scale-[.98]">
-                    Create Account
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                  {/* Submit button — disabled and shows loading text while API call runs */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d3d26] text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#0a3020] active:scale-[.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Creating account…' : 'Create Account'}
+                    {!isLoading && (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </button>
                 </form>
 
@@ -276,6 +308,7 @@ function RegistrationForm() {
   );
 }
 
+// Wrap in Suspense because useSearchParams() requires it in Next.js App Router
 export default function RegistrationPage() {
   return (
     <Suspense>

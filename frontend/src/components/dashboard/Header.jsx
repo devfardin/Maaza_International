@@ -3,7 +3,12 @@
 // Header — sticky top bar shown on all screen sizes
 // On mobile: shows logo. On desktop: shows search bar.
 
-export default function Header({ showPage, showToast }) {
+// Props:
+//   showPage  — function to navigate to a dashboard page
+//   showToast — function to show a toast notification
+//   user      — logged-in user object from Redux (name, membershipLevel, etc.)
+//   onLogout  — function to sign the user out
+export default function Header({ showPage, showToast, user, onLogout }) {
 
   // Search: pressing Enter navigates to matching page
   function handleSearch(e) {
@@ -24,7 +29,7 @@ export default function Header({ showPage, showToast }) {
         : 'Language set to English.'
     );
   }
-
+  
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
       <div className="h-[66px] lg:h-[78px] px-4 sm:px-6 xl:px-9 flex items-center gap-3">
@@ -71,11 +76,23 @@ export default function Header({ showPage, showToast }) {
             onClick={() => showPage('profile')}
             className="flex items-center gap-2 sm:border-l sm:pl-3"
           >
-            <span className="w-9 h-9 rounded-xl bg-harvest-100 text-harvest-700 grid place-items-center text-xs font-extrabold">FA</span>
-            <span className="hidden sm:block text-left">
-              <b className="block text-xs">Fardin Ahmed</b>
-              <small className="text-[10px] text-slate-500">Member account</small>
+            {/* Avatar shows first 2 letters of user's name */}
+            <span className="w-9 h-9 rounded-xl bg-harvest-100 text-harvest-700 grid place-items-center text-xs font-extrabold">
+              {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : '??'}
             </span>
+            <span className="hidden sm:block text-left">
+              <b className="block text-xs">{user?.fullName || 'Loading...'}</b>
+              <small className="text-[10px] text-slate-500">Level {user?.membershipLevel || 'Member'}</small>
+            </span>
+          </button>
+
+          {/* Logout button — visible on desktop */}
+          <button
+            onClick={onLogout}
+            title="Sign out"
+            className="hidden sm:flex items-center gap-1 text-xs text-slate-400 hover:text-rose-500 border-l pl-3 transition-colors"
+          >
+            ⏻ Sign out
           </button>
         </div>
       </div>

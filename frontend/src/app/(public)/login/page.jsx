@@ -1,8 +1,32 @@
 'use client';
+// src/app/(public)/login/page.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Login page — authenticates the user against the backend API.
+//
+// FLOW:
+//   1. User submits email + password.
+//   2. We call POST /auth/login via RTK Query useLoginMutation.
+//   3. On success: save tokens to Redux + cookie, redirect to /dashboard.
+//   4. On failure: show the error message from the server.
+//
+// TO CHANGE THE REDIRECT AFTER LOGIN:
+//   Change the router.push('/dashboard') call in handleLogin.
+//
+// TO CHANGE THE API ENDPOINT:
+//   Update the login endpoint in src/redux/features/apiSlice.js.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDispatch } from 'react-redux';
+import { useLoginMutation } from '@/redux/features/apiSlice';
+import { setCredentials } from '@/redux/features/authSlice';
+import { Suspense } from 'react';
 
-const HarvestLogo = () => (
+// ── Small reusable SVG components ─────────────────────────────────────────────
+
+const MaazaLogo = () => (
   <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2">
     <path d="M12 21V10M12 14C5 14 4 8 4 4c7 0 10 3 8 10ZM12 17c0-6 4-9 8-9 0 6-2 9-8 9Z"
       strokeLinecap="round" strokeLinejoin="round" />
@@ -20,18 +44,57 @@ const EyeIcon = ({ open }) => open ? (
   </svg>
 );
 
-export default function LoginPage() {
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState('');
+// ── Main login form (wrapped in Suspense for useSearchParams) ─────────────────
 
-  function handleLogin(e) {
+function LoginForm() {
+  const [showPw, setShowPw]   = useState(false);
+  const [error, setError]     = useState('');
+
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const dispatch     = useDispatch();
+
+  // RTK Query login mutation — provides { isLoading } for button state
+  const [login, { isLoading }] = useLoginMutation();
+
+  // Handle form submission — calls the backend login endpoint
+  async function handleLogin(e) {
     e.preventDefault();
-    const form = e.target;
-    if (!form.email.value || !form.password.value) {
-      setError('Please fill in all fields');
-      return;
+    setError('');
+
+    const form     = e.target;
+    // Backend expects { phone, password } — the input field is labelled
+    // 'Email or phone' but the value is sent as 'phone' to match the server
+    const phone    = form.email.value.trim();
+    const password = form.password.value;
+
+    try {
+      // Call POST /auth/login — backend expects { phone, password }
+      // Response shape: { success, message, data: { accessToken, refreshToken } }
+      const result = await login({ phone, password }).unwrap();
+
+      // Backend returns tokens inside result.data — there is no user object
+      // in the login response. The user profile is fetched separately via
+      // GET /users/me in the dashboard layout after redirect.
+      dispatch(setCredentials({
+        user:         null,
+        accessToken:  result.data?.accessToken,
+        refreshToken: result.data?.refreshToken,
+      }));
+
+      // Set accessToken as a cookie so Next.js middleware (middleware.js)
+      // can read it for server-side route protection — middleware cannot
+      // access localStorage, only cookies.
+      document.cookie = `accessToken=${result.data?.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+
+      // Redirect to the page the user originally tried to visit, or dashboard
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      router.push(redirect);
+
+    } catch (err) {
+      // Show the error message returned by the server, or a generic fallback
+      setError(err?.data?.message || 'Invalid phone number or password. Please try again.');
     }
-    window.location.href = '/dashboard';
   }
 
   return (
@@ -40,7 +103,6 @@ export default function LoginPage() {
 
         {/* ── Left decorative panel (desktop only) ── */}
         <section className="relative hidden overflow-hidden bg-[#0d3d26] lg:flex lg:flex-col lg:justify-between p-14 xl:p-20">
-          {/* Background blobs */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -right-24 -top-24 h-[28rem] w-[28rem] rounded-full border border-white/10" />
             <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full border border-white/10" />
@@ -49,12 +111,12 @@ export default function LoginPage() {
           </div>
 
           {/* Logo */}
-          <a href="#" className="relative z-10 flex items-center gap-3 text-white">
+          <div className="relative z-10 flex items-center gap-3 text-white">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-lime-300 text-[#0d3d26] shadow-lg shadow-lime-400/30">
-              <HarvestLogo />
+              <MaazaLogo />
             </span>
             <span className="text-2xl font-extrabold tracking-tight">Maaza International</span>
-          </a>
+          </div>
 
           {/* Hero text */}
           <div className="relative z-10 max-w-lg">
@@ -71,21 +133,6 @@ export default function LoginPage() {
             <p className="mt-5 text-lg leading-8 text-white/60">
               Your products, activity, and account tools — thoughtfully brought together in one simple place.
             </p>
-
-            {/* Social proof */}
-            <div className="mt-10 flex items-center gap-4">
-              <div className="flex -space-x-3">
-                {[['A', 'amber'], ['M', 'sky'], ['S', 'rose']].map(([l, c]) => (
-                  <span key={l} className={`grid h-10 w-10 place-items-center rounded-full border-2 border-[#0d3d26] bg-${c}-200 text-sm font-bold text-${c}-900`}>{l}</span>
-                ))}
-              </div>
-              <div className="text-white">
-                <p className="text-sm font-semibold">Made for your next step</p>
-                <p className="text-xs text-white/50">Simple. Clear. Member-first.</p>
-              </div>
-            </div>
-
-            {/* Stats row */}
             <div className="mt-10 grid grid-cols-3 gap-4">
               {[['3K+', 'Members'], ['99%', 'Uptime'], ['24/7', 'Support']].map(([n, l]) => (
                 <div key={l} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm">
@@ -106,12 +153,11 @@ export default function LoginPage() {
           <div className="relative overflow-hidden bg-[#0d3d26] px-6 pb-10 pt-8 lg:hidden">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/10" />
             <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-lime-400/10 blur-2xl" />
-
             <p className="relative z-10 mt-4 text-2xl font-extrabold text-white">Welcome back 👋</p>
             <p className="relative z-10 mt-1 text-sm text-white/60">Sign in to your Maaza International account</p>
           </div>
 
-          {/* Form card */}
+          {/* Form area */}
           <div className="flex flex-1 items-start justify-center px-4 py-8 sm:px-6 lg:items-center lg:px-10 xl:px-16">
             <div className="w-full">
 
@@ -122,7 +168,7 @@ export default function LoginPage() {
                 <p className="mt-2 text-sm text-slate-500">Sign in to continue to your Maaza International dashboard.</p>
               </div>
 
-              {/* Tab switcher */}
+              {/* Tab switcher — Sign In / Create Account */}
               <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-300">
                 <span className="rounded-xl bg-[#0d3d26] px-4 py-3.5 text-center text-sm font-bold text-white shadow-md">
                   Sign In
@@ -137,17 +183,21 @@ export default function LoginPage() {
               <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100 sm:p-8">
                 <form onSubmit={handleLogin} className="space-y-5">
 
-                  {/* Email */}
-                  <div className="group">
+                  {/* Phone number field — backend login requires phone, not email */}
+                  <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                      Email or phone number
+                      Phone number
                     </label>
-                    <input name="email" required autoComplete="username"
-                      placeholder="Enter your email or phone"
-                      className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15" />
+                    <input
+                      name="email"
+                      required
+                      autoComplete="tel"
+                      placeholder="e.g. 01XXXXXXXXX"
+                      className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15"
+                    />
                   </div>
 
-                  {/* Password */}
+                  {/* Password field with show/hide toggle */}
                   <div>
                     <div className="mb-1.5 flex items-center justify-between">
                       <label className="text-sm font-semibold text-slate-700">Password</label>
@@ -156,31 +206,26 @@ export default function LoginPage() {
                       </button>
                     </div>
                     <div className="relative">
-                      <input name="password" required autoComplete="current-password"
+                      <input
+                        name="password"
+                        required
+                        autoComplete="current-password"
                         type={showPw ? 'text' : 'password'}
                         placeholder="Enter your password"
-                        className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15" />
-                      <button type="button" onClick={() => setShowPw(p => !p)}
-                        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600">
+                        className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15"
+                      />
+                      {/* Toggle password visibility */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPw(p => !p)}
+                        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600"
+                      >
                         <EyeIcon open={showPw} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Remember me */}
-                  <div className="flex items-center justify-between">
-                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
-                      <input type="checkbox" className="h-4 w-4 rounded accent-emerald-600" />
-                      Remember me
-                    </label>
-                    <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      Secure access
-                    </span>
-                  </div>
-
+                  {/* Error message from server */}
                   {error && (
                     <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
                       <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
@@ -190,20 +235,20 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <button type="submit"
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d3d26] text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#0a3020] active:scale-[.98]">
-                    Sign In
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                  {/* Submit button — shows loading state while API call is in progress */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d3d26] text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#0a3020] active:scale-[.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Signing in…' : 'Sign In'}
+                    {!isLoading && (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </button>
                 </form>
-
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-slate-100" />
-                  <span className="text-xs text-slate-400">or</span>
-                  <div className="h-px flex-1 bg-slate-100" />
-                </div>
 
                 <p className="mt-5 text-center text-sm text-slate-500">
                   New to Maaza International?{' '}
@@ -222,5 +267,14 @@ export default function LoginPage() {
 
       </div>
     </div>
+  );
+}
+
+// Wrap in Suspense because useSearchParams() requires it in Next.js App Router
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
