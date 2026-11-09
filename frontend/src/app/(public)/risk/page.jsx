@@ -1,5 +1,5 @@
 // Risk Disclosure page
-// This page explains the risks associated with using Harvest's services
+// This page explains the risks associated with using Maaza International's services
 
 export default function RiskPage() {
   return (
@@ -70,7 +70,7 @@ export default function RiskPage() {
         <section>
           <h2 className="text-2xl font-extrabold mb-3">8. No Guarantee of Profits</h2>
           <p className="leading-7">
-            Harvest does not guarantee any profit from your activities on our platform. All investment decisions are your responsibility.
+            Maaza International does not guarantee any profit from your activities on our platform. All investment decisions are your responsibility.
             You should only invest money that you can afford to lose and should not invest based solely on expectations of profit.
           </p>
         </section>
@@ -88,7 +88,7 @@ export default function RiskPage() {
           <h2 className="text-2xl font-extrabold mb-3">10. Acknowledgment</h2>
           <p className="leading-7">
             By using Harvest, you acknowledge that you have read and understood this risk disclosure and accept all the risks associated
-            with using our platform. You agree that you are making investment decisions at your own risk and that Harvest shall not
+            with using our platform. You agree that you are making investment decisions at your own risk and that Maaza International shall not
             be liable for any losses you may incur.
           </p>
         </section>
@@ -98,7 +98,7 @@ export default function RiskPage() {
           <p className="leading-7 mt-4">
             If you have any questions about this Risk Disclosure, please contact us at:
             <br /><br />
-            Email: risk@harvest.example<br />
+            Email: risk@maazainternational.com<br />
             Phone: +880 1234 567890
           </p>
         </section>

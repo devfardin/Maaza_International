@@ -5,8 +5,8 @@ import { UserModel } from "./user.model";
 import { generateUniqueReferralCode } from "./user.utils";
 import mongoose from 'mongoose';
 import { WalletServices } from '../wallets/wallet.services';
+import { sendEmail } from '../../utils/sendEmail';
 import config from '../../config';
-import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const createUser = async (payload: Tuser) => {
     const session = await mongoose.startSession();
@@ -29,11 +29,20 @@ const createUser = async (payload: Tuser) => {
             throw new AppError(status.INTERNAL_SERVER_ERROR, 'Failed to create user');
         }
 
+        // Welcome email with CTA
+        await sendEmail({
+            to: result[0]?.email,
+            subject: 'Welcome to Maaza International!',
+            heading: `Welcome, ${result[0].fullName}!`,
+            subheading: 'Your account has been created successfully.',
+            body: `<p>You can now log in and start exploring products, earning daily income, and inviting friends.</p>`,
+            button: { label: 'Go to Dashboard', url: `${config.frontend_url}/dashboard` },
+        });
+
         // create both recharge and balance wallets for the new user
         await WalletServices.createWalletsForUser(result[0]._id, session);
 
         await session.commitTransaction();
-
         return result[0];
 
     } catch (error) {

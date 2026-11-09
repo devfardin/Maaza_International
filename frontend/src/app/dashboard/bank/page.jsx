@@ -1,6 +1,6 @@
 'use client';
-import BankPage from "@/components/pages/BankPage";
-import TasksPage from "@/components/pages/TasksPage";
+import BankPage from "@/components/dashboard/pages/BankPage";
+import TasksPage from "@/components/dashboard/pages/TasksPage";
 import { useProductModal } from "@/hooks/useDashboardModals";
 
 export default function Page() {

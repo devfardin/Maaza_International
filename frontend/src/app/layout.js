@@ -1,8 +1,9 @@
 import './globals.css';
+import ReduxProvider from '@/redux/ReduxProvider';
 
 export const metadata = {
   title: 'Maaza International',
-  description: 'Maaza — Grow with purpose',
+  description: 'Maaza International — Grow with purpose',
 };
 
 export default function RootLayout({ children }) {
@@ -13,7 +14,8 @@ export default function RootLayout({ children }) {
         <script src="https://cdn.tailwindcss.com" />
 
         {/* Custom harvest green color palette used across all 3 zones */}
-        <script dangerouslySetInnerHTML={{ __html: `
+        <script dangerouslySetInnerHTML={{
+          __html: `
           tailwind.config = {
             theme: {
               extend: {
@@ -41,7 +43,9 @@ export default function RootLayout({ children }) {
         No navbar/sidebar here — each zone (landing, dashboard, admin)
         has its own layout.jsx that adds the right chrome
       */}
-      <body className="bg-slate-50 text-slate-800">{children}</body>
+      <body className="bg-slate-50 text-slate-800">
+        <ReduxProvider>{children}</ReduxProvider>
+      </body>
     </html>
   );
 }

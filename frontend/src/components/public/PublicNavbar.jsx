@@ -10,8 +10,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import Container from '../shared/Container';
 
 // ── Nav links ─────────────────────────────────────────────────────────────────
 const navLinks = [
@@ -27,12 +28,13 @@ export default function PublicNavbar() {
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+     <Container>
+       <div className=" h-16 flex items-center justify-between">
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-lg grid place-items-center">✦</span>
-          <b className="text-lg">Harvest</b>
+          <b className="text-lg">Maaza International</b>
         </Link>
 
         {/* Desktop nav links */}
@@ -74,6 +76,7 @@ export default function PublicNavbar() {
           {menuOpen ? '✕' : '☰'}
         </button>
       </div>
+     </Container>
 
       {/* Mobile dropdown menu */}
       {menuOpen && (

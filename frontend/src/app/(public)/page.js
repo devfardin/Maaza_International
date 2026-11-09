@@ -1,3 +1,4 @@
+import Container from '@/components/shared/Container';
 import Link from 'next/link';
 
 // Landing home page — hero, features, CTA
@@ -7,10 +8,11 @@ export default function LandingHome() {
   return (
     <div>
       {/* Hero section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
+      <section className="">
+        <Container>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <p className="text-xs tracking-widest font-extrabold text-harvest-700 mb-3">WELCOME TO HARVEST</p>
+            <p className="text-xs tracking-widest font-extrabold text-harvest-700 mb-3">WELCOME TO MAAZA INTERNATIONAL</p>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">Grow with purpose</h1>
             <p className="text-lg text-slate-600 leading-7 mb-6">Manage your wallet, explore products, complete tasks and grow your earnings in a trusted community.</p>
             <div className="flex gap-3">
@@ -26,13 +28,14 @@ export default function LandingHome() {
             🌱
           </div>
         </div>
+        </Container>
       </section>
 
       {/* Features section */}
       <section className="bg-white border-t py-16 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Why choose Harvest?</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Why choose Maaza International?</h2>
             <p className="text-lg text-slate-600">Everything you need to manage your account and grow your earnings</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-6">
@@ -57,7 +60,7 @@ export default function LandingHome() {
       {/* CTA section */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
         <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Ready to get started?</h2>
-        <p className="text-lg text-slate-600 mb-6">Join thousands of members growing their earnings with Harvest.</p>
+        <p className="text-lg text-slate-600 mb-6">Join thousands of members growing their earnings with Maaza International.</p>
         <Link href="/login" className="inline-block px-8 py-4 rounded-xl bg-harvest-700 text-white font-bold text-lg hover:bg-harvest-800">
           Create your account →
         </Link>

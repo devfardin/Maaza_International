@@ -98,7 +98,7 @@ function RegistrationForm() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-lime-300 text-[#0d3d26] shadow-lg shadow-lime-400/30">
               <HarvestLogo />
             </span>
-            <span className="text-2xl font-extrabold tracking-tight">Harvest</span>
+            <span className="text-2xl font-extrabold tracking-tight">Maaza International</span>
           </a>
 
           <div className="relative z-10 max-w-lg">
@@ -113,7 +113,7 @@ function RegistrationForm() {
               </span>
             </h1>
             <p className="mt-5 text-lg leading-8 text-white/60">
-              Create your free account and get access to all Harvest tools in one place.
+              Create your free account and get access to all Maaza International tools in one place.
             </p>
 
             {/* Benefits list */}

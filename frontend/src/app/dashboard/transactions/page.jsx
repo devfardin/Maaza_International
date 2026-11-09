@@ -1,6 +1,6 @@
 'use client';
 
-import TransactionsPage from "@/components/pages/TransactionsPage";
+import TransactionsPage from "@/components/dashboard/pages/TransactionsPage";
 import { useProductModal } from "@/hooks/useDashboardModals";
 
 

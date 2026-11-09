@@ -5,8 +5,8 @@
 
 // Edit this array to change purchased product data
 const PURCHASED = [
-  { emoji: '🌿', name: 'Green Harvest P1',  order: 'HP-2601021', price: '1,000', days: 30, elapsed: 7  },
-  { emoji: '🌾', name: 'Harvest Supply P2', order: 'HP-2600988', price: '2,500', days: 45, elapsed: 15 },
+  { emoji: '🌿', name: 'Maaza Green P1',   order: 'MI-2601021', price: '1,000', days: 30, elapsed: 7  },
+  { emoji: '🌾', name: 'Maaza Supply P2',  order: 'MI-2600988', price: '2,500', days: 45, elapsed: 15 },
   { emoji: '🍎', name: 'Fresh Market P1',   order: 'HP-2600841', price: '800',   days: 20, elapsed: 20 },
 ];
 

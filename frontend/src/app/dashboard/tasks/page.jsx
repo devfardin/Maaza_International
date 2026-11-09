@@ -1,5 +1,5 @@
 'use client';
-import TasksPage from "@/components/pages/TasksPage";
+import TasksPage from "@/components/dashboard/pages/TasksPage";
 import { useProductModal } from "@/hooks/useDashboardModals";
 
 export default function Page() {

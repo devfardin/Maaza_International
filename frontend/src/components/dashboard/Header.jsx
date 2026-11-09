@@ -32,7 +32,7 @@ export default function Header({ showPage, showToast }) {
         {/* Mobile logo — hidden on desktop */}
         <div className="flex items-center gap-2 lg:hidden">
           <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-xl grid place-items-center">✦</span>
-          <b className="text-lg">Harvest</b>
+          <b className="text-lg">Maaza International</b>
         </div>
 
         {/* Desktop search bar — hidden on mobile */}

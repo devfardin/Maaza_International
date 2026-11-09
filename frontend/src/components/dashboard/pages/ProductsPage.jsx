@@ -3,8 +3,8 @@ import { useState } from 'react';
 
 // All products data — edit this array to add/remove products
 const PRODUCTS = [
-  { emoji: '🌿', cat: 'Agriculture', gradient: 'from-lime-100 to-harvest-200',    name: 'Green Harvest P1',      desc: 'Agriculture-focused business product with clear terms.',       price: 1000, points: 100, validity: '30 days' },
-  { emoji: '🌾', cat: 'Agriculture', gradient: 'from-amber-100 to-orange-200',    name: 'Harvest Supply P2',     desc: 'A supply-chain product with an itemized overview.',            price: 2500, points: 250, validity: '45 days' },
+  { emoji: '🌿', cat: 'Agriculture', gradient: 'from-lime-100 to-harvest-200',    name: 'Maaza Green P1',        desc: 'Agriculture-focused business product with clear terms.',       price: 1000, points: 100, validity: '30 days' },
+  { emoji: '🌾', cat: 'Agriculture', gradient: 'from-amber-100 to-orange-200',    name: 'Maaza Supply P2',       desc: 'A supply-chain product with an itemized overview.',            price: 2500, points: 250, validity: '45 days' },
   { emoji: '🍎', cat: 'Food supply', gradient: 'from-rose-100 to-orange-200',     name: 'Fresh Market P1',       desc: 'Fresh-produce distribution product overview.',                 price: 800,  points: 80,  validity: '20 days' },
   { emoji: '🍍', cat: 'Food supply', gradient: 'from-yellow-100 to-lime-200',     name: 'Tropical Produce P3',   desc: 'Produce procurement and distribution overview.',               price: 1500, points: 150, validity: '30 days' },
   { emoji: '🤝', cat: 'Community',   gradient: 'from-sky-100 to-teal-200',        name: 'Community Enterprise P1', desc: 'A community business opportunity listing.',                 price: 3000, points: 300, validity: '60 days' },

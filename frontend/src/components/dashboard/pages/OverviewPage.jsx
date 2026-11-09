@@ -94,8 +94,8 @@ export default function OverviewPage({ showPage, openTask }) {
             <button onClick={() => showPage('purchased')} className="text-harvest-700 text-xs font-extrabold">View all →</button>
           </div>
           {[
-            { emoji: '🌿', bg: 'bg-harvest-50', name: 'Green Harvest P1',  date: 'Purchased 20 Oct 2026', price: '৳ 1,000' },
-            { emoji: '🌾', bg: 'bg-amber-50',   name: 'Harvest Supply P2', date: 'Purchased 12 Oct 2026', price: '৳ 2,500' },
+            { emoji: '🌿', bg: 'bg-harvest-50', name: 'Maaza Green P1',   date: 'Purchased 20 Oct 2026', price: '৳ 1,000' },
+            { emoji: '🌾', bg: 'bg-amber-50',   name: 'Maaza Supply P2',  date: 'Purchased 12 Oct 2026', price: '৳ 2,500' },
             { emoji: '🍎', bg: 'bg-sky-50',     name: 'Fresh Market P1',   date: 'Purchased 04 Oct 2026', price: '৳ 800' },
           ].map(({ emoji, bg, name, date, price }, i, arr) => (
             <div key={name} className={`flex items-center gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`}>

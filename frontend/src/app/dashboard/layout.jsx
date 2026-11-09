@@ -1,11 +1,11 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
-import Sidebar   from '@/components/Sidebar';
-import Header    from '@/components/Header';
-import MobileNav from '@/components/MobileNav';
-import Modal     from '@/components/Modal';
-import Toast     from '@/components/Toast';
+import Sidebar   from '@/components/dashboard/Sidebar';
+import Header    from '@/components/dashboard/Header';
+import MobileNav from '@/components/dashboard/MobileNav';
+import Modal     from '@/components/dashboard/Modal';
+import Toast     from '@/components/dashboard/Toast';
 
 // Inner layout — needs to be separate so it can call useDashboard()
 function DashboardInner({ children }) {

@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useTaskModal } from '@/hooks/useDashboardModals';
-import OverviewPage from '@/components/pages/OverviewPage';
+import OverviewPage from '@/components/dashboard/pages/OverviewPage';
 
 export default function Page() {
   const router   = useRouter();

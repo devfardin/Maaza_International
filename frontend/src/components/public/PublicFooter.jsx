@@ -13,7 +13,7 @@ export default function PublicFooter() {
           <div>
             <div className="flex items-center gap-2.5 mb-3">
               <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-sm grid place-items-center">✦</span>
-              <b>Harvest</b>
+              <b>Maaza International</b>
             </div>
             <p className="text-sm text-slate-500 leading-6 max-w-xs">Grow with purpose. A platform for members to manage products, wallet and community.</p>
           </div>
@@ -51,7 +51,7 @@ export default function PublicFooter() {
 
         {/* Bottom bar */}
         <div className="border-t mt-8 pt-6 flex flex-col sm:flex-row justify-between gap-2 text-xs text-slate-400">
-          <span>© 2024 Harvest. All rights reserved.</span>
+          <span>© 2024 Maaza International. All rights reserved.</span>
           <span>Built for members · Grow with purpose</span>
         </div>
       </div>

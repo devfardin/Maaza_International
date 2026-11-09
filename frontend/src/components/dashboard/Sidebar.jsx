@@ -37,7 +37,7 @@ export default function Sidebar({ activePage, showPage, showToast }) {
       <div className="flex items-center gap-3 px-2 shrink-0">
         <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-2xl grid place-items-center">✦</span>
         <span>
-          <b className="block text-xl">Harvest</b>
+          <b className="block text-xl">Maaza International</b>
           <small className="text-xs text-slate-500">Grow with purpose</small>
         </span>
       </div>

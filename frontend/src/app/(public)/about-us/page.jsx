@@ -3,9 +3,9 @@
 export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-      <h1 className="text-4xl sm:text-5xl font-extrabold mb-6">About Harvest</h1>
-      <p className="text-lg text-slate-600 leading-8 mb-8">
-        Harvest is a platform designed to help members manage their financial activities, explore investment products, and grow their earnings through a trusted community.
+      <h1 className="text-4xl sm:text-5xl font-extrabold mb-6">About Maaza International</h1>
+      <p className="text-lg text-harvest-500 leading-8 mb-8">
+        Maaza International is a platform designed to help members manage their financial activities, explore investment products, and grow their earnings through a trusted community.
       </p>
 
       <div className="space-y-8">

@@ -1,6 +1,6 @@
 'use client';
 import { useProductModal } from '@/hooks/useDashboardModals';
-import PurchasedPage from '@/components/pages/PurchasedPage';
+import PurchasedPage from '@/components/dashboard/pages/PurchasedPage';
 
 export default function Page() {
   const openProduct = useProductModal();

@@ -45,7 +45,7 @@ export default function AdminSidebar({ userPermissions = [], userName = 'Admin U
       <div className="flex items-center gap-3 px-2 shrink-0">
         <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-700 text-white text-2xl grid place-items-center">⚡</span>
         <span>
-          <b className="block text-xl">Harvest Admin</b>
+          <b className="block text-xl">Maaza International Admin</b>
           <small className="text-xs text-slate-500">Control panel</small>
         </span>
       </div>

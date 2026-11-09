@@ -1,5 +1,5 @@
 'use client';
-import WithdrawalsPage from "@/components/pages/WithdrawalsPage";
+import WithdrawalsPage from "@/components/dashboard/pages/WithdrawalsPage";
 import { useProductModal } from "@/hooks/useDashboardModals";
 
 export default function Page() {

@@ -92,6 +92,15 @@ const updateDepositRequestStatus = async (
                 { new: true, session }
             );
 
+
+            // Deposit approved
+            // await sendEmail({
+            //     to: user.email,
+            //     subject: 'Deposit Approved',
+            //     heading: 'Your Deposit Was Approved',
+            //     body: `<p>Your deposit of <strong>৳${amount}</strong> has been credited to your recharge wallet.</p>`,
+            // });
+
             // wallet must exist (created during user registration)
             if (!wallet) {
                 throw new AppError(status.NOT_FOUND, "User recharge wallet not found!");

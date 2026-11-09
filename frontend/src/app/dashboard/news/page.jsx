@@ -1,5 +1,5 @@
 'use client';
-import NewsPage from "@/components/pages/NewsPage";
+import NewsPage from "@/components/dashboard/pages/NewsPage";
 import { useProductModal } from "@/hooks/useDashboardModals";
 
 export default function Page() {

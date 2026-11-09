@@ -4,7 +4,7 @@
 
 export default function ReferralsPage({ showToast }) {
   function copyLink() {
-    navigator.clipboard?.writeText('https://harvest.example/join/FA1024')
+            navigator.clipboard?.writeText('https://maazainternational.com/join/FA1024')
       .then(() => showToast('Referral link copied.'))
       .catch(() => showToast('Referral link selected.'));
   }
@@ -39,7 +39,7 @@ export default function ReferralsPage({ showToast }) {
           <div className="flex gap-2 mt-4">
             <input
               readOnly
-              value="https://harvest.example/join/FA1024"
+              value="https://maazainternational.com/join/FA1024"
               className="min-w-0 flex-1 border rounded-xl px-3 py-3 text-xs bg-slate-50"
             />
             <button onClick={copyLink} className="rounded-xl bg-harvest-700 text-white px-4 text-xs font-bold">

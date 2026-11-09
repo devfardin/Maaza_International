@@ -76,7 +76,7 @@ export default function ContactPage() {
 
       <div className="mt-12 grid sm:grid-cols-3 gap-6 text-center">
         {[
-          { icon: '📧', title: 'Email', value: 'support@harvest.example' },
+          { icon: '📧', title: 'Email', value: 'support@maazainternational.com' },
           { icon: '💬', title: 'Chat', value: 'Available 9am-6pm' },
           { icon: '📍', title: 'Location', value: 'Bangladesh' },
         ].map(({ icon, title, value }) => (

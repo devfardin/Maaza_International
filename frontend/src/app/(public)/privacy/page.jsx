@@ -1,5 +1,5 @@
 // Privacy Policy page
-// This page explains how Harvest collects, uses, and protects user information
+// This page explains how Maaza International collects, uses, and protects user information
 
 export default function PrivacyPage() {
   return (
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
           <p className="leading-7">
             If you have any questions about this Privacy Policy, please contact us at:
             <br /><br />
-            Email: privacy@harvest.example<br />
+            Email: privacy@maazainternational.com<br />
             Phone: +880 1234 567890
           </p>
         </section>

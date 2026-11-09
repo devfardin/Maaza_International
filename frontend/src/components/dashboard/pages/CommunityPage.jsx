@@ -108,7 +108,7 @@ export default function CommunityPage({ showToast }) {
               <div className="flex gap-3">
                 <div className="w-10 h-10 rounded-full bg-sky-100 grid place-items-center font-bold text-sky-700">HM</div>
                 <div className="flex-1">
-                  <b className="text-sm">Harvest Member</b>
+                  <b className="text-sm">Maaza International Member</b>
                   <p className="text-xs text-slate-500 mt-1">Community member · 2 hours ago</p>
                   <p className="text-sm leading-6 text-slate-600 mt-3">Happy to be part of the community! Looking forward to learning more about the platform and its updates.</p>
                   <div className="h-36 rounded-xl bg-gradient-to-br from-harvest-50 to-lime-100 mt-3 grid place-items-center text-5xl">🌱</div>
