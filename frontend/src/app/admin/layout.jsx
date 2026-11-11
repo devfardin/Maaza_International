@@ -7,6 +7,7 @@ import AdminHeader  from '@/components/admin/AdminHeader';
 import { useGetProfileQuery } from '@/redux/features/apiSlice';
 import { clearAuthCookies } from '@/lib/authCookies';
 import { setUser, logout } from '@/redux/features/authSlice';
+import PageLoader from '@/components/shared/PageLoader';
 
 function AdminInner({ children }) {
   const dispatch = useDispatch();
@@ -50,7 +51,7 @@ function AdminInner({ children }) {
 
   // Wait for the profile (role comes from the server) before showing anything
   if (!token || !user || user.role === 'user') {
-    return <div className="min-h-screen grid place-items-center text-sm text-slate-400">Loading…</div>;
+    return <PageLoader label="Preparing your admin panel…" className="min-h-screen" />;
   }
 
   return (

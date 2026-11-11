@@ -38,6 +38,7 @@ export const apiSlice = createApi({
     'User', 'Products', 'Categories', 'Wallet', 'Transactions',
     'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
     'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
+    'Withdrawals', 'Notifications', 'AdminActivity',
   ],
 
   endpoints: (builder) => ({
@@ -101,6 +102,13 @@ export const apiSlice = createApi({
     getMe: builder.query({
       query: () => '/users/me',
       providesTags: ['User'],
+    }),
+
+    // PATCH /users/me  (authenticated)
+    // Body: { fullName?, email?, phone? }  — referralCode, membership and status are NOT editable
+    updateMyProfile: builder.mutation({
+      query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
+      invalidatesTags: ['User'],
     }),
 
     // ── CATEGORIES ────────────────────────────────────────────────────────────
@@ -195,6 +203,71 @@ export const apiSlice = createApi({
     getMyDepositRequests: builder.query({
       query: (userId) => `/deposit-requests/user/${userId}`,
       providesTags: ['DepositRequests'],
+    }),
+
+    // ── WITHDRAWALS (PAYOUTS) ─────────────────────────────────────────────────
+    // POST /withdrawals/create-withdrawal  (user)
+    // Body: { amount (whole BDT, min 100), paymentAccountId }
+    // The amount is moved out of the balance wallet immediately; refunded if rejected.
+    createWithdrawal: builder.mutation({
+      query: (body) => ({ url: '/withdrawals/create-withdrawal', method: 'POST', body }),
+      invalidatesTags: ['Withdrawals', 'Wallet', 'Transactions'],
+    }),
+
+    // GET /withdrawals/my  (user) — own withdrawal history, newest first
+    getMyWithdrawals: builder.query({
+      query: () => '/withdrawals/my',
+      providesTags: ['Withdrawals'],
+    }),
+
+    // GET /withdrawals?status=pending  (admin)
+    getAllWithdrawals: builder.query({
+      query: (status) => (status ? `/withdrawals?status=${status}` : '/withdrawals'),
+      providesTags: ['Withdrawals'],
+    }),
+
+    // PATCH /withdrawals/:id/status  (admin)
+    // Body: { status: 'approved' | 'rejected', adminNote?, payoutReference? }
+    updateWithdrawalStatus: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/withdrawals/${id}/status`, method: 'PATCH', body }),
+      invalidatesTags: ['Withdrawals', 'Wallet', 'Transactions', 'Notifications'],
+    }),
+
+    // ── NOTIFICATIONS (ADMIN BELL) ────────────────────────────────────────────
+    // GET /notifications?limit=  (admin) → { items, unreadCount }
+    getNotifications: builder.query({
+      query: (limit = 20) => `/notifications?limit=${limit}`,
+      providesTags: ['Notifications'],
+    }),
+
+    // PATCH /notifications/:id/read  (admin)
+    markNotificationRead: builder.mutation({
+      query: (id) => ({ url: `/notifications/${id}/read`, method: 'PATCH' }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    // PATCH /notifications/read-all  (admin)
+    markAllNotificationsRead: builder.mutation({
+      query: () => ({ url: '/notifications/read-all', method: 'PATCH' }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    // ── ADMIN ACTIVITY (SUPER ADMIN ONLY) ─────────────────────────────────────
+    // GET /admin-activity?adminId=&action=&limit=
+    getAdminActivity: builder.query({
+      query: (params = {}) => {
+        const qs = new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+        ).toString();
+        return `/admin-activity${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: ['AdminActivity'],
+    }),
+
+    // GET /admin-activity/summary  (super admin) — one row per admin
+    getAdminActivitySummary: builder.query({
+      query: () => '/admin-activity/summary',
+      providesTags: ['AdminActivity'],
     }),
 
     // ── PAYMENT METHODS ───────────────────────────────────────────────────────
@@ -421,6 +494,20 @@ export const {
   useGetClaimHistoryQuery,
   // Wallets
   useGetMyWalletsQuery,
+  // Profile
+  useUpdateMyProfileMutation,
+  // Withdrawals
+  useCreateWithdrawalMutation,
+  useGetMyWithdrawalsQuery,
+  useGetAllWithdrawalsQuery,
+  useUpdateWithdrawalStatusMutation,
+  // Notifications
+  useGetNotificationsQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  // Admin activity
+  useGetAdminActivityQuery,
+  useGetAdminActivitySummaryQuery,
   // Deposit requests
   useCreateDepositRequestMutation,
   useGetMyDepositRequestsQuery,

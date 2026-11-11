@@ -24,6 +24,7 @@ import { useLoginMutation } from '@/redux/features/apiSlice';
 import { setCredentials, logout } from '@/redux/features/authSlice';
 import { Suspense } from 'react';
 import { setAuthCookies, isAdminRole, safeRedirect } from '@/lib/authCookies';
+import { notify, getErrorMessage } from '@/lib/toast';
 
 // ── Small reusable SVG components ─────────────────────────────────────────────
 
@@ -49,7 +50,6 @@ const EyeIcon = ({ open }) => open ? (
 
 function LoginForm() {
   const [showPw, setShowPw]   = useState(false);
-  const [error, setError]     = useState('');
 
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -61,7 +61,7 @@ function LoginForm() {
   // Handle form submission — calls the backend login endpoint
   async function handleLogin(e) {
     e.preventDefault();
-    setError('');
+    
 
     const form     = e.target;
     // Backend expects { phone, password } — the input field is labelled
@@ -96,7 +96,7 @@ function LoginForm() {
 
     } catch (err) {
       // Show the error message returned by the server, or a generic fallback
-      setError(err?.data?.message || 'Invalid phone number or password. Please try again.');
+      notify.error(getErrorMessage(err, 'Invalid phone number or password. Please try again.'));
     }
   }
 
@@ -229,14 +229,6 @@ function LoginForm() {
                   </div>
 
                   {/* Error message from server */}
-                  {error && (
-                    <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {error}
-                    </div>
-                  )}
 
                   {/* Submit button — shows loading state while API call is in progress */}
                   <button

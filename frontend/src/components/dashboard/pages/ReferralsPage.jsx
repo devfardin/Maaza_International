@@ -22,10 +22,10 @@ export default function ReferralsPage({ showToast }) {
     : '';
 
   function copyLink() {
-    if (!referralLink) return showToast('Referral link not available.');
+    if (!referralLink) return showToast('Referral link not available.', 'error');
     navigator.clipboard?.writeText(referralLink)
       .then(() => showToast('Referral link copied.'))
-      .catch(() => showToast('Could not copy. Please copy manually.'));
+      .catch(() => showToast('Could not copy. Please copy manually.', 'error'));
   }
 
   function copyCode() {

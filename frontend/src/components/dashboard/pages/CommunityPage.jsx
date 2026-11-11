@@ -1,4 +1,5 @@
 'use client';
+import { getErrorMessage } from '@/lib/toast';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -22,13 +23,13 @@ export default function CommunityPage({ showToast }) {
     : '??';
 
   async function handleSubmit() {
-    if (!postText.trim()) return showToast('Write something before posting.');
+    if (!postText.trim()) return showToast('Write something before posting.', 'error');
     try {
       await createPost({ content: postText }).unwrap();
       setPostText('');
       showToast('Post submitted for admin approval.');
     } catch (err) {
-      showToast(err?.data?.message || 'Failed to submit post.');
+      showToast(getErrorMessage(err, 'Failed to submit post.'), 'error');
     }
   }
 
@@ -36,7 +37,7 @@ export default function CommunityPage({ showToast }) {
     try {
       await likePost(postId).unwrap();
     } catch {
-      showToast('Could not like post.');
+      showToast('Could not like post.', 'error');
     }
   }
 

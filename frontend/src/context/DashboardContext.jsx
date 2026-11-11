@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useState } from 'react';
+import { notify } from '@/lib/toast';
 
 // DashboardContext — shared state available to every dashboard page
 // Provides: showToast, openModal, closeModal, savedBank, setSavedBank
@@ -8,11 +9,10 @@ const DashboardContext = createContext(null);
 
 export function DashboardProvider({ children }) {
   // ── Toast ──────────────────────────────────────────────────────
-  const [toastMsg, setToastMsg] = useState('');
-
-  function showToast(msg) {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 2600); // auto-hide after 2.6s
+  // Shows a top-right toast (sonner). type: 'success' | 'error' | 'info' | 'warning'
+  function showToast(message, type = 'success') {
+    const fn = notify[type] || notify.info;
+    fn(message);
   }
 
   // ── Modal ──────────────────────────────────────────────────────
@@ -27,11 +27,10 @@ export function DashboardProvider({ children }) {
   }
 
   // ── Saved bank (payout method) ─────────────────────────────────
-  // Shared between BankPage and WithdrawPage
   const [savedBank, setSavedBank] = useState(null);
 
   return (
-    <DashboardContext.Provider value={{ showToast, toastMsg, openModal, closeModal, modal, savedBank, setSavedBank }}>
+    <DashboardContext.Provider value={{ showToast, openModal, closeModal, modal, savedBank, setSavedBank }}>
       {children}
     </DashboardContext.Provider>
   );

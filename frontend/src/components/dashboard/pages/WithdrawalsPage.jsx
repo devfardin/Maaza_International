@@ -1,63 +1,86 @@
 'use client';
-import { useSelector } from 'react-redux';
-import { useGetUserTransactionsQuery } from '@/redux/features/apiSlice';
+// Full withdrawal history for the logged-in user, with live status.
+import { useGetMyWithdrawalsQuery } from '@/redux/features/apiSlice';
+import { formatBDT, formatDateTime } from '@/components/shared/money';
+import StatusBadge from '@/components/shared/StatusBadge';
+import PageLoader from '@/components/shared/PageLoader';
+import CopyButton from '@/components/shared/CopyButton';
+import { useI18n } from '@/lib/i18n';
 
-export default function WithdrawalsPage({ showPage }) {
-  const user   = useSelector((s) => s.auth.user);
-  const userId = user?._id;
-
-  const { data: txData, isLoading } = useGetUserTransactionsQuery(userId, { skip: !userId });
-
-  const withdrawals = (txData?.data || []).filter((t) => t.type === 'withdrawal');
+export default function WithdrawalsPage() {
+  const { t } = useI18n();
+  const { data, isLoading } = useGetMyWithdrawalsQuery(undefined, { pollingInterval: 60000 });
+  const rows = data?.data ?? [];
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Withdrawal requests</h1>
-        <p className="text-sm text-slate-500 mt-1">Track request IDs and payout status.</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold">{t('nav.withdrawals')}</h1>
+        <p className="text-sm text-slate-500 mt-1">Every payout request you have made and what happened to it.</p>
       </div>
 
-      <div className="bg-white border rounded-2xl p-4 sm:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-extrabold">Request history</h2>
-          <button onClick={() => showPage('withdraw')} className="bg-harvest-700 text-white rounded-xl px-4 py-3 text-xs font-bold">＋ New request</button>
-        </div>
+      {isLoading ? (
+        <PageLoader label="Loading withdrawals…" />
+      ) : rows.length === 0 ? (
+        <div className="bg-white border rounded-2xl p-10 text-center text-sm text-slate-400">{t('common.noData')}</div>
+      ) : (
+        <>
+          {/* Mobile: cards */}
+          <ul className="space-y-3 md:hidden">
+            {rows.map((w) => (
+              <li key={w._id} className="bg-white border rounded-2xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <b className="text-base">{formatBDT(w.amount)}</b>
+                    <p className="text-[11px] text-slate-500">{formatDateTime(w.createdAt)}</p>
+                  </div>
+                  <StatusBadge status={w.status} />
+                </div>
+                <p className="text-xs text-slate-600 mt-2">{w.method === 'bkash' ? 'bKash' : 'Nagad'} · {w.accountNumber}</p>
+                {w.payoutReference && <p className="text-xs text-slate-600 mt-1">Ref: {w.payoutReference}</p>}
+                {w.adminNote && <p className="text-xs text-slate-500 mt-1">Note: {w.adminNote}</p>}
+                <div className="mt-3 flex items-center gap-2">
+                  <code className="flex-1 min-w-0 truncate text-[11px] bg-slate-50 border rounded-lg px-2 py-1.5">{w._id}</code>
+                  <CopyButton value={w._id} />
+                </div>
+              </li>
+            ))}
+          </ul>
 
-        {isLoading && <p className="text-sm text-slate-400 py-6 text-center">Loading…</p>}
-
-        {!isLoading && withdrawals.length === 0 && (
-          <p className="text-sm text-slate-400 py-6 text-center">No withdrawal requests found.</p>
-        )}
-
-        {!isLoading && withdrawals.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[550px] text-left text-sm">
-              <thead className="text-xs uppercase text-slate-400">
+          {/* Desktop: table */}
+          <div className="hidden md:block bg-white border rounded-2xl overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs text-slate-500">
                 <tr>
                   <th className="p-3">Request ID</th>
-                  <th className="p-3">Amount</th>
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3">{t('common.amount')}</th>
+                  <th className="p-3">Payout to</th>
+                  <th className="p-3">{t('common.date')}</th>
+                  <th className="p-3">{t('common.status')}</th>
+                  <th className="p-3">Note</th>
                 </tr>
               </thead>
               <tbody>
-                {withdrawals.map((tx) => (
-                  <tr key={tx._id} className="border-t">
-                    <td className="p-3 font-mono text-xs">{tx._id?.slice(-10).toUpperCase()}</td>
-                    <td className="p-3 font-bold">৳ {tx.amount?.toLocaleString()}</td>
-                    <td className="p-3">{new Date(tx.createdAt).toLocaleDateString('en-BD')}</td>
-                    <td className={`p-3 font-bold capitalize ${
-                      tx.status === 'approved' ? 'text-emerald-700' :
-                      tx.status === 'rejected' ? 'text-rose-600' :
-                      'text-amber-600'
-                    }`}>{tx.status}</td>
+                {rows.map((w) => (
+                  <tr key={w._id} className="border-t align-top">
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <code className="text-[11px]">{w._id.slice(-10)}</code>
+                        <CopyButton value={w._id} />
+                      </div>
+                    </td>
+                    <td className="p-3 font-bold">{formatBDT(w.amount)}</td>
+                    <td className="p-3">{w.method === 'bkash' ? 'bKash' : 'Nagad'} · {w.accountNumber}</td>
+                    <td className="p-3 whitespace-nowrap">{formatDateTime(w.createdAt)}</td>
+                    <td className="p-3"><StatusBadge status={w.status} /></td>
+                    <td className="p-3 text-xs text-slate-500">{w.adminNote || w.payoutReference || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

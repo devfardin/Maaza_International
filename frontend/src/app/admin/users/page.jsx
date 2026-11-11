@@ -9,6 +9,7 @@ import {
   useDeleteUserMutation,
   useCreateAdminMutation,
 } from '@/redux/features/apiSlice';
+import { notify, getErrorMessage } from '@/lib/toast';
 
 const STATUS_COLORS = {
   active:    'bg-emerald-50 text-emerald-700',
@@ -31,7 +32,6 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [confirm, setConfirm] = useState(null); // { user, action: 'active'|'suspended'|'blocked'|'delete'|'promote'|'demote' }
   const [showCreate, setShowCreate] = useState(false);
-  const [error, setError] = useState('');
 
   const { data, isLoading } = useGetAllUsersQuery();
   const [changeStatus, { isLoading: changing }] = useChangeUserStatusMutation();
@@ -50,22 +50,28 @@ export default function AdminUsersPage() {
 
   async function runConfirm() {
     if (!confirm) return;
-    setError('');
+    
     const { user, action } = confirm;
     try {
       if (action === 'delete') await deleteUser(user._id).unwrap();
       else if (action === 'promote') await updateUser({ id: user._id, role: 'admin' }).unwrap();
       else if (action === 'demote') await updateUser({ id: user._id, role: 'user' }).unwrap();
       else await changeStatus({ id: user._id, status: action }).unwrap();
+      const done = {
+        delete: 'User deleted.',
+        promote: 'User promoted to admin.',
+        demote: 'Admin changed back to user.',
+      };
+      notify.success(done[action] || `Account status set to ${action}.`);
       setConfirm(null);
     } catch (e) {
-      setError(e?.data?.message || 'Action failed.');
+      notify.error(getErrorMessage(e, 'Action failed.'));
     }
   }
 
   async function handleCreateAdmin(e) {
     e.preventDefault();
-    setError('');
+    
     const f = new FormData(e.target);
     try {
       await createAdmin({
@@ -74,17 +80,17 @@ export default function AdminUsersPage() {
         phone: f.get('phone'),
         passwordHash: f.get('password'),
       }).unwrap();
+      notify.success('Admin account created.');
       setShowCreate(false);
     } catch (err) {
-      const first = err?.data?.errorSources?.[0];
-      setError(first?.message || err?.data?.message || 'Could not create admin.');
+      notify.error(getErrorMessage(err, 'Could not create admin.'));
     }
   }
 
   const actionButtons = (u) => {
     if (!canManage(u)) return <span className="text-xs text-slate-400">—</span>;
     const btn = (action, text, cls) => (
-      <button key={action} onClick={() => { setError(''); setConfirm({ user: u, action }); }}
+      <button key={action} onClick={() => {  setConfirm({ user: u, action }); }}
         className={`text-xs font-bold px-2.5 py-1.5 rounded-lg ${cls}`}>{text}</button>
     );
     return (
@@ -113,7 +119,7 @@ export default function AdminUsersPage() {
           <p className="text-sm text-slate-500 mt-1">Manage all registered users{isSuper ? ' and admins' : ''}.</p>
         </div>
         {isSuper && (
-          <button onClick={() => { setError(''); setShowCreate(true); }}
+          <button onClick={() => {  setShowCreate(true); }}
             className="bg-blue-600 text-white rounded-xl px-5 py-3 text-sm font-bold">+ Create admin</button>
         )}
       </div>
@@ -201,7 +207,6 @@ export default function AdminUsersPage() {
               {confirmText[confirm.action] || <>set this user&apos;s status to <b>{confirm.action}</b></>}
               {' '}for <b>{confirm.user.fullName}</b>?
             </p>
-            {error && <p className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2 mb-4">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setConfirm(null)} className="flex-1 border rounded-xl py-3 text-sm font-bold">Cancel</button>
               <button onClick={runConfirm} disabled={changing || updating || deleting}
@@ -219,7 +224,6 @@ export default function AdminUsersPage() {
             <input name="email" type="email" required placeholder="Email" className={inputCls} />
             <input name="phone" required pattern="\+?[0-9]{11}" title="11 digit phone number" placeholder="Phone (11 digits)" className={inputCls} />
             <input name="password" type="password" required minLength={8} placeholder="Password (min 8 characters)" className={inputCls} />
-            {error && <p className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2">{error}</p>}
             <div className="flex gap-3">
               <button type="button" onClick={() => setShowCreate(false)} className="flex-1 border rounded-xl py-3 text-sm font-bold">Cancel</button>
               <button disabled={creating} className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-bold disabled:opacity-60">{creating ? 'Creating…' : 'Create'}</button>

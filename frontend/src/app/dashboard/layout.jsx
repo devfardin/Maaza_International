@@ -17,7 +17,6 @@ import Sidebar                             from '@/components/dashboard/Sidebar'
 import Header                              from '@/components/dashboard/Header';
 import MobileNav                           from '@/components/dashboard/MobileNav';
 import Modal                               from '@/components/dashboard/Modal';
-import Toast                               from '@/components/dashboard/Toast';
 
 // ── Inner layout — must be inside DashboardProvider ───────────────────────────
 function DashboardInner({ children }) {
@@ -25,7 +24,7 @@ function DashboardInner({ children }) {
   const router   = useRouter();
   const dispatch = useDispatch();
 
-  const { toastMsg, showToast, modal, closeModal } = useDashboard();
+  const { modal, closeModal } = useDashboard();
 
   // Read auth state — token needed to gate the profile query
   const { token, user } = useSelector((state) => state.auth);
@@ -81,7 +80,6 @@ function DashboardInner({ children }) {
       <Sidebar
         activePage={segment}
         showPage={showPage}
-        showToast={showToast}
         user={user}
         onLogout={handleLogout}
       />
@@ -90,7 +88,6 @@ function DashboardInner({ children }) {
         {/* Header — top bar with search, notifications, user avatar */}
         <Header
           showPage={showPage}
-          showToast={showToast}
           user={user}
           onLogout={handleLogout}
         />
@@ -107,8 +104,6 @@ function DashboardInner({ children }) {
         {modal.body}
       </Modal>
 
-      {/* Toast notification — auto-hides after 2.6s */}
-      <Toast message={toastMsg} />
     </div>
   );
 }

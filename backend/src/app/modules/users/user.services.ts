@@ -164,6 +164,39 @@ const deleteUser = async (actor: { userId: string; role: string }, id: string) =
     return UserModel.findByIdAndUpdate(id, { isDeleted: true, status: 'blocked' }, { new: true }).select('-passwordHash');
 };
 
+const updateMyProfile = async (
+    userId: string,
+    payload: { fullName?: string; email?: string; phone?: string; avatar?: string }
+) => {
+    const user = await UserModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) throw new AppError(status.NOT_FOUND, 'User not found');
+
+    const update: Partial<Pick<Tuser, 'fullName' | 'email' | 'phone' | 'avatar'>> = {};
+
+    if (payload.fullName !== undefined) update.fullName = payload.fullName;
+
+    if (payload.email !== undefined && payload.email !== user.email) {
+        const taken = await UserModel.exists({ email: payload.email, _id: { $ne: user._id } });
+        if (taken) throw new AppError(status.CONFLICT, 'This email is already used by another account');
+        update.email = payload.email;
+    }
+
+    if (payload.phone !== undefined && payload.phone !== user.phone) {
+        const taken = await UserModel.exists({ phone: payload.phone, _id: { $ne: user._id } });
+        if (taken) throw new AppError(status.CONFLICT, 'This phone number is already used by another account');
+        update.phone = payload.phone;
+    }
+
+    if (payload.avatar !== undefined) update.avatar = payload.avatar;
+
+    if (Object.keys(update).length === 0) {
+        return getMe(userId);
+    }
+
+    await UserModel.updateOne({ _id: user._id }, update, { runValidators: true });
+    return getMe(userId);
+};
+
 const changeUserStatus = async (actor: { userId: string; role: string }, id: string, newStatus: string) => {
     const target = await UserModel.findById(id);
     if (!target || target.isDeleted) {
@@ -181,6 +214,7 @@ export const UserServices = {
     getAllUsers,
     getSingleUser,
     updateUser,
+    updateMyProfile,
     deleteUser,
     changeUserStatus,
 };

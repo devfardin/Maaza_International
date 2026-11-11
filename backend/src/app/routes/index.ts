@@ -13,6 +13,9 @@ import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.ro
 import { ProductPurchaseRoutes } from '../modules/productPurchages/productPurchases.route';
 import { ReferralRoutes } from '../modules/referrals/referral.route';
 import { ActivityLogRoutes } from '../modules/activityLogs/activityLog.route';
+import { WithdrawalRoutes } from '../modules/withdrawals/withdrawal.route';
+import { NotificationRoutes } from '../modules/notifications/notification.route';
+import { AdminActivityRoutes } from '../modules/adminActivity/adminActivity.route';
 
 const router = Router();
 
@@ -35,6 +38,9 @@ const moduleRoutes = [
   { path: '/community-posts', route: CommunityPostRoutes },     // Community posts
   { path: '/referrals', route: ReferralRoutes },                // Referral relationships & stats
   { path: '/activity-logs', route: ActivityLogRoutes },         // Admin: login/register IP, device, browser, OS
+  { path: '/withdrawals', route: WithdrawalRoutes },            // User withdrawal requests & admin payouts
+  { path: '/notifications', route: NotificationRoutes },        // Admin bell notifications
+  { path: '/admin-activity', route: AdminActivityRoutes },      // Super admin: what each admin did
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

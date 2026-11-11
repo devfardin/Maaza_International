@@ -4,6 +4,19 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { getClientInfo } from '../../utils/clientInfo';
 import { UserServices } from './user.services';
+import { AdminActivityServices } from '../adminActivity/adminActivity.services';
+
+// Self-service profile update. Only the fields a user may change themselves;
+// referralCode, membershipLevel, status, role and wallets can never be changed here.
+const updateMyProfile = catchAsync(async (req, res) => {
+  const result = await UserServices.updateMyProfile(req.user!.userId, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: 'Profile updated successfully',
+    data: result,
+  });
+});
 
 // Public registration — always creates a normal user
 const createUser = catchAsync(async (req, res) => {
@@ -61,6 +74,12 @@ const getSingleUser = catchAsync(async (req, res) => {
 
 const updateUser = catchAsync(async (req, res) => {
   const result = await UserServices.updateUser(req.user!, req.params.id, req.body);
+  await AdminActivityServices.record(
+    req.user!,
+    'user_updated',
+    `Updated profile of ${result?.fullName ?? 'user'} (fields: ${Object.keys(req.body).join(', ')})`,
+    { type: 'user', id: req.params.id }
+  );
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -71,6 +90,12 @@ const updateUser = catchAsync(async (req, res) => {
 
 const deleteUser = catchAsync(async (req, res) => {
   const result = await UserServices.deleteUser(req.user!, req.params.id);
+  await AdminActivityServices.record(
+    req.user!,
+    'user_deleted',
+    `Deleted (soft) user ${result?.fullName ?? req.params.id}`,
+    { type: 'user', id: req.params.id }
+  );
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -81,6 +106,12 @@ const deleteUser = catchAsync(async (req, res) => {
 
 const changeUserStatus = catchAsync(async (req, res) => {
   const result = await UserServices.changeUserStatus(req.user!, req.params.id, req.body.status);
+  await AdminActivityServices.record(
+    req.user!,
+    'user_status_changed',
+    `Set account status of ${result?.fullName ?? 'user'} to ${req.body.status}`,
+    { type: 'user', id: req.params.id }
+  );
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
@@ -90,6 +121,7 @@ const changeUserStatus = catchAsync(async (req, res) => {
 });
 
 export const UserController = {
+  updateMyProfile,
   createUser,
   createAdmin,
   deleteUser,

@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useDashboard } from '@/context/DashboardContext';
 import { usePurchaseProductMutation } from '@/redux/features/apiSlice';
+import { getErrorMessage } from '@/lib/toast';
 
 // useProductModal — opens a real product detail modal with purchase action
 export function useProductModal() {
@@ -43,7 +44,7 @@ export function useProductModal() {
                 showToast('Product purchased successfully!');
                 router.push('/dashboard/purchased');
               } catch (err) {
-                showToast(err?.data?.message || 'Purchase failed. Check your wallet balance.');
+                showToast(getErrorMessage(err, 'Purchase failed. Check your wallet balance.'), 'error');
               }
             }}
             className="bg-harvest-700 text-white rounded-xl py-3 text-sm font-extrabold disabled:opacity-60"

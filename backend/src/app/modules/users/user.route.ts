@@ -14,6 +14,14 @@ router.post(
   UserController.createUser,
 );
 
+// Edit own profile (name, email, phone, avatar only). Declared before '/:id' routes.
+router.patch(
+  '/me',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
+  validationRequest(UserValidations.updateMyProfileValidation),
+  UserController.updateMyProfile,
+);
+
 // Create an admin account (super_admin only)
 router.post(
   '/create-admin',

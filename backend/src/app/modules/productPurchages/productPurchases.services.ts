@@ -5,6 +5,7 @@ import { UserModel } from '../users/user.model';
 import { ProductModel } from '../products/product.model';
 import { WalletModel } from '../wallets/wallet.model';
 import { TransactionServices } from '../transactions/transaction.services';
+import { NotificationServices } from '../notifications/notification.services';
 import { ProductPurchaseModel } from './productPurchases.model';
 import { DailyClaimModel } from './dailyClaim.model';
 import { ReferralServices } from '../referrals/referral.services';
@@ -72,6 +73,7 @@ const creditBalance = async (
 
 const purchaseProduct = async (userId: string, productId: string, paymentSource: TPaymentSource) => {
     const session = await mongoose.startSession();
+    let committedPurchase: any = null;
 
     try {
         session.startTransaction();
@@ -238,7 +240,7 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
         }
 
         await session.commitTransaction();
-        return purchase;
+        committedPurchase = purchase;
 
     } catch (error) {
         await session.abortTransaction();
@@ -246,6 +248,21 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
     } finally {
         await session.endSession();
     }
+
+    // Admin notification AFTER the commit — it can never fail or undo the purchase
+    const buyer = await UserModel.findById(userId);
+    NotificationServices.notifyAdmins({
+        type: 'product_purchase',
+        title: 'Product purchased',
+        message: `${buyer?.fullName ?? 'A user'} bought ${committedPurchase.productName} for ৳${(committedPurchase.purchasePrice / 100).toFixed(2)} from ${paymentSource} wallet`,
+        actorId: new Types.ObjectId(userId),
+        actorName: buyer?.fullName ?? '',
+        actorPhone: buyer?.phone ?? '',
+        amount: committedPurchase.purchasePrice,
+        referenceId: committedPurchase._id as Types.ObjectId,
+    });
+
+    return committedPurchase;
 };
 
 // ─── Daily Income Claim ───────────────────────────────────────────────────────

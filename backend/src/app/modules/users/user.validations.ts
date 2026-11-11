@@ -43,6 +43,17 @@ const updateUserValidation = z.object({
     }).strict(),
 });
 
+// Self-service profile edit. .strict() makes any other key (referralCode,
+// membershipLevel, status, role, wallets …) a validation error.
+const updateMyProfileValidation = z.object({
+    body: z.object({
+        fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(50, "Full name must not exceed 50 characters").optional(),
+        email: z.string().trim().toLowerCase().email("Please provide a valid email address").optional(),
+        phone: z.string().trim().regex(phoneRegex, "Please provide a valid phone number (11 digits)").optional(),
+        avatar: z.string().url("Avatar must be a valid URL").optional().or(z.literal("")),
+    }).strict(),
+});
+
 const changeUserStatusValidation = z.object({
     body: z.object({
         status: z.enum(["active", "suspended", "blocked"]),
@@ -53,5 +64,6 @@ export const UserValidations = {
     createUserValidation,
     createAdminValidation,
     updateUserValidation,
+    updateMyProfileValidation,
     changeUserStatusValidation,
 };

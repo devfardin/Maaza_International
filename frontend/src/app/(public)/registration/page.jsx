@@ -21,6 +21,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCreateUserMutation } from '@/redux/features/apiSlice';
+import { notify, getErrorMessage } from '@/lib/toast';
 
 // ── Reusable form field wrapper ───────────────────────────────────────────────
 const Field = ({ label, hint, children }) => (
@@ -65,7 +66,6 @@ const EyeBtn = ({ show, toggle }) => (
 function RegistrationForm() {
   const [showPw, setShowPw]         = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError]           = useState('');
 
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -79,7 +79,7 @@ function RegistrationForm() {
   // Handle form submission — validates passwords match then calls the API
   async function handleRegister(e) {
     e.preventDefault();
-    setError('');
+    
 
     const formData = new FormData(e.target);
     const name     = formData.get('name');
@@ -92,7 +92,7 @@ function RegistrationForm() {
     // Backend expects: { fullName, phone, email?, passwordHash, referredBy? }
     // Note: the password field is named 'passwordHash' in the backend schema
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      notify.error('Passwords do not match.');
       return;
     }
 
@@ -112,7 +112,7 @@ function RegistrationForm() {
       router.push('/login?registered=1');
 
     } catch (err) {
-      setError(err?.data?.message || 'Registration failed. Please try again.');
+      notify.error(getErrorMessage(err, 'Registration failed. Please try again.'));
     }
   }
 
@@ -267,14 +267,6 @@ function RegistrationForm() {
                   </label>
 
                   {/* Error message from server or client validation */}
-                  {error && (
-                    <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {error}
-                    </div>
-                  )}
 
                   {/* Submit button — disabled and shows loading text while API call runs */}
                   <button

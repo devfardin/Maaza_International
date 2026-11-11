@@ -1,133 +1,109 @@
 'use client';
+// Payout accounts (bKash / Nagad) the user can withdraw to.
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useCreatePaymentAccountMutation, useGetMyPaymentAccountsQuery } from '@/redux/features/apiSlice';
+import { notify, getErrorMessage } from '@/lib/toast';
+import { useI18n } from '@/lib/i18n';
+import PageLoader from '@/components/shared/PageLoader';
 
-export default function BankPage({ showToast }) {
-  const user = useSelector((s) => s.auth.user);
+const NUMBER_RE = /^01[3-9]\d{8}$/;
 
-  const { data: accountsData } = useGetMyPaymentAccountsQuery();
-  const apiAccounts = accountsData?.data || [];
-  // Prefer API data, fall back to user profile embedded accounts
-  const paymentAccounts = apiAccounts.length > 0 ? apiAccounts : (user?.paymentAccounts || []);
-  const savedAccount = paymentAccounts[0] || null;
+export default function BankPage() {
+  const { t } = useI18n();
+  const { data, isLoading } = useGetMyPaymentAccountsQuery();
+  const [createAccount, { isLoading: saving }] = useCreatePaymentAccountMutation();
 
-  const [editing, setEditing] = useState(false);
-  const [bankMethod, setBankMethod] = useState('bKash');
-  const [holder, setHolder] = useState('');
-  const [number, setNumber] = useState('');
+  const accounts = data?.data ?? [];
 
-  const [createPaymentAccount, { isLoading }] = useCreatePaymentAccountMutation();
+  const [method, setMethod] = useState('bkash');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
 
-  function startEdit() {
-    setEditing(true);
-    setBankMethod(savedAccount?.method || 'bKash');
-    setHolder(savedAccount?.accountHolderName || '');
-    setNumber(savedAccount?.accountNumber || '');
-  }
-
-  async function handleSave() {
-    if (!holder.trim()) return showToast('Enter the account holder name.');
-    if (!/^01\d{9}$/.test(number.replace(/[\s-]/g, ''))) return showToast('Enter a valid 11-digit mobile wallet number.');
-
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!NUMBER_RE.test(accountNumber.trim())) return notify.error('Enter a valid 11-digit mobile number (01XXXXXXXXX).');
+    if (accountHolderName.trim().length < 2) return notify.error('Enter the account holder name.');
     try {
-      await createPaymentAccount({
-        method: bankMethod,
-        accountHolderName: holder.trim(),
-        accountNumber: number.replace(/[\s-]/g, ''),
+      await createAccount({
+        method,
+        accountNumber: accountNumber.trim(),
+        accountHolderName: accountHolderName.trim(),
+        isPrimary: accounts.length === 0,
       }).unwrap();
-      setEditing(false);
-      showToast('Payout details saved successfully.');
+      notify.success(`${method === 'bkash' ? 'bKash' : 'Nagad'} account saved. You can now withdraw to it.`);
+      setAccountNumber('');
+      setAccountHolderName('');
     } catch (err) {
-      showToast(err?.data?.message || 'Failed to save payout details.');
+      notify.error(getErrorMessage(err, 'Could not save this payout account.'));
     }
   }
 
-  const showForm = !savedAccount || editing;
+  const inputCls = 'w-full rounded-xl border px-4 py-3 text-base sm:text-sm outline-none focus:border-harvest-500';
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Payout details</h1>
-        <p className="text-sm text-slate-500 mt-1">Save one bKash or Nagad mobile wallet for withdrawals.</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold">{t('bank.title')}</h1>
+        <p className="text-sm text-slate-500 mt-1">Save the bKash or Nagad number your withdrawals should be paid to.</p>
       </div>
 
-      <div className="max-w-4xl grid md:grid-cols-[.8fr_1.2fr] gap-5">
-        {/* Left: saved method display */}
-        <div className="bg-white border rounded-2xl p-5">
-          <div className="w-12 h-12 rounded-2xl bg-harvest-50 grid place-items-center text-2xl">🛡️</div>
-          <h2 className="font-extrabold text-lg mt-4">Saved payout method</h2>
-          <p className="text-sm text-slate-500 leading-6 mt-2">Only one mobile wallet can be saved at a time.</p>
-
-          {savedAccount && !editing ? (
-            <div className="mt-5 rounded-xl bg-slate-50 border p-4">
-              <span className="text-xs font-bold text-emerald-700">SAVED</span>
-              <b className="block mt-2">{savedAccount.method} · {savedAccount.accountHolderName}</b>
-              <span className="text-sm text-slate-500">{savedAccount.accountNumber}</span>
-              <button onClick={startEdit} className="mt-4 w-full border bg-white rounded-xl py-3 text-sm font-bold">Edit details</button>
+      <div className="grid xl:grid-cols-2 gap-5 items-start">
+        <div className="bg-white border rounded-2xl p-5 sm:p-7">
+          <h2 className="font-extrabold text-lg">Add payout account</h2>
+          <form onSubmit={handleAdd} className="space-y-4 mt-5">
+            <div>
+              <p className="text-sm font-bold mb-2">Method</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[{ v: 'bkash', l: 'bKash' }, { v: 'nogod', l: 'Nagad' }].map((m) => (
+                  <button
+                    key={m.v}
+                    type="button"
+                    aria-pressed={method === m.v}
+                    onClick={() => setMethod(m.v)}
+                    className={`rounded-xl border-2 py-3 text-sm font-bold ${method === m.v ? 'border-harvest-600 bg-harvest-50 text-harvest-800' : 'border-slate-200'}`}
+                  >
+                    {m.l}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="mt-5 rounded-xl border border-dashed p-5 text-center">
-              <span className="text-3xl">＋</span>
-              <p className="font-bold mt-2">No payout method added</p>
-              <p className="text-xs text-slate-500 mt-1">Add one mobile wallet.</p>
+            <div>
+              <label htmlFor="acc-number" className="block text-sm font-bold mb-2">Mobile number</label>
+              <input id="acc-number" type="tel" inputMode="numeric" required value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} />
             </div>
-          )}
+            <div>
+              <label htmlFor="acc-holder" className="block text-sm font-bold mb-2">Account holder name</label>
+              <input id="acc-holder" type="text" required value={accountHolderName}
+                onChange={(e) => setAccountHolderName(e.target.value)} placeholder="As registered in bKash / Nagad" className={inputCls} />
+            </div>
+            <button type="submit" disabled={saving}
+              className="w-full rounded-xl bg-harvest-700 text-white py-3.5 text-sm font-extrabold disabled:opacity-60">
+              {saving ? 'Saving…' : 'Save payout account'}
+            </button>
+          </form>
         </div>
 
-        {/* Right: add/edit form */}
-        <div className="bg-white border rounded-2xl p-5 sm:p-6">
-          <h2 className="font-extrabold text-lg">{editing ? 'Edit payout details' : savedAccount ? 'Payout method saved' : 'Add payout method'}</h2>
-          <p className="text-xs text-slate-500 mt-1">bKash or Nagad only.</p>
-
-          {showForm && (
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              {['bKash', 'Nagad'].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setBankMethod(m)}
-                  className={`border-2 rounded-xl p-3 text-left ${bankMethod === m ? 'border-harvest-600 bg-harvest-50' : 'border-slate-200'}`}
-                >
-                  <b>{m}</b>
-                  <small className="block text-xs text-slate-500 mt-1">Mobile wallet</small>
-                </button>
+        <div className="bg-white border rounded-2xl p-5 sm:p-7">
+          <h2 className="font-extrabold text-lg">Saved accounts</h2>
+          {isLoading ? (
+            <PageLoader label="Loading accounts…" className="py-8" />
+          ) : accounts.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">No payout account yet. Add one to start withdrawing.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {accounts.map((a) => (
+                <li key={a._id} className="rounded-xl border p-4 flex items-center gap-3">
+                  <span className="w-11 h-11 shrink-0 rounded-xl bg-pink-50 grid place-items-center text-xl">📱</span>
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-sm">{a.method === 'bkash' ? 'bKash' : 'Nagad'} · {a.accountHolderName}</b>
+                    <span className="text-xs text-slate-500 break-all">{a.accountNumber}</span>
+                  </div>
+                  {a.isPrimary && <span className="rounded-full bg-harvest-50 text-harvest-700 px-2 py-1 text-[10px] font-bold">Primary</span>}
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-
-          <div className="mt-4">
-            <label className="block text-sm font-bold mb-2">Account holder name</label>
-            <input
-              value={holder}
-              onChange={(e) => setHolder(e.target.value)}
-              disabled={!!savedAccount && !editing}
-              placeholder="Registered account holder"
-              className="w-full rounded-xl border px-3.5 py-3 text-sm disabled:bg-slate-50"
-            />
-          </div>
-          <div className="mt-4">
-            <label className="block text-sm font-bold mb-2">Mobile wallet number</label>
-            <input
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              disabled={!!savedAccount && !editing}
-              inputMode="numeric"
-              placeholder="01XXXXXXXXX"
-              className="w-full rounded-xl border px-3.5 py-3 text-sm disabled:bg-slate-50"
-            />
-          </div>
-
-          {showForm && (
-            <button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="mt-5 w-full rounded-xl bg-harvest-700 text-white py-4 text-sm font-extrabold disabled:opacity-60"
-            >
-              {isLoading ? 'Saving…' : editing ? 'Save changes' : 'Save payout details'}
-            </button>
-          )}
-
-          <p className="text-xs text-slate-500 leading-5 mt-3">Never share your wallet PIN or OTP with anyone.</p>
         </div>
       </div>
     </div>

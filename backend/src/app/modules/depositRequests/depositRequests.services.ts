@@ -7,7 +7,11 @@ import { sendEmail } from "../../utils/sendEmail";
 import { UserModel } from "../users/user.model";
 import { WalletModel } from "../wallets/wallet.model";
 import { TransactionServices } from "../transactions/transaction.services";
+import { NotificationServices } from "../notifications/notification.services";
+import { escapeHtml } from "../../utils/escapeHtml";
 import { DepositRequestModel } from "./depositRequests.model";
+
+const formatBDT = (poisha: number) => `৳${(poisha / BDT).toFixed(2)}`;
 
 type TCreatePayload = {
     amount: number; // BDT from the client
@@ -44,8 +48,9 @@ const createDepositRequest = async (userId: string, payload: TCreatePayload) => 
     }
 
     // the unique index on transactionId is the real guard against races (E11000 → 409 below)
+    let created;
     try {
-        return await DepositRequestModel.create({
+        created = await DepositRequestModel.create({
             userId,
             amount,
             currency: "BDT",
@@ -59,6 +64,36 @@ const createDepositRequest = async (userId: string, payload: TCreatePayload) => 
         }
         throw err;
     }
+
+    // Side effects after the request is saved — they must never fail it
+    if (user.email) {
+        sendEmail({
+            to: user.email,
+            subject: "Deposit Request Received — Maaza International",
+            heading: "We received your deposit request",
+            subheading: `${formatBDT(amount)} is waiting for review.`,
+            body: `
+                <p>Hi <strong>${escapeHtml(user.fullName)}</strong>,</p>
+                <p>Your deposit request of <strong>${formatBDT(amount)}</strong> (transaction ID <strong>${escapeHtml(payload.transactionId)}</strong>) has been submitted.</p>
+                <p>Request ID: ${created._id.toString()}</p>
+                <p>We will email you again as soon as it is reviewed.</p>
+            `,
+            button: { label: "View Recharge Status", url: `${config.frontend_url}/dashboard/recharge` },
+        }).catch((err) => console.error("Deposit request email failed", err));
+    }
+
+    NotificationServices.notifyAdmins({
+        type: "deposit_request",
+        title: "New deposit request",
+        message: `${user.fullName} submitted a deposit of ${formatBDT(amount)} (TrxID ${payload.transactionId})`,
+        actorId: user._id as mongoose.Types.ObjectId,
+        actorName: user.fullName,
+        actorPhone: user.phone,
+        amount,
+        referenceId: created._id as mongoose.Types.ObjectId,
+    });
+
+    return created;
 };
 
 // ─── Admin: Get all deposit requests ──────────────────────────────────────────
@@ -128,6 +163,7 @@ const updateDepositRequestStatus = async (
             });
 
             // 2. one-time welcome bonus on the user's FIRST approved deposit.
+            //    It goes to the BALANCE wallet, so it can be withdrawn.
             //    The conditional update makes it impossible to pay twice.
             const bonusUser = await UserModel.findOneAndUpdate(
                 { _id: updatedRequest.userId, welcomeBonusClaimed: { $ne: true } },
@@ -136,7 +172,7 @@ const updateDepositRequestStatus = async (
             );
             if (bonusUser) {
                 const bonusWallet = await WalletModel.findOneAndUpdate(
-                    { userId: updatedRequest.userId, walletType: "recharge" },
+                    { userId: updatedRequest.userId, walletType: "balance" },
                     { $inc: { balance: WELCOME_BONUS } },
                     { new: true, session }
                 );
@@ -147,9 +183,9 @@ const updateDepositRequestStatus = async (
                     type: "new_user_bonus",
                     flow: "credit",
                     amount: WELCOME_BONUS,
-                    walletAffected: "recharge",
+                    walletAffected: "balance",
                     balanceAfter: bonusWallet.balance,
-                    note: "Welcome bonus on first deposit",
+                    note: "Welcome bonus on first deposit (added to withdrawable balance)",
                     referenceId: updatedRequest._id as mongoose.Types.ObjectId,
                     session,
                 });
@@ -166,12 +202,31 @@ const updateDepositRequestStatus = async (
     }
 
     // Email is sent AFTER the commit and can never fail / roll back the approval
+    if (payload.status === "rejected") {
+        const user = await UserModel.findById(updatedRequest.userId);
+        if (user?.email) {
+            sendEmail({
+                to: user.email,
+                subject: "Deposit Rejected — Maaza International",
+                heading: "Your deposit request was rejected",
+                subheading: `${formatBDT(updatedRequest.amount)} was not credited.`,
+                body: `
+                    <p>Hi <strong>${escapeHtml(user.fullName)}</strong>,</p>
+                    <p>Your deposit request (transaction ID <strong>${escapeHtml(updatedRequest.transactionId)}</strong>) was rejected.</p>
+                    ${updatedRequest.adminNote ? `<p>Reason: ${escapeHtml(updatedRequest.adminNote)}</p>` : ""}
+                    <p>If you believe this is a mistake, please contact support.</p>
+                `,
+                button: { label: "Open Recharge Page", url: `${config.frontend_url}/dashboard/recharge` },
+            }).catch((err) => console.error("Deposit rejection email failed", err));
+        }
+    }
+
     if (payload.status === "approved") {
         const user = await UserModel.findById(updatedRequest.userId);
         if (user?.email) {
             const amountBDT = (updatedRequest.amount / BDT).toFixed(2);
             const bonusLine = welcomeBonusPaid
-                ? `<p>🎁 We also added your <strong>৳${(WELCOME_BONUS / BDT).toFixed(0)}</strong> welcome bonus!</p>`
+                ? `<p>🎁 We also added your <strong>৳${(WELCOME_BONUS / BDT).toFixed(0)}</strong> welcome bonus to your withdrawable balance!</p>`
                 : "";
             sendEmail({
                 to: user.email,
@@ -192,9 +247,6 @@ const updateDepositRequestStatus = async (
 
     return updatedRequest;
 };
-
-const escapeHtml = (value: string) =>
-    value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 
 export const DepositRequestServices = {
     createDepositRequest,

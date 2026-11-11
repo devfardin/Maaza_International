@@ -9,6 +9,7 @@ import {
   useCreateCategoryMutation,
 } from '@/redux/features/apiSlice';
 import ProductForm from '@/components/admin/ProductForm';
+import { notify, getErrorMessage } from '@/lib/toast';
 
 const STATUS = {
   active:     'bg-emerald-50 text-emerald-700',
@@ -33,7 +34,6 @@ function Sheet({ title, onClose, children }) {
 
 export default function AdminProductsPage() {
   const [sheet, setSheet] = useState(null); // { mode: 'create' } | { mode: 'edit', product }
-  const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(null);
   const [newCategory, setNewCategory] = useState('');
 
@@ -48,14 +48,15 @@ export default function AdminProductsPage() {
   const categories = catData?.data || [];
 
   async function handleSubmit({ data, file }) {
-    setError('');
+    
     try {
       if (sheet.mode === 'create') await createProduct({ data, file }).unwrap();
       else await updateProduct({ id: sheet.product._id, ...data }).unwrap();
+      notify.success(sheet.mode === 'create' ? 'Product created successfully.' : 'Product updated successfully.');
       setSheet(null);
     } catch (e) {
       const first = e?.data?.errorSources?.[0];
-      setError(first?.path ? `${first.path}: ${first.message}` : e?.data?.message || 'Something went wrong.');
+      notify.error(first?.path ? `${first.path}: ${first.message}` : getErrorMessage(e, 'Something went wrong.'));
     }
   }
 
@@ -64,9 +65,10 @@ export default function AdminProductsPage() {
     if (newCategory.trim().length < 2) return;
     try {
       await createCategory({ name: newCategory.trim() }).unwrap();
+      notify.success('Category added.');
       setNewCategory('');
     } catch (err) {
-      setError(err?.data?.message || 'Could not create category.');
+      notify.error(getErrorMessage(err, 'Could not create category.'));
     }
   }
 
@@ -77,7 +79,7 @@ export default function AdminProductsPage() {
           <h1 className="text-2xl font-extrabold">Products</h1>
           <p className="text-sm text-slate-500 mt-1">Upload products and manage stock, rewards and limits.</p>
         </div>
-        <button onClick={() => { setError(''); setSheet({ mode: 'create' }); }}
+        <button onClick={() => {  setSheet({ mode: 'create' }); }}
           className="bg-blue-600 text-white rounded-xl px-5 py-3 text-sm font-bold">+ Add product</button>
       </div>
 
@@ -119,7 +121,7 @@ export default function AdminProductsPage() {
                 <div><dt className="text-[11px] text-slate-400">Limit / user</dt><dd className="font-bold">{p.purchaseRules?.purchaseLimit}</dd></div>
               </dl>
               <div className="flex gap-2 mt-5 pt-4 border-t">
-                <button onClick={() => { setError(''); setSheet({ mode: 'edit', product: p }); }}
+                <button onClick={() => {  setSheet({ mode: 'edit', product: p }); }}
                   className="flex-1 border rounded-xl py-2.5 text-xs font-bold hover:bg-slate-50">Edit</button>
                 <button onClick={() => setDeleting(p)}
                   className="flex-1 rounded-xl py-2.5 text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100">Delete</button>
@@ -136,7 +138,6 @@ export default function AdminProductsPage() {
             product={sheet.product}
             categories={categories}
             submitting={creating || updating}
-            error={error}
             onSubmit={handleSubmit}
             onCancel={() => setSheet(null)}
           />
@@ -151,7 +152,16 @@ export default function AdminProductsPage() {
             <div className="flex gap-3">
               <button onClick={() => setDeleting(null)} className="flex-1 border rounded-xl py-3 text-sm font-bold">Cancel</button>
               <button disabled={removing}
-                onClick={async () => { try { await deleteProduct(deleting._id).unwrap(); } finally { setDeleting(null); } }}
+                onClick={async () => {
+                  try {
+                    await deleteProduct(deleting._id).unwrap();
+                    notify.success('Product deleted.');
+                  } catch (err) {
+                    notify.error(getErrorMessage(err, 'Could not delete this product.'));
+                  } finally {
+                    setDeleting(null);
+                  }
+                }}
                 className="flex-1 bg-rose-600 text-white rounded-xl py-3 text-sm font-bold disabled:opacity-60">Delete</button>
             </div>
           </div>

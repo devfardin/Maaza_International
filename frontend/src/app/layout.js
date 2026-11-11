@@ -1,5 +1,5 @@
 import './globals.css';
-import ReduxProvider from '@/redux/ReduxProvider';
+import AppProviders from '@/components/shared/AppProviders';
 
 export const metadata = {
   title: 'Maaza International',
@@ -44,7 +44,7 @@ export default function RootLayout({ children }) {
         has its own layout.jsx that adds the right chrome
       */}
       <body className="bg-slate-50 text-slate-800">
-        <ReduxProvider>{children}</ReduxProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

@@ -4,6 +4,7 @@
 // Shows referral bonus amount per product so users know what they earn
 // when their referred member purchases this product.
 
+import { getErrorMessage } from '@/lib/toast';
 import { useState } from 'react';
 import { useGetProductsQuery, useGetCategoriesQuery, usePurchaseProductMutation } from '@/redux/features/apiSlice';
 import { useSelector } from 'react-redux';
@@ -35,11 +36,11 @@ export default function ProductsPage({ showPage, showToast }) {
   async function handlePurchase(productId) {
     try {
       await purchaseProduct({ productId, paymentSource: 'recharge' }).unwrap();
-      showToast('Product purchased successfully! Welcome bonus of ৳120 has been credited.');
+      showToast('Product purchased successfully!');
       setSelectedProduct(null);
       showPage('purchased');
     } catch (err) {
-      showToast(err?.data?.message || 'Purchase failed. Please check your wallet balance.');
+      showToast(getErrorMessage(err, 'Purchase failed. Please check your wallet balance.'), 'error');
     }
   }
 

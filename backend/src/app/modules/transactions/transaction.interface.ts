@@ -3,7 +3,8 @@ import { Types } from "mongoose";
 // all possible transaction types across the platform
 export type TTransactionType =
     | "deposit"          // recharge wallet top-up after deposit request approved
-    | "withdrawal"       // user withdraws balance to mobile banking
+    | "withdrawal"       // user withdraws balance to mobile banking (debited when requested)
+    | "withdrawal_refund" // a rejected withdrawal returned to the balance wallet
     | "daily_checkin"    // daily check-in bonus credited to balance wallet
     | "profit"           // product profit credited to balance wallet
     | "commission"       // referral / team commission credited to balance wallet

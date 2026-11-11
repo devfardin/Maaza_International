@@ -8,12 +8,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export const adminNav = [
-  { href: '/admin',              icon: '📊', label: 'Dashboard'    },
-  { href: '/admin/users',        icon: '👥', label: 'Users'        },
-  { href: '/admin/products',     icon: '📦', label: 'Products'     },
-  { href: '/admin/deposits',     icon: '💳', label: 'Deposits'     },
+  { href: '/admin',              icon: '📊', label: 'Dashboard' },
+  { href: '/admin/users',        icon: '👥', label: 'Users' },
+  { href: '/admin/products',     icon: '📦', label: 'Products' },
+  { href: '/admin/deposits',     icon: '💳', label: 'Deposits' },
+  { href: '/admin/withdrawals',  icon: '💸', label: 'Withdrawals' },
   { href: '/admin/transactions', icon: '💰', label: 'Transactions' },
-  { href: '/admin/activity',     icon: '🛡️', label: 'Activity'     },
+  { href: '/admin/activity',     icon: '🛡️', label: 'Login activity' },
+  { href: '/admin/admin-activity', icon: '🧭', label: 'Admin activity', superOnly: true },
 ];
 
 const isActiveRoute = (pathname, href) =>
@@ -71,7 +73,7 @@ export default function AdminSidebar({ userName = 'Admin', userRole = 'admin' })
             <li key={href} className="flex-1 min-w-[72px]">
               <Link
                 href={href}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${
+                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] whitespace-nowrap ${
                   isActiveRoute(pathname, href) ? 'text-blue-700 font-bold' : 'text-slate-500'
                 }`}
               >
