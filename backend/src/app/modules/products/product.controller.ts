@@ -7,7 +7,6 @@ import { ProductService } from "./product.services";
 const createProduct = catchAsync(
     async (req, res) => {
         const { ...payload } = req.body;
-        console.log(req.file);
         const result = await ProductService.createProduct(req.file, payload);
         sendResponse(res, {
             statusCode: status.OK,
@@ -21,6 +20,19 @@ const createProduct = catchAsync(
 const getAllProducts = catchAsync(
     async (req, res) => {
         const result = await ProductService.getAllProducts();
+        sendResponse(res, {
+            statusCode: status.OK,
+            success: true,
+            message: "Products fetched successfully",
+            data: result
+        });
+    }
+);
+
+// admin: list every non-deleted product (any status)
+const getAllProductsForAdmin = catchAsync(
+    async (req, res) => {
+        const result = await ProductService.getAllProductsForAdmin();
         sendResponse(res, {
             statusCode: status.OK,
             success: true,
@@ -74,6 +86,7 @@ const deleteProduct = catchAsync(
 export const ProductController = {
     createProduct,
     getAllProducts,
+    getAllProductsForAdmin,
     getSingleProduct,
     updateProduct,
     deleteProduct

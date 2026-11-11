@@ -4,7 +4,7 @@ const handleZodError = (error: ZodError): TGeneracErrorResponse => {
   const statusCode = 400;
   const errorSources: TErrorSources = error.issues.map((issue: ZodIssue) => {
     return {
-      path: issue?.path[issue.path.length - 1],
+      path: String(issue?.path[issue.path.length - 1] ?? ""),
       message: issue.message,
     };
   });

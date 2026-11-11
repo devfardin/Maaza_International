@@ -39,7 +39,7 @@ api.interceptors.request.use(
     // Attach raw token — backend auth middleware does jwt.verify(req.headers.authorization)
     // directly without stripping 'Bearer ', so we must NOT add the prefix.
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -81,8 +81,10 @@ api.interceptors.response.use(
         // Refresh also failed — clear tokens and redirect to login
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        document.cookie = 'accessToken=; path=/; max-age=0';
+        document.cookie = 'role=; path=/; max-age=0';
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.assign('/login');
         }
       }
     }

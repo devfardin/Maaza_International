@@ -18,7 +18,7 @@ export default function ContactPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center mb-12">
         <h1 className="text-4xl sm:text-5xl font-extrabold mb-3">Get in touch</h1>
-        <p className="text-lg text-slate-600">Have questions? We'd love to hear from you.</p>
+        <p className="text-lg text-slate-600">Have questions? We&apos;d love to hear from you.</p>
       </div>
 
       <div className="bg-white border rounded-2xl p-8">
@@ -69,7 +69,7 @@ export default function ContactPage() {
 
         {submitted && (
           <div className="mt-4 p-4 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold">
-            ✓ Message sent! We'll get back to you soon.
+            ✓ Message sent! We&apos;ll get back to you soon.
           </div>
         )}
       </div>

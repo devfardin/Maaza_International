@@ -18,7 +18,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-extrabold mb-3">2. Use License</h2>
           <p className="leading-7">
-            Permission is granted to temporarily view the materials (information or software) on Maaza International's website for personal, 
+            Permission is granted to temporarily view the materials (information or software) on Maaza International&apos;s website for personal, 
             non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license 
             you may not:
           </p>
@@ -27,14 +27,14 @@ export default function TermsPage() {
             <li>Use the materials for any public or commercial purpose</li>
             <li>Attempt to decompile or reverse engineer any software on the site</li>
             <li>Remove any copyright or other proprietary notations from the materials</li>
-            <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
+            <li>Transfer the materials to another person or &quot;mirror&quot; the materials on any other server</li>
           </ul>
         </section>
 
         <section>
           <h2 className="text-2xl font-extrabold mb-3">3. Disclaimer</h2>
           <p className="leading-7">
-            The materials on Maaza International's website are provided on "as is" basis without warranties of any kind. Maaza International makes no warranties,
+            The materials on Maaza International&apos;s website are provided on &quot;as is&quot; basis without warranties of any kind. Maaza International makes no warranties,
             expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties
             or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other
             violation of rights.
@@ -53,7 +53,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-extrabold mb-3">5. Revisions and Errata</h2>
           <p className="leading-7">
-            The materials appearing on Maaza International's website could include technical, typographical, or photographic errors. Maaza International does
+            The materials appearing on Maaza International&apos;s website could include technical, typographical, or photographic errors. Maaza International does
             not warrant that any of the materials on its website are accurate, complete, or current. Maaza International may make changes to the
             materials contained on its website at any time without notice.
           </p>

@@ -1,66 +1,85 @@
-import { is } from "zod/locales";
+import status from "http-status";
+import AppError from "../../errors/AppError";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { CategoryModel } from "../categories/category.model";
 import { TProduct } from "./product.interface";
 import { ProductModel } from "./product.model";
-import { CategoryModel } from "../categories/category.model";
-import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 
-// create a product
-const createProduct = async (file: any, payload: TProduct) => {
-    const isExist = await ProductModel.findOne({ name: payload.name });
+const createProduct = async (file: Express.Multer.File | undefined, payload: TProduct) => {
+    if (!file) {
+        throw new AppError(status.BAD_REQUEST, "Product image is required");
+    }
+
+    const isExist = await ProductModel.findOne({ name: payload.name, isDeleted: false });
     if (isExist) {
-        throw new Error("Product already exists");
+        throw new AppError(status.CONFLICT, "Product already exists");
     }
-    // check category are exit
-    const iscatExit = await CategoryModel.findOne({ _id: payload.category });
-    if (!iscatExit) {
-        throw new Error("Category does not exist");
-    }
-    const path = file?.path;
-    const imageName = `${payload?.name?.split(' ').join('_')}_${Date.now()}`;
 
-    // send image to cloudinary
-    const { secure_url } = await sendImageToCloudinary(imageName, path);
-    
-    payload.image = secure_url as string;
-
-    const result = await ProductModel.create(payload);
-    if (result) {
-        // update category productcont value
-        await CategoryModel.findByIdAndUpdate(payload.category, {
-            $inc: { productCount: 1 }
-        })
+    const category = await CategoryModel.findById(payload.category);
+    if (!category) {
+        throw new AppError(status.NOT_FOUND, "Category does not exist");
     }
+
+    const imageName = `${payload.name.split(" ").join("_")}_${Date.now()}`;
+    const { secure_url } = await sendImageToCloudinary(imageName, file.path);
+
+    const result = await ProductModel.create({
+        ...payload,
+        image: secure_url,
+        status: payload.quantity === 0 ? "outofstock" : payload.status,
+    });
+
+    await CategoryModel.findByIdAndUpdate(payload.category, { $inc: { productCount: 1 } });
     return result;
-}
-// get all products
+};
+
+// public storefront: only visible products
 const getAllProducts = async () => {
-    const result = await ProductModel.find();
-    return result;
-}
-// get single product
-const getSingleProduct = async (id: string) => {
-    const result = await ProductModel.findById(id);
-    return result;
-}
-// update product
-const updateProduct = async (id: string, payload: Partial<TProduct>) => {
-    const result = await ProductModel.findByIdAndUpdate(id, payload, { new: true });
-    return result;
-}
+    return ProductModel.find({ isDeleted: false, status: { $ne: "inactive" } }).sort({ sortOrder: 1, createdAt: -1 });
+};
 
-// delete product
-const deleteProduct = async (id: string) => {
-    const result = await ProductModel.findByIdAndUpdate(id,
-        { isDeleted: true },
-        { new: true, runValidators: true }
-    );
+// admin: everything that is not soft-deleted, any status
+const getAllProductsForAdmin = async () => {
+    return ProductModel.find({ isDeleted: false }).populate("category", "name").sort({ createdAt: -1 });
+};
+
+const getSingleProduct = async (id: string) => {
+    const result = await ProductModel.findOne({ _id: id, isDeleted: false });
+    if (!result) throw new AppError(status.NOT_FOUND, "Product not found");
     return result;
-}
+};
+
+const updateProduct = async (id: string, payload: Partial<TProduct>) => {
+    const current = await ProductModel.findOne({ _id: id, isDeleted: false });
+    if (!current) throw new AppError(status.NOT_FOUND, "Product not found");
+
+    const update: Partial<TProduct> = { ...payload };
+
+    // keep status and stock consistent
+    if (payload.quantity !== undefined) {
+        if (payload.quantity === 0) update.status = "outofstock";
+        else if (current.status === "outofstock" && payload.status === undefined) update.status = "active";
+    }
+
+    return ProductModel.findByIdAndUpdate(id, update, { new: true, runValidators: true });
+};
+
+const deleteProduct = async (id: string) => {
+    const result = await ProductModel.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { isDeleted: true },
+        { new: true }
+    );
+    if (!result) throw new AppError(status.NOT_FOUND, "Product not found");
+    await CategoryModel.findByIdAndUpdate(result.category, { $inc: { productCount: -1 } });
+    return result;
+};
 
 export const ProductService = {
     createProduct,
     getAllProducts,
+    getAllProductsForAdmin,
     getSingleProduct,
     updateProduct,
-    deleteProduct
-}
+    deleteProduct,
+};

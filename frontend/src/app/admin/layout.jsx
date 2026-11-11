@@ -1,89 +1,82 @@
-// src/app/admin/layout.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN LAYOUT — wraps all /admin/* pages with sidebar + header.
-//
-// PERMISSION SYSTEM:
-// Right now permissions are hardcoded here (mockAdminUser).
-// When you connect a real backend, replace mockAdminUser with data
-// fetched from your auth token/session.
-//
-// HOW TO CHANGE PERMISSIONS FOR TESTING:
-// Edit the `permissions` array in mockAdminUser below.
-// Available permission keys are defined in src/lib/adminPermissions.js
-//
-// ADDING A NEW ADMIN PAGE:
-// 1. Create src/app/admin/your-page/page.jsx
-// 2. Add a nav item in AdminSidebar.jsx with the matching permission key
-// ─────────────────────────────────────────────────────────────────────────────
-
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader  from '@/components/admin/AdminHeader';
+import { useGetProfileQuery } from '@/redux/features/apiSlice';
+import { clearAuthCookies } from '@/lib/authCookies';
+import { setUser, logout } from '@/redux/features/authSlice';
 
-// ── Mock admin user ───────────────────────────────────────────────────────────
-// TODO: Replace this with real data from your auth system (JWT, session, etc.)
-// The `permissions` array controls what this admin can see and do.
-// See src/lib/adminPermissions.js for all available permission keys.
-const mockAdminUser = {
-  name: 'Admin User',
-  role: 'Admin',                // Display label shown in the header
-  permissions: [
-    'DASHBOARD_VIEW',
-    'USER_VIEW',
-    'USER_EDIT',
-    'PRODUCT_VIEW',
-    'PRODUCT_EDIT',
-    'PRODUCT_CREATE',
-    'TRANSACTION_VIEW',
-    'TRANSACTION_APPROVE',
-    'REPORT_VIEW',
-    'SETTINGS_VIEW',
-    // Remove any of the above to restrict access
-    // Add 'USER_DELETE', 'PRODUCT_DELETE', 'SETTINGS_EDIT' for more access
-    // Add all keys from PERMISSIONS for super-admin access
-  ],
-};
+function AdminInner({ children }) {
+  const dispatch = useDispatch();
+  const router   = useRouter();
+  const { token, user } = useSelector((s) => s.auth);
 
-export default function AdminLayout({ children }) {
-  // activePage tracks which sidebar item is highlighted
-  // It is set by showPage() which is passed down to AdminSidebar
-  const [activePage, setActivePage] = useState('dashboard');
+  const { data: profileData, isError } = useGetProfileQuery(undefined, { skip: !token });
 
-  // showPage is called when a sidebar nav button is clicked.
-  // For now it just updates the highlight — real navigation uses
-  // Next.js <Link> or router.push() inside each nav item.
-  function showPage(page) {
-    setActivePage(page);
+  useEffect(() => {
+    if (profileData?.data) dispatch(setUser(profileData.data));
+  }, [profileData, dispatch]);
+
+  // No token → go to login
+  useEffect(() => {
+    if (!token) {
+      router.replace('/login');
+    }
+  }, [token, router]);
+
+  // Regular user → go to dashboard
+  useEffect(() => {
+    if (user && user.role === 'user') {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
+
+  // Token invalid → logout
+  useEffect(() => {
+    if (isError) {
+      dispatch(logout());
+      clearAuthCookies();
+      router.replace('/login');
+    }
+  }, [isError, dispatch, router]);
+
+  function handleLogout() {
+    dispatch(logout());
+    clearAuthCookies();
+    router.replace('/login');
+  }
+
+  // Wait for the profile (role comes from the server) before showing anything
+  if (!token || !user || user.role === 'user') {
+    return <div className="min-h-screen grid place-items-center text-sm text-slate-400">Loading…</div>;
   }
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-
-      {/* Sidebar — desktop only, shows only items the user has permission for */}
       <AdminSidebar
-        activePage={activePage}
-        showPage={showPage}
-        userPermissions={mockAdminUser.permissions}
+        userName={user?.fullName || 'Admin'}
+        userRole={user?.role || 'admin'}
       />
-
-      {/* Main content area */}
       <main className="min-w-0">
-
-        {/* Header — shows role badge and user info */}
         <AdminHeader
-          showPage={showPage}
-          userRole={mockAdminUser.role}
-          userName={mockAdminUser.name}
-          userPermissions={mockAdminUser.permissions}
+          userRole={user?.role || 'admin'}
+          userName={user?.fullName || 'Admin'}
+          onLogout={handleLogout}
         />
-
-        {/* Page content */}
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-9 py-5 sm:py-7 pb-10">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-9 py-5 sm:py-7 pb-28 lg:pb-10">
           {children}
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }) {
+  return (
+    <Suspense>
+      <AdminInner>{children}</AdminInner>
+    </Suspense>
   );
 }

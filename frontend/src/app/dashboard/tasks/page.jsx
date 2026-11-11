@@ -1,8 +1,8 @@
 'use client';
-import TasksPage from "@/components/dashboard/pages/TasksPage";
-import { useProductModal } from "@/hooks/useDashboardModals";
+import TasksPage from '@/components/dashboard/pages/TasksPage';
+import { useTaskModal } from '@/hooks/useDashboardModals';
 
 export default function Page() {
-  const openProduct = useProductModal();
-  return <TasksPage openProduct={openProduct} />;
+  const openTask = useTaskModal();
+  return <TasksPage openTask={openTask} />;
 }

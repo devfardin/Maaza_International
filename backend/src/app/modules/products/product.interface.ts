@@ -9,7 +9,7 @@ export type TProductStatus = "active" | "inactive" | "outofstock";
 
 // Team commission configuration
 export type TTeamCommission = {
-    level: "B" | "C" | "D";
+    level: "B" | "C" | "D"; // B = inviter's inviter, C = B's inviter
     rate: number; // Example: 0.10 = 10%
     basis: "daily-income" | "total-reward" | "purchase-price";
 };
@@ -49,6 +49,9 @@ export type TProduct = {
     // Pricing
     price: number;
     points: number;
+
+    // Stock management — decremented atomically on every purchase
+    quantity: number;
 
     // Reward information
     rewardPlan: TProductReward;

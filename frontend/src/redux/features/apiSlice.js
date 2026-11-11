@@ -1,39 +1,29 @@
 // src/redux/features/apiSlice.js
 // ─────────────────────────────────────────────────────────────────────────────
-// RTK Query base API — defines all backend endpoints in one place.
+// RTK Query — single source of truth for ALL backend API calls.
 //
-// HOW IT WORKS:
-//   RTK Query auto-generates React hooks for every endpoint defined here.
-//   It handles caching, loading states, error states, and re-fetching.
+// BASE URL : NEXT_PUBLIC_API_URL  (e.g. http://localhost:5000/api/v1)
+// AUTH     : "Bearer <jwt>" in the Authorization header (backend also accepts a raw token)
 //
 // HOW TO USE IN A COMPONENT:
-//   import { useGetProfileQuery } from '@/redux/features/apiSlice';
-//   const { data, isLoading, isError } = useGetProfileQuery();
+//   import { useGetProductsQuery } from '@/redux/features/apiSlice';
+//   const { data, isLoading, isError, refetch } = useGetProductsQuery();
 //
 // HOW TO ADD A NEW ENDPOINT:
-//   Add a new entry inside `endpoints` builder below.
-//   Use `query` for GET requests, `mutation` for POST/PATCH/DELETE.
-//
-// CACHE TAGS:
-//   Tags allow RTK Query to automatically refetch related data after a mutation.
-//   e.g. after a recharge mutation, the wallet query auto-refreshes.
+//   Add a builder.query() or builder.mutation() inside endpoints below,
+//   then export the generated hook at the bottom.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// Base query — attaches JWT token from Redux state to every request
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
 
-  // Inject the access token from Redux state into every request header.
-  // IMPORTANT: The backend auth middleware reads req.headers.authorization
-  // directly and passes it to jwt.verify() WITHOUT stripping 'Bearer '.
-  // So we send the raw token only — no 'Bearer ' prefix.
+  credentials: 'include', // send the httpOnly refresh-token cookie
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.token;
-    if (token) {
-      // Send raw token — backend does: jwt.verify(req.headers.authorization, secret)
-      headers.set('Authorization', token);
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
     return headers;
   },
@@ -43,15 +33,19 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
 
-  // Cache tags — used to invalidate and refetch data after mutations
-  // Add new tags here when you add new resource types
-  tagTypes: ['User', 'Products', 'Wallet', 'Transactions', 'Tasks', 'Referrals'],
+  // Cache invalidation tags — add a new tag whenever you add a new resource type
+  tagTypes: [
+    'User', 'Products', 'Categories', 'Wallet', 'Transactions',
+    'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
+    'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
+  ],
 
   endpoints: (builder) => ({
 
-    // ── AUTH ────────────────────────────────────────────────────────────────
-
-    // POST /auth/login — returns { user, accessToken, refreshToken }
+    // ── AUTH ──────────────────────────────────────────────────────────────────
+    // POST /auth/login
+    // Body: { phone, password }
+    // Response: { data: { accessToken, refreshToken } }
     login: builder.mutation({
       query: (credentials) => ({
         url: '/auth/login',
@@ -60,9 +54,40 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // POST /users/create-user — creates a new user account
-    // Backend route: POST /api/v1/users/create-user
-    register: builder.mutation({
+    // POST /auth/refresh-token
+    // Reads refreshToken from httpOnly cookie (set at login) — no body needed
+    // Response: { data: { accessToken } }
+    refreshToken: builder.mutation({
+      query: () => ({ url: '/auth/refresh-token', method: 'POST' }),
+    }),
+
+    // POST /auth/change-password  (authenticated)
+    // Body: { oldPassword, newPassword }
+    changePassword: builder.mutation({
+      query: (data) => ({ url: '/auth/change-password', method: 'POST', body: data }),
+    }),
+
+    // POST /auth/forget-password
+    // Body: { phone }
+    forgetPassword: builder.mutation({
+      query: (data) => ({ url: '/auth/forget-password', method: 'POST', body: data }),
+    }),
+
+    // POST /auth/reset-password
+    // Body: { phone, newPassword }  — token sent in Authorization header
+    resetPassword: builder.mutation({
+      query: ({ token, ...data }) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body: data,
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    }),
+
+    // ── USERS ─────────────────────────────────────────────────────────────────
+    // POST /users/create-user  (public — registration)
+    // Body: { fullName, phone, email, passwordHash, referredBy? }
+    createUser: builder.mutation({
       query: (userData) => ({
         url: '/users/create-user',
         method: 'POST',
@@ -70,139 +95,369 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // NOTE: There is no /auth/logout endpoint on the backend.
-    // Logout is handled purely on the frontend by clearing tokens.
-    // This mutation is kept as a no-op placeholder so the dashboard
-    // layout does not need to be changed if a logout endpoint is added later.
-    logoutUser: builder.mutation({
-      query: () => ({ url: '/auth/logout', method: 'POST' }),
-    }),
-
-    // ── USER / PROFILE ──────────────────────────────────────────────────────
-
-    // GET /users/me — fetch the logged-in user's full profile
-    getProfile: builder.query({
+    // GET /users/me  (authenticated)
+    // Returns the full profile of the logged-in user (no passwordHash)
+    // Populated: referredBy (the user who referred this user)
+    getMe: builder.query({
       query: () => '/users/me',
       providesTags: ['User'],
     }),
 
-    // PATCH /users/me — update profile fields (name, phone, etc.)
-    updateProfile: builder.mutation({
-      query: (data) => ({ url: '/users/me', method: 'PATCH', body: data }),
-      invalidatesTags: ['User'], // refetch profile after update
+    // ── CATEGORIES ────────────────────────────────────────────────────────────
+    // GET /categories  (public)
+    getCategories: builder.query({
+      query: () => '/categories',
+      providesTags: ['Categories'],
     }),
 
-    // ── PRODUCTS ────────────────────────────────────────────────────────────
-
-    // GET /products — fetch all available products
+    // ── PRODUCTS ──────────────────────────────────────────────────────────────
+    // GET /products  (public)
+    // Returns all active products with rewardPlan, bonuses, teamCommissions
     getProducts: builder.query({
       query: () => '/products',
       providesTags: ['Products'],
     }),
 
-    // GET /products/:id — fetch a single product by ID
+    // GET /products/:id  (public)
     getProductById: builder.query({
       query: (id) => `/products/${id}`,
       providesTags: ['Products'],
     }),
 
-    // GET /products/purchased — fetch products the user has purchased
-    getPurchasedProducts: builder.query({
-      query: () => '/products/purchased',
-      providesTags: ['Products'],
-    }),
-
-    // POST /products/:id/purchase — buy a product
+    // ── PRODUCT PURCHASES ─────────────────────────────────────────────────────
+    // POST /product-purchases/purchase  (authenticated user)
+    // Body: { productId, paymentSource: "recharge" | "balance" }
+    // On success: deducts from wallet, creates purchase, records transaction
+    // Welcome bonus (120 BDT) and referral bonus are handled by the backend
     purchaseProduct: builder.mutation({
-      query: (id) => ({ url: `/products/${id}/purchase`, method: 'POST' }),
-      invalidatesTags: ['Products', 'Wallet', 'Transactions'],
+      query: (data) => ({
+        url: '/product-purchases/purchase',
+        method: 'POST',
+        body: data,
+      }),
+      // Refetch wallet, purchases, and transactions after a purchase
+      invalidatesTags: ['Purchases', 'Wallet', 'Transactions'],
     }),
 
-    // ── WALLET ──────────────────────────────────────────────────────────────
+    // GET /product-purchases/my-purchases  (authenticated user)
+    // Returns all purchases for the logged-in user, populated with product name/image
+    getMyPurchases: builder.query({
+      query: () => '/product-purchases/my-purchases',
+      providesTags: ['Purchases'],
+    }),
 
-    // GET /wallet — fetch wallet balance and summary
-    getWallet: builder.query({
-      query: () => '/wallet',
+    // GET /product-purchases/:purchaseId  (authenticated user)
+    getSinglePurchase: builder.query({
+      query: (purchaseId) => `/product-purchases/${purchaseId}`,
+      providesTags: ['Purchases'],
+    }),
+
+    // POST /product-purchases/:purchaseId/claim  (authenticated user)
+    // Claims daily income for a purchase — credits balance wallet
+    // Also credits referral commissions (level B and C) automatically
+    claimDailyIncome: builder.mutation({
+      query: (purchaseId) => ({
+        url: `/product-purchases/${purchaseId}/claim`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Wallet', 'Transactions', 'Purchases'],
+    }),
+
+    // GET /product-purchases/:purchaseId/claim-history  (authenticated user)
+    getClaimHistory: builder.query({
+      query: (purchaseId) => `/product-purchases/${purchaseId}/claim-history`,
+    }),
+
+    // ── WALLETS ───────────────────────────────────────────────────────────────
+    // GET /wallets/:userId  (authenticated)
+    // Returns { rechargeWallet: { balance, formattedBalance }, balanceWallet: {...} }
+    // NOTE: userId must be the logged-in user's ID from Redux state
+    getMyWallets: builder.query({
+      query: (userId) => `/wallets/${userId}`,
       providesTags: ['Wallet'],
     }),
 
-    // POST /wallet/recharge — submit a recharge request
-    rechargeWallet: builder.mutation({
-      query: (data) => ({ url: '/wallet/recharge', method: 'POST', body: data }),
-      invalidatesTags: ['Wallet', 'Transactions'],
+    // ── DEPOSIT REQUESTS (RECHARGE) ───────────────────────────────────────────
+    // POST /deposit-requests/create-deposit-request  (authenticated user)
+    // Body: { userId, amount, methodCode, senderNumber, transactionId }
+    // amount is in BDT integer (min 200). Backend stores in poisha (×100).
+    createDepositRequest: builder.mutation({
+      query: (data) => ({
+        url: '/deposit-requests/create-deposit-request',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['DepositRequests'],
     }),
 
-    // POST /wallet/withdraw — submit a withdrawal request
-    withdrawWallet: builder.mutation({
-      query: (data) => ({ url: '/wallet/withdraw', method: 'POST', body: data }),
-      invalidatesTags: ['Wallet', 'Transactions'],
+    // GET /deposit-requests/user/:userId  (authenticated)
+    // Returns all deposit requests submitted by this user
+    getMyDepositRequests: builder.query({
+      query: (userId) => `/deposit-requests/user/${userId}`,
+      providesTags: ['DepositRequests'],
     }),
 
-    // ── TRANSACTIONS ────────────────────────────────────────────────────────
+    // ── PAYMENT METHODS ───────────────────────────────────────────────────────
+    // GET /payment-methods  (public)
+    // Returns active payment methods (bKash, Nagad) with account numbers for deposit
+    getPaymentMethods: builder.query({
+      query: () => '/payment-methods',
+      providesTags: ['PaymentMethods'],
+    }),
 
-    // GET /transactions — fetch full transaction history
-    getTransactions: builder.query({
-      query: () => '/transactions',
+    // ── PAYMENT ACCOUNTS (USER PAYOUT ACCOUNTS) ───────────────────────────────
+        // GET /paymentaccounts  — not in backend routes, omitted
+
+    // POST /paymentaccounts/create-payment-accounts  (authenticated)
+    // Body: { userId, method: "bkash"|"nogod", accountNumber, accountHolderName }
+    createPaymentAccount: builder.mutation({
+      query: (data) => ({
+        url: '/payment-accounts/create-payment-accounts',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['PaymentAccounts'],
+    }),
+
+    // GET /payment-accounts/my-accounts  (authenticated)
+    // Returns all payout accounts saved by the logged-in user
+    getMyPaymentAccounts: builder.query({
+      query: () => '/payment-accounts/my-accounts',
+      providesTags: ['PaymentAccounts'],
+    }),
+
+    // ── TRANSACTIONS ──────────────────────────────────────────────────────────
+    // GET /transactions/user/:userId  (authenticated)
+    // Returns full transaction history for the user, newest first
+    getUserTransactions: builder.query({
+      query: (userId) => `/transactions/user/${userId}`,
       providesTags: ['Transactions'],
     }),
 
-    // ── TASKS ───────────────────────────────────────────────────────────────
+    // GET /transactions/user/:userId/filter?type=deposit  (authenticated)
+    // Filter by type: deposit | withdrawal | product_purchase | profit | commission
+    getUserTransactionsByType: builder.query({
+      query: ({ userId, type }) => `/transactions/user/${userId}/filter?type=${type}`,
+      providesTags: ['Transactions'],
+    }),
 
-    // GET /tasks — fetch all available tasks
+    // ── TASKS ─────────────────────────────────────────────────────────────────
+    // GET /tasks  (public)
     getTasks: builder.query({
       query: () => '/tasks',
       providesTags: ['Tasks'],
     }),
 
-    // POST /tasks/:id/submit — submit a completed task for review
-    submitTask: builder.mutation({
-      query: (id) => ({ url: `/tasks/${id}/submit`, method: 'POST' }),
-      invalidatesTags: ['Tasks'],
+    // GET /tasks/:id  (public)
+    getTaskById: builder.query({
+      query: (id) => `/tasks/${id}`,
+      providesTags: ['Tasks'],
     }),
 
-    // ── REFERRALS ───────────────────────────────────────────────────────────
+    // ── COMMUNITY POSTS ───────────────────────────────────────────────────────
+    // GET /community-posts  (public)
+    getCommunityPosts: builder.query({
+      query: () => '/community-posts',
+      providesTags: ['CommunityPosts'],
+    }),
 
-    // GET /referrals — fetch referral stats and referred users list
-    getReferrals: builder.query({
-      query: () => '/referrals',
+    // POST /community-posts/create-post  (authenticated)
+    // Body: { content, ... }
+    createCommunityPost: builder.mutation({
+      query: (data) => ({
+        url: '/community-posts/create-post',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['CommunityPosts'],
+    }),
+
+    // PATCH /community-posts/:postId/like  (authenticated)
+    likePost: builder.mutation({
+      query: (postId) => ({
+        url: `/community-posts/${postId}/like`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['CommunityPosts'],
+    }),
+
+    // GET /referrals/my-referrals  (authenticated)
+    // Returns { total, valid, invalid, referrals[] }
+    getMyReferrals: builder.query({
+      query: () => '/referrals/my-referrals',
       providesTags: ['Referrals'],
     }),
 
-    // ── PAYOUT / BANK ───────────────────────────────────────────────────────
-
-    // GET /users/payout — fetch saved bKash/Nagad payout details
-    getPayoutDetails: builder.query({
-      query: () => '/users/payout',
+    // ── ADMIN ──────────────────────────────────────────────────────────────────────────────
+    // GET /users  (admin only)
+    getAllUsers: builder.query({
+      query: () => '/users',
       providesTags: ['User'],
     }),
 
-    // POST /users/payout — save or update payout details
-    savePayoutDetails: builder.mutation({
-      query: (data) => ({ url: '/users/payout', method: 'POST', body: data }),
+    // GET /transactions  (admin only)
+    getAllTransactions: builder.query({
+      query: () => '/transactions',
+      providesTags: ['Transactions'],
+    }),
+
+    // GET /deposit-requests  (admin only)
+    getAllDepositRequests: builder.query({
+      query: () => '/deposit-requests',
+      providesTags: ['DepositRequests'],
+    }),
+
+    // PATCH /deposit-requests/:id/status  (admin only)
+    updateDepositStatus: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/deposit-requests/${id}/status`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['DepositRequests', 'Transactions', 'Wallet'],
+    }),
+
+    // PATCH /users/change-status/:id  (admin only)
+    changeUserStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/users/change-status/${id}`,
+        method: 'PATCH',
+        body: { status },
+      }),
       invalidatesTags: ['User'],
+    }),
+
+    // ── ADMIN: USERS ──────────────────────────────────────────────────────────
+    // POST /users/create-admin  (super_admin only)
+    createAdmin: builder.mutation({
+      query: (body) => ({ url: '/users/create-admin', method: 'POST', body }),
+      invalidatesTags: ['User'],
+    }),
+
+    // PATCH /users/:id  (admin; role changes super_admin only)
+    updateUser: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/users/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['User'],
+    }),
+
+    // DELETE /users/:id  (admin — soft delete)
+    deleteUser: builder.mutation({
+      query: (id) => ({ url: `/users/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['User'],
+    }),
+
+    // GET /activity-logs?userId=&event=&limit=  (admin)
+    // Registration / login tracking: IP, device type, browser, OS
+    getActivityLogs: builder.query({
+      query: (params = {}) => {
+        const qs = new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+        ).toString();
+        return `/activity-logs${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: ['Activity'],
+    }),
+
+    // ── ADMIN: PRODUCTS ───────────────────────────────────────────────────────
+    // GET /products/admin/all  (admin) — includes inactive & out-of-stock
+    getAdminProducts: builder.query({
+      query: () => '/products/admin/all',
+      providesTags: ['AdminProducts'],
+    }),
+
+    // POST /products/create-product  (admin) — multipart: file + data(JSON)
+    createProduct: builder.mutation({
+      query: ({ file, data }) => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('data', JSON.stringify(data));
+        return { url: '/products/create-product', method: 'POST', body: form };
+      },
+      invalidatesTags: ['AdminProducts', 'Products', 'Categories'],
+    }),
+
+    // PUT /products/:id  (admin) — price, stock, status, rewards …
+    updateProduct: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/products/${id}`, method: 'PUT', body }),
+      invalidatesTags: ['AdminProducts', 'Products'],
+    }),
+
+    // PATCH /products/:id  (admin) — soft delete
+    deleteProduct: builder.mutation({
+      query: (id) => ({ url: `/products/${id}`, method: 'PATCH' }),
+      invalidatesTags: ['AdminProducts', 'Products', 'Categories'],
+    }),
+
+    // POST /categories/create-category  (admin)
+    createCategory: builder.mutation({
+      query: (body) => ({ url: '/categories/create-category', method: 'POST', body }),
+      invalidatesTags: ['Categories'],
     }),
 
   }),
 });
 
-// Export auto-generated hooks — import these directly in your components
+// ── Export all auto-generated hooks ──────────────────────────────────────────
 export const {
+  // Auth
   useLoginMutation,
-  useRegisterMutation,
-  useLogoutUserMutation,
-  useGetProfileQuery,
-  useUpdateProfileMutation,
+  useRefreshTokenMutation,
+  useChangePasswordMutation,
+  useForgetPasswordMutation,
+  useResetPasswordMutation,
+  // Users
+  useCreateUserMutation,
+  useGetMeQuery,
+  // Categories
+  useGetCategoriesQuery,
+  // Products
   useGetProductsQuery,
   useGetProductByIdQuery,
-  useGetPurchasedProductsQuery,
+  // Purchases
   usePurchaseProductMutation,
-  useGetWalletQuery,
-  useRechargeWalletMutation,
-  useWithdrawWalletMutation,
-  useGetTransactionsQuery,
+  useGetMyPurchasesQuery,
+  useGetSinglePurchaseQuery,
+  useClaimDailyIncomeMutation,
+  useGetClaimHistoryQuery,
+  // Wallets
+  useGetMyWalletsQuery,
+  // Deposit requests
+  useCreateDepositRequestMutation,
+  useGetMyDepositRequestsQuery,
+  // Payment methods
+  useGetPaymentMethodsQuery,
+  // Payment accounts
+  useCreatePaymentAccountMutation,
+  useGetMyPaymentAccountsQuery,
+  // Transactions
+  useGetUserTransactionsQuery,
+  useGetUserTransactionsByTypeQuery,
+  // Tasks
   useGetTasksQuery,
-  useSubmitTaskMutation,
-  useGetReferralsQuery,
-  useGetPayoutDetailsQuery,
-  useSavePayoutDetailsMutation,
+  useGetTaskByIdQuery,
+  // Community
+  useGetCommunityPostsQuery,
+  useCreateCommunityPostMutation,
+  useLikePostMutation,
+  // Referrals
+  useGetMyReferralsQuery,
+  // Admin
+  useGetAllUsersQuery,
+  useGetAllTransactionsQuery,
+  useGetAllDepositRequestsQuery,
+  useUpdateDepositStatusMutation,
+  useChangeUserStatusMutation,
+  useCreateAdminMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useGetActivityLogsQuery,
+  useGetAdminProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+  useCreateCategoryMutation,
 } = apiSlice;
+
+// Aliases for components that use alternate hook names
+export const useRegisterMutation = () => useCreateUserMutation();
+export const useGetProfileQuery  = useGetMeQuery;

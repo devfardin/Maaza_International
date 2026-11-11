@@ -1,8 +1,13 @@
 'use client';
-import RechargePage from "@/components/dashboard/pages/RechargePage";
-import { useProductModal } from "@/hooks/useDashboardModals";
+import RechargePage from '@/components/dashboard/pages/RechargePage';
+import { useDashboard } from '@/context/DashboardContext';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
-  const openProduct = useProductModal();
-  return <RechargePage openProduct={openProduct} />;
+  const { showToast } = useDashboard();
+  const router = useRouter();
+  function showPage(page) {
+    router.push(page === 'overview' ? '/dashboard' : `/dashboard/${page}`);
+  }
+  return <RechargePage showPage={showPage} showToast={showToast} />;
 }

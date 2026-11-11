@@ -1,66 +1,48 @@
 // src/middleware.js
 // ─────────────────────────────────────────────────────────────────────────────
-// Next.js Edge Middleware — runs on every request BEFORE the page renders.
-// Used here to protect private routes from unauthenticated access.
+// Next.js Edge Middleware — decides which interface a visitor may see.
 //
-// PROTECTED ROUTES:
-//   /dashboard/*  — requires a logged-in user
-//   /admin/*      — requires a logged-in user (role check done inside the page)
+//   /dashboard/*  → role "user"                (members)
+//   /admin/*      → role "admin" | "super_admin"
+//   /login, /registration, /forgot-password → only for logged-out visitors
 //
-// HOW IT WORKS:
-//   1. Reads the accessToken from the request cookies.
-//   2. If the token is missing and the user is trying to access a protected
-//      route, they are redirected to /login.
-//   3. If the user is already logged in and visits /login or /registration,
-//      they are redirected to /dashboard.
-//
-// NOTE:
-//   This middleware reads cookies, NOT localStorage (localStorage is not
-//   available in Edge middleware). So your login flow must also set the
-//   accessToken as a cookie. See login/page.jsx for how this is done.
-//
-// TO ADD MORE PROTECTED ROUTES:
-//   Add the path prefix to the `protectedRoutes` array below.
+// It reads the `accessToken` and `role` cookies set at login (see lib/authCookies.js).
+// The cookies only steer navigation; every API call is re-authorised by the backend.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';
 
-// Routes that require authentication
-const protectedRoutes = ['/dashboard', '/admin'];
+const authRoutes = ['/login', '/registration', '/forgot-password'];
 
-// Routes that logged-in users should not see (auth pages)
-const authRoutes = ['/login', '/registration'];
+const homeFor = (role) => (role === 'admin' || role === 'super_admin' ? '/admin' : '/dashboard');
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
-
-  // Read the access token from cookies
-  // Your login handler must set this cookie: document.cookie = `accessToken=...`
   const token = request.cookies.get('accessToken')?.value;
+  const role  = request.cookies.get('role')?.value;
+  const isAdmin = role === 'admin' || role === 'super_admin';
 
-  const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
+  const inDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  const inAdmin     = pathname === '/admin' || pathname.startsWith('/admin/');
   const isAuthPage  = authRoutes.some((r) => pathname.startsWith(r));
 
-  // Redirect unauthenticated users away from protected routes
-  if (isProtected && !token) {
+  // 1. Logged out → login
+  if ((inDashboard || inAdmin) && !token) {
     const loginUrl = new URL('/login', request.url);
-    // Pass the original URL so we can redirect back after login
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect already-authenticated users away from login/register pages
-  if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  // 2. Wrong interface for the role → send to the right one
+  if (token && inAdmin && !isAdmin)   return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (token && inDashboard && isAdmin) return NextResponse.redirect(new URL('/admin', request.url));
+
+  // 3. Already logged in → skip the auth pages
+  if (token && isAuthPage) return NextResponse.redirect(new URL(homeFor(role), request.url));
 
   return NextResponse.next();
 }
 
-// Tell Next.js which paths this middleware should run on
-// Excludes static files, images, and Next.js internals for performance
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|api|favicon.ico|public/).*)'],
 };

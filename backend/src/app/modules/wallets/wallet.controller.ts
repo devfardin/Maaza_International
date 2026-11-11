@@ -4,14 +4,12 @@ import sendResponse from '../../utils/sendResponse';
 import { WalletServices } from './wallet.services';
 import AppError from '../../errors/AppError';
 import { TWalletType } from './wallet.interface';
-import { UserModel } from '../users/user.model';
+import { assertSelfOrAdmin } from '../../utils/assertOwnership';
 
 const getMyWallets = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    const existUser = UserModel.findById({ _id: userId })
-    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized'); 
-
-    const result = await WalletServices.getUserWallets(userId);
+    assertSelfOrAdmin(req, userId);
+const result = await WalletServices.getUserWallets(userId);
     sendResponse(res, {
         statusCode: status.OK,
         success: true,
@@ -22,11 +20,8 @@ const getMyWallets = catchAsync(async (req, res) => {
 
 const checkBalance = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    const existUser = UserModel.findById(userId)
-    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
-
-
-    const { walletType } = req.params;
+    assertSelfOrAdmin(req, userId);
+const { walletType } = req.params;
     if (walletType !== 'recharge' && walletType !== 'balance') {
         throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
     }
@@ -43,11 +38,8 @@ const checkBalance = catchAsync(async (req, res) => {
 const getMyWalletByType = catchAsync(async (req, res) => {
 
     const { userId } = req.params;
-    const existUser = UserModel.findById(userId)
-
-    if (!existUser) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
-
-    const { walletType } = req.query;
+    assertSelfOrAdmin(req, userId);
+const { walletType } = req.query;
     if (walletType !== 'recharge' && walletType !== 'balance') {
         throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
     }

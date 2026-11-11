@@ -20,7 +20,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useRegisterMutation } from '@/redux/features/apiSlice';
+import { useCreateUserMutation } from '@/redux/features/apiSlice';
 
 // ── Reusable form field wrapper ───────────────────────────────────────────────
 const Field = ({ label, hint, children }) => (
@@ -45,6 +45,23 @@ const MaazaLogo = () => (
 
 // ── Registration form ─────────────────────────────────────────────────────────
 
+// Eye toggle button for password fields
+const EyeBtn = ({ show, toggle }) => (
+  <button type="button" onClick={toggle}
+    className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600">
+    {show ? (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
+      </svg>
+    ) : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    )}
+  </button>
+);
+
 function RegistrationForm() {
   const [showPw, setShowPw]         = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -57,24 +74,7 @@ function RegistrationForm() {
   const refId = searchParams.get('refId') ?? '';
 
   // RTK Query register mutation
-  const [register, { isLoading }] = useRegisterMutation();
-
-  // Eye toggle button for password fields
-  const EyeBtn = ({ show, toggle }) => (
-    <button type="button" onClick={toggle}
-      className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600">
-      {show ? (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </svg>
-      )}
-    </button>
-  );
+  const [register, { isLoading }] = useCreateUserMutation();
 
   // Handle form submission — validates passwords match then calls the API
   async function handleRegister(e) {
@@ -221,12 +221,13 @@ function RegistrationForm() {
                   </Field>
 
                   {/* Referral code — auto-filled and locked if ?refId= is in URL */}
-                  <Field label="Referral code" hint={refId ? 'auto-filled' : 'optional'}>
+                  <Field label="Referral code" hint={refId ? 'auto-filled · locked' : 'optional'}>
                     <div className="relative">
                       <input
                         name="ref"
                         readOnly={!!refId}
-                        defaultValue={refId || ''}
+                        value={refId || undefined}
+                        defaultValue={refId ? undefined : ''}
                         placeholder="Enter referral code"
                         className={`${inputCls} pl-10 ${refId ? 'cursor-not-allowed bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : ''}`}
                       />
@@ -238,7 +239,7 @@ function RegistrationForm() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Create password">
                       <div className="relative">
-                        <input name="newpw" required minLength="8" type={showPw ? 'text' : 'password'}
+                        <input name="newpw" required type={showPw ? 'text' : 'password'}
                           autoComplete="new-password" placeholder="Min. 8 characters"
                           className={`${inputCls} pr-11`} />
                         <EyeBtn show={showPw} toggle={() => setShowPw(p => !p)} />
@@ -246,7 +247,7 @@ function RegistrationForm() {
                     </Field>
                     <Field label="Confirm password">
                       <div className="relative">
-                        <input name="confirm" required minLength="8" type={showConfirm ? 'text' : 'password'}
+                        <input name="confirm" required type={showConfirm ? 'text' : 'password'}
                           autoComplete="new-password" placeholder="Repeat password"
                           className={`${inputCls} pr-11`} />
                         <EyeBtn show={showConfirm} toggle={() => setShowConfirm(p => !p)} />

@@ -1,87 +1,83 @@
 'use client';
 // src/app/dashboard/layout.jsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Dashboard layout — wraps all /dashboard/* pages with sidebar, header,
-// mobile nav, modal, and toast. Also loads the user profile on mount.
-//
-// STRUCTURE:
-//   DashboardLayout (outer) — provides DashboardContext
-//     └── DashboardInner (inner) — reads context, renders chrome
-//           └── {children} — the actual page content
-//
-// WHY TWO COMPONENTS:
-//   DashboardInner needs to call useDashboard() which requires being inside
-//   the DashboardProvider. So the provider must wrap it from the outside.
-//
-// USER PROFILE LOADING:
-//   useGetProfileQuery() runs automatically when this layout mounts.
-//   It fetches GET /users/me and stores the result in Redux via setUser().
-//   All dashboard pages can then read user data from Redux state.
+// Dashboard layout — shell for all /dashboard/* pages.
+// Fetches the logged-in user's profile on mount and stores it in Redux.
+// Passes user data down to Sidebar and Header for display.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useEffect }                          from 'react';
-import { usePathname, useRouter }             from 'next/navigation';
-import { useDispatch, useSelector }           from 'react-redux';
-import { DashboardProvider, useDashboard }    from '@/context/DashboardContext';
-import { useGetProfileQuery }                 from '@/redux/features/apiSlice';
-import { setUser, logout }                    from '@/redux/features/authSlice';
-import Sidebar                                from '@/components/dashboard/Sidebar';
-import Header                                 from '@/components/dashboard/Header';
-import MobileNav                              from '@/components/dashboard/MobileNav';
-import Modal                                  from '@/components/dashboard/Modal';
-import Toast                                  from '@/components/dashboard/Toast';
+import { useEffect, Suspense }             from 'react';
+import { usePathname, useRouter }          from 'next/navigation';
+import { useDispatch, useSelector }        from 'react-redux';
+import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
+import { useGetMeQuery }                   from '@/redux/features/apiSlice';
+import { clearAuthCookies } from '@/lib/authCookies';
+import { setUser, logout }                 from '@/redux/features/authSlice';
+import Sidebar                             from '@/components/dashboard/Sidebar';
+import Header                              from '@/components/dashboard/Header';
+import MobileNav                           from '@/components/dashboard/MobileNav';
+import Modal                               from '@/components/dashboard/Modal';
+import Toast                               from '@/components/dashboard/Toast';
 
-// ── Inner layout — must be inside DashboardProvider to use useDashboard() ─────
+// ── Inner layout — must be inside DashboardProvider ───────────────────────────
 function DashboardInner({ children }) {
   const pathname = usePathname();
   const router   = useRouter();
   const dispatch = useDispatch();
 
-  // Read shared UI state from DashboardContext
   const { toastMsg, showToast, modal, closeModal } = useDashboard();
 
-  // Read auth state from Redux — used to check if user is logged in
+  // Read auth state — token needed to gate the profile query
   const { token, user } = useSelector((state) => state.auth);
 
-  // RTK Query — fetch the logged-in user's profile from GET /users/me
-  // skip: true means don't run the query if there's no token
-  const { data: profileData } = useGetProfileQuery(undefined, {
+  // GET /users/me — runs automatically when token exists
+  // skip prevents the query from running before the user is logged in
+  const { data: meData, isError: meError } = useGetMeQuery(undefined, {
     skip: !token,
   });
 
-//  from the API, save it to Redux state
-  // This populates user.name, user.role, user.wallet, etc. across all pages
+  // When profile data arrives, save it to Redux so all pages can read it
   useEffect(() => {
-    if (profileData?.data) {
-      dispatch(setUser(profileData.data));
+    if (meData?.data) {
+      dispatch(setUser(meData.data));
     }
-  }, [profileData, dispatch]);
+  }, [meData, dispatch]);
 
-  // Derive the active page segment from the URL path
-  // e.g. /dashboard/products → 'products', /dashboard → 'overview'
+  // Admins / super admins have their own interface
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      router.replace('/admin');
+    }
+  }, [user, router]);
+
+  // If the profile fetch returns 401, the token is invalid — force logout
+  useEffect(() => {
+    if (meError) {
+      dispatch(logout());
+      clearAuthCookies();
+      router.push('/login');
+    }
+  }, [meError, dispatch, router]);
+
+  // Derive active page from URL: /dashboard/products → 'products'
   const segment = pathname.split('/')[2] || 'overview';
 
-  // Navigate to a dashboard sub-page using the Next.js router
+  // Navigate to a dashboard sub-page
   function showPage(page) {
-    const path = page === 'overview' ? '/dashboard' : `/dashboard/${page}`;
-    router.push(path);
+    router.push(page === 'overview' ? '/dashboard' : `/dashboard/${page}`);
   }
 
-  // Sign the user out — clears Redux state, localStorage, and the cookie.
-  // NOTE: The backend has no /auth/logout endpoint currently, so we skip
-  // the server call and only clean up locally. Add the server call back
-  // once a logout endpoint is added to the backend.
-  async function handleLogout() {
+  // Clear all auth state and redirect to login
+  function handleLogout() {
     dispatch(logout());
-    // Remove the accessToken cookie used by Next.js middleware
-    document.cookie = 'accessToken=; path=/; max-age=0';
+    clearAuthCookies();
     router.push('/login');
   }
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[248px_minmax(0,1fr)] bg-[#f5f8f5]">
 
-      {/* Sidebar — desktop only, receives user data for the bottom user card */}
+      {/* Sidebar — desktop only */}
       <Sidebar
         activePage={segment}
         showPage={showPage}
@@ -90,9 +86,8 @@ function DashboardInner({ children }) {
         onLogout={handleLogout}
       />
 
-      {/* Main content area */}
       <main className="min-w-0">
-        {/* Header — receives user data for the avatar/name display */}
+        {/* Header — top bar with search, notifications, user avatar */}
         <Header
           showPage={showPage}
           showToast={showToast}
@@ -104,10 +99,10 @@ function DashboardInner({ children }) {
         </div>
       </main>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom navigation */}
       <MobileNav activePage={segment} showPage={showPage} />
 
-      {/* Shared modal — controlled via DashboardContext openModal/closeModal */}
+      {/* Shared modal — opened via DashboardContext.openModal() */}
       <Modal open={modal.open} tag={modal.tag} title={modal.title} onClose={closeModal}>
         {modal.body}
       </Modal>
@@ -118,11 +113,13 @@ function DashboardInner({ children }) {
   );
 }
 
-// ── Outer layout — provides context, then renders the inner layout ─────────────
+// ── Outer layout — provides DashboardContext ──────────────────────────────────
 export default function DashboardLayout({ children }) {
   return (
     <DashboardProvider>
-      <DashboardInner>{children}</DashboardInner>
+      <Suspense>
+        <DashboardInner>{children}</DashboardInner>
+      </Suspense>
     </DashboardProvider>
   );
 }

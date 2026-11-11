@@ -3,12 +3,10 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { ProductPurchaseServices } from './productPurchases.services';
 import AppError from '../../errors/AppError';
-import { UserModel } from '../users/user.model';
 
 const purchaseProduct = catchAsync(async (req, res) => {
-    // const userId = req.user?.userId;
-    const { userId } = req.body;
-    // const userId = await UserModel.findOne({_id: user});
+    // the buyer is ALWAYS the authenticated user — never a userId from the request body
+    const userId = req.user?.userId;
     if (!userId) throw new AppError(status.UNAUTHORIZED, 'Unauthorized');
 
     const { productId, paymentSource } = req.body;

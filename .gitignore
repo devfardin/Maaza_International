@@ -14,8 +14,8 @@ frontend/out/
 frontend/build/
 
 # Backend build
-Backend/dist/
-Backend/build/
+backend/dist/
+backend/build/
 
 # Environment variables
 .env

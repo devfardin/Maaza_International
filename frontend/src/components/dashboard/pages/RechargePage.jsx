@@ -1,148 +1,186 @@
 'use client';
+// src/components/dashboard/pages/RechargePage.jsx
+// Fetches active payment methods from GET /payment-methods.
+// Submits a deposit request via POST /deposit-requests/create-deposit-request.
+// Amount is in BDT (min 200). Backend stores in poisha internally.
+
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useGetPaymentMethodsQuery, useCreateDepositRequestMutation } from '@/redux/features/apiSlice';
 
-// Recharge page — user submits a payment to top up their wallet
-// Props:
-//   onSuccess(orderId, amount, method, txnId) — called after valid form submit
-//   prefillAmount — optional amount pre-filled from product purchase flow
+export default function RechargePage({ showPage, showToast }) {
+  const user   = useSelector((state) => state.auth.user);
+  const userId = user?._id;
 
-export default function RechargePage({ onSuccess, prefillAmount, showPage }) {
-  const [amount, setAmount]     = useState(prefillAmount || '');
-  const [method, setMethod]     = useState('bKash');   // selected payment method
-  const [sender, setSender]     = useState('');
-  const [txnId, setTxnId]       = useState('');
-  const [confirmed, setConfirmed] = useState(false);
-  const [error, setError]       = useState('');
+  const [amount, setAmount]           = useState('');
+  const [method, setMethod]           = useState('');
+  const [senderNumber, setSenderNumber] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [submitted, setSubmitted]     = useState(false);
 
-  // Merchant numbers — replace with real numbers before launch
-  const merchantNumbers = { bKash: '01XXX-XXXXXX', Nagad: '01YYY-YYYYYY' };
+  // GET /payment-methods — bKash, Nagad etc. with their account numbers
+  const { data: methodsData, isLoading: methodsLoading } = useGetPaymentMethodsQuery();
 
-  function copyMerchant() {
-    navigator.clipboard?.writeText(merchantNumbers[method]);
+  // POST /deposit-requests/create-deposit-request
+  const [createDeposit, { isLoading: submitting }] = useCreateDepositRequestMutation();
+
+  const paymentMethods = methodsData?.data ?? [];
+
+  // Handle deposit form submission
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!method) { showToast('Please select a payment method.'); return; }
+
+    try {
+      await createDeposit({
+        userId,
+        amount: Number(amount),   // BDT integer — backend validates min 200
+        methodCode: method,
+        senderNumber,
+        transactionId,
+        currency: 'BDT',
+      }).unwrap();
+
+      setSubmitted(true);
+      showToast('Deposit request submitted! Admin will approve within 24 hours.');
+    } catch (err) {
+      showToast(err?.data?.message || 'Failed to submit deposit request.');
+    }
   }
 
-  function handleSubmit() {
-    // Basic validation
-    if (Number(amount) < 100)          return setError('Enter an amount of at least ৳100.');
-    if (!/^01\d{9}$/.test(sender.replace(/[\s-]/g, ''))) return setError('Enter a valid 11-digit mobile number.');
-    if (txnId.trim().length < 5)       return setError('Enter the transaction ID from your receipt.');
-    if (!confirmed)                    return setError('Confirm your payment details first.');
-
-    setError('');
-    const orderId = 'RC-' + Date.now().toString().slice(-8);
-    onSuccess(orderId, amount, method, txnId.trim());
+  // Show success state after submission
+  if (submitted) {
+    return (
+      <div className="max-w-md mx-auto text-center py-16">
+        <div className="text-6xl mb-4">✅</div>
+        <p className="text-xs tracking-widest text-harvest-700 font-extrabold">REQUEST SUBMITTED</p>
+        <h2 className="text-2xl font-extrabold mt-2">Deposit request sent!</h2>
+        <p className="text-sm text-slate-500 mt-2 mb-6">
+          Your deposit of ৳{amount} is under review. Admin will approve within 24 hours.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => showPage('transactions')} className="border rounded-xl py-3 text-sm font-bold">View transactions</button>
+          <button onClick={() => { setSubmitted(false); setAmount(''); setTransactionId(''); setSenderNumber(''); }} className="rounded-xl bg-harvest-700 text-white py-3 text-sm font-bold">New request</button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Recharge wallet</h1>
-        <p className="text-sm text-slate-500 mt-1">Submit your payment information for review.</p>
+    <div className="max-w-lg mx-auto space-y-5">
+
+      {/* ── Header ── */}
+      <div>
+        <p className="text-xs tracking-widest font-extrabold text-harvest-700">RECHARGE WALLET</p>
+        <h1 className="text-xl font-extrabold mt-1">Add funds</h1>
+        <p className="text-sm text-slate-500 mt-1">Minimum deposit: ৳200</p>
       </div>
 
-      <div className="grid xl:grid-cols-[1fr_.8fr] gap-5">
-        {/* Left: form */}
-        <div className="bg-white border rounded-2xl p-5 sm:p-7">
-          <h2 className="font-extrabold text-lg">Recharge request</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Amount input */}
-          <div className="mt-5">
-            <label className="block text-sm font-bold mb-2">Recharge amount (৳)</label>
-            <input
-              type="number" min="100"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              className="w-full rounded-xl border px-4 py-3.5 outline-none focus:border-harvest-500"
-            />
-            {/* Quick amount buttons */}
-            <div className="grid grid-cols-4 gap-2 mt-3">
-              {[500, 1000, 2500, 5000].map(a => (
-                <button key={a} onClick={() => setAmount(a)} className="border rounded-xl py-3 text-sm font-bold">৳{a.toLocaleString()}</button>
-              ))}
-            </div>
-          </div>
+        {/* Amount input */}
+        <div>
+          <label className="block text-sm font-semibold mb-1.5">Amount (BDT)</label>
+          <input
+            type="number"
+            min="200"
+            required
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            placeholder="Enter amount (min ৳200)"
+            className="w-full rounded-xl border px-4 py-3.5 outline-none focus:border-harvest-500 text-sm"
+          />
+        </div>
 
-          {/* Payment method selector */}
-          <div className="mt-6">
-            <label className="block text-sm font-bold mb-2">Choose payment method</label>
-            <div className="grid grid-cols-2 gap-3">
-              {['bKash', 'Nagad'].map(m => (
+        {/* Quick amount buttons */}
+        <div className="flex gap-2 flex-wrap">
+          {[500, 1000, 1300, 2000, 5000].map(amt => (
+            <button
+              key={amt}
+              type="button"
+              onClick={() => setAmount(String(amt))}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${amount === String(amt) ? 'bg-harvest-700 text-white border-harvest-700' : 'bg-white'}`}
+            >
+              ৳{amt}
+            </button>
+          ))}
+        </div>
+
+        {/* Payment method selection */}
+        <div>
+          <label className="block text-sm font-semibold mb-1.5">Payment method</label>
+          {methodsLoading ? (
+            <div className="h-24 bg-slate-100 rounded-xl animate-pulse" />
+          ) : paymentMethods.length === 0 ? (
+            <p className="text-sm text-slate-400 p-4 border rounded-xl">No payment methods available.</p>
+          ) : (
+            <div className="space-y-2">
+              {paymentMethods.map(m => (
                 <button
-                  key={m}
-                  onClick={() => setMethod(m)}
-                  className={`border-2 rounded-2xl p-4 text-left ${method === m ? 'border-harvest-600 bg-harvest-50' : 'border-slate-200'}`}
+                  key={m._id}
+                  type="button"
+                  onClick={() => setMethod(m.methodCode || m.name)}
+                  className={`w-full border-2 rounded-2xl p-4 text-left flex items-center gap-3 ${method === (m.methodCode || m.name) ? 'border-harvest-600 bg-harvest-50' : 'border-slate-200'}`}
                 >
-                  <span className="text-2xl">{m === 'bKash' ? '📱' : '📲'}</span>
-                  <b className="block mt-2">{m}</b>
-                  <small className="text-xs text-slate-500">Mobile wallet</small>
+                  <div className="w-10 h-10 rounded-xl bg-white border grid place-items-center font-bold text-xs">
+                    {m.name?.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{m.name}</p>
+                    {/* Show the admin's account number so user knows where to send money */}
+                    <p className="text-xs text-slate-500">Send to: <b>{m.accountNumber || m.number || '—'}</b></p>
+                  </div>
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Payment instructions box */}
-          <div className="mt-5 rounded-2xl bg-slate-50 border p-4">
-            <div className="flex justify-between">
-              <b className="text-sm">Payment instructions</b>
-              <span className={`rounded-lg px-2 py-1 text-xs font-bold ${method === 'bKash' ? 'bg-pink-100 text-pink-700' : 'bg-orange-100 text-orange-700'}`}>{method}</span>
-            </div>
-            <p className="text-xs text-slate-500 leading-5 mt-2">Send the selected amount to the verified payment recipient. Confirm the recipient and amount before sending.</p>
-            <div className="flex items-center justify-between mt-3">
-              <div>
-                <small className="block text-xs text-slate-500">Merchant payment number</small>
-                <b className="text-base">{merchantNumbers[method]}</b>
-              </div>
-              <button onClick={copyMerchant} className="border bg-white rounded-lg px-3 py-2 text-xs font-bold">Copy</button>
-            </div>
-            {/* Reminder to replace placeholder before launch */}
-            <p className="text-xs text-amber-700 mt-3">Replace this placeholder with verified merchant details before launch.</p>
-          </div>
-
-          {/* Sender number + transaction ID */}
-          <div className="grid sm:grid-cols-2 gap-4 mt-5">
-            <div>
-              <label className="block text-sm font-bold mb-2">Your payment number</label>
-              <input value={sender} onChange={e => setSender(e.target.value)} placeholder="01XXXXXXXXX" className="w-full rounded-xl border px-3.5 py-3 text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-2">Transaction ID</label>
-              <input value={txnId} onChange={e => setTxnId(e.target.value)} placeholder="Enter transaction ID" className="w-full rounded-xl border px-3.5 py-3 text-sm" />
-            </div>
-          </div>
-
-          {/* Confirmation checkbox */}
-          <label className="flex gap-3 items-start mt-5 text-sm text-slate-600">
-            <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="mt-1" />
-            <span>I confirm these payment details are accurate. My request will remain pending until reviewed.</span>
-          </label>
-
-          {/* Error message */}
-          {error && <p className="text-sm text-rose-600 mt-3">{error}</p>}
-
-          <button onClick={handleSubmit} className="mt-5 w-full rounded-xl bg-harvest-700 text-white py-4 text-sm font-extrabold">
-            Submit recharge request →
-          </button>
+          )}
         </div>
 
-        {/* Right: balance card + tips */}
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-harvest-900 to-harvest-600 text-white rounded-2xl p-6">
-            <p className="text-sm text-white/70">Recharge wallet balance</p>
-            <b className="block text-3xl mt-2">৳ 2,450.00</b>
-            <button onClick={() => showPage('transactions')} className="mt-4 bg-white/15 rounded-xl px-4 py-3 text-sm font-bold">View wallet activity →</button>
-          </div>
-          <div className="bg-white border rounded-2xl p-5">
-            <h3 className="font-extrabold">Before you submit</h3>
-            <ul className="text-sm text-slate-500 leading-6 list-disc pl-4 mt-3">
-              <li>Check payment method and amount.</li>
-              <li>Enter the transaction ID accurately.</li>
-              <li>Never share your PIN or OTP.</li>
-              <li>Keep the receipt until the request is reviewed.</li>
-            </ul>
-          </div>
+        {/* Sender number */}
+        <div>
+          <label className="block text-sm font-semibold mb-1.5">Your sender number</label>
+          <input
+            type="tel"
+            required
+            value={senderNumber}
+            onChange={e => setSenderNumber(e.target.value)}
+            placeholder="01XXXXXXXXX"
+            className="w-full rounded-xl border px-4 py-3.5 outline-none focus:border-harvest-500 text-sm"
+          />
         </div>
-      </div>
+
+        {/* Transaction ID */}
+        <div>
+          <label className="block text-sm font-semibold mb-1.5">Transaction ID</label>
+          <input
+            type="text"
+            required
+            value={transactionId}
+            onChange={e => setTransactionId(e.target.value)}
+            placeholder="Enter the transaction ID from your payment"
+            className="w-full rounded-xl border px-4 py-3.5 outline-none focus:border-harvest-500 text-sm"
+          />
+        </div>
+
+        {/* Info box */}
+        <div className="bg-gradient-to-br from-harvest-900 to-harvest-600 text-white rounded-2xl p-5 text-sm">
+          <p className="font-extrabold mb-2">How to recharge</p>
+          <ol className="space-y-1 text-white/80 text-xs list-decimal list-inside">
+            <li>Select a payment method above</li>
+            <li>Send the amount to the account number shown</li>
+            <li>Enter your sender number and the transaction ID</li>
+            <li>Submit — admin will approve within 24 hours</li>
+          </ol>
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-xl bg-harvest-700 text-white py-4 text-sm font-extrabold disabled:opacity-60"
+        >
+          {submitting ? 'Submitting…' : 'Submit deposit request →'}
+        </button>
+      </form>
     </div>
   );
 }

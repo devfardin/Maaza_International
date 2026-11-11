@@ -11,7 +11,7 @@ const depositRequestSchema = new Schema<TDepositRequest>(
         amount: {
             type: Number,
             required: [true, "Amount is required"],
-            min: [200, "Amount must be at least 200 BDT"],
+            min: [20000, "Amount must be at least 200 BDT"], // stored in poisha
         },
         currency: {
             type: String,

@@ -1,144 +1,195 @@
 'use client';
+// src/components/dashboard/pages/OverviewPage.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard home — shows wallet balances, recent purchases, quick actions.
+// All data is fetched from the real backend via RTK Query hooks.
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Overview page — the main dashboard home screen
-// Shows wallet balance, stats, quick action cards, product list and task list
+import { useSelector } from 'react-redux';
+import { useGetMyWalletsQuery, useGetMyPurchasesQuery, useGetUserTransactionsQuery } from '@/redux/features/apiSlice';
 
-export default function OverviewPage({ showPage, openTask }) {
+export default function OverviewPage({ showPage }) {
+  // Get userId from Redux — needed for wallet and transaction queries
+  const user   = useSelector((state) => state.auth.user);
+  const userId = user?._id;
+
+  // Fetch wallet balances — GET /wallets/:userId
+  const { data: walletData, isLoading: walletLoading } = useGetMyWalletsQuery(userId, {
+    skip: !userId,
+  });
+
+  // Fetch user's purchases — GET /product-purchases/my-purchases
+  const { data: purchasesData, isLoading: purchasesLoading } = useGetMyPurchasesQuery();
+
+  // Fetch recent transactions — GET /transactions/user/:userId
+  const { data: txData, isLoading: txLoading } = useGetUserTransactionsQuery(userId, {
+    skip: !userId,
+  });
+
+  // Extract wallet balances — backend stores in poisha, formattedBalance is in BDT
+  const rechargeBalance = walletData?.data?.rechargeWallet?.formattedBalance ?? '0.00';
+  const balanceAmount   = walletData?.data?.balanceWallet?.formattedBalance   ?? '0.00';
+
+  // Get the 3 most recent purchases for the quick list
+  const recentPurchases = purchasesData?.data?.slice(0, 3) ?? [];
+
+  // Get the 5 most recent transactions
+  const recentTx = txData?.data?.slice(0, 5) ?? [];
+
+  // Quick action cards — each navigates to a dashboard sub-page
+  const quickActions = [
+    { page: 'recharge',      icon: '＋', label: 'Recharge wallet',   sub: 'Add funds to your wallet',    cta: 'Recharge now →' },
+    { page: 'products',      icon: '▦', label: 'Browse products',    sub: 'Explore available products',  cta: 'View products →' },
+    { page: 'tasks',         icon: '✧', label: 'Task bonuses',       sub: 'Complete tasks, earn rewards', cta: 'View tasks →' },
+    { page: 'referrals',     icon: '♧', label: 'Referral center',    sub: 'Invite friends, earn bonuses', cta: 'Invite now →' },
+  ];
+
   return (
-    <div>
-      {/* Page heading + action buttons */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div className="space-y-5">
+
+      {/* ── Welcome header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] sm:text-xs tracking-widest font-extrabold text-harvest-700">MEMBER DASHBOARD</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-2">Welcome back, Fardin 👋</h1>
-          <p className="text-sm sm:text-base text-slate-500 mt-1.5">Here's your wallet, products and latest account activity.</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold mt-1">
+            Welcome back, {user?.fullName?.split(' ')[0] || 'Member'} 👋
+          </h1>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => showPage('recharge')} className="flex-1 sm:flex-none rounded-xl bg-harvest-700 text-white px-5 py-3 text-sm font-bold">＋ Recharge wallet</button>
-          <button onClick={() => showPage('withdraw')} className="flex-1 sm:flex-none rounded-xl border bg-white px-5 py-3 text-sm font-bold">↗ Withdraw</button>
-        </div>
+        <button
+          onClick={() => showPage('recharge')}
+          className="flex-1 sm:flex-none rounded-xl bg-harvest-700 text-white px-5 py-3 text-sm font-bold"
+        >
+          ＋ Recharge wallet
+        </button>
       </div>
 
-      {/* Wallet balance card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-5 sm:p-8 mb-5 shadow-soft">
-        {/* Decorative circle */}
-        <div className="absolute -right-8 -top-16 w-56 h-56 border border-white/10 rounded-full" />
-        <div className="relative grid md:grid-cols-[1.2fr_.8fr] gap-5 items-center">
+      {/* ── Wallet balance card ── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-5 sm:p-8 shadow-soft">
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5" />
+        <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
+        <div className="relative z-10 grid sm:grid-cols-2 gap-6">
+          {/* Recharge wallet */}
           <div>
-            <p className="text-xs font-bold tracking-widest text-lime-200">YOUR RECHARGE WALLET</p>
-            <p className="text-sm text-white/75 mt-3">Wallet balance</p>
-            <div className="flex items-end gap-3 mt-1">
-              <h2 className="text-3xl sm:text-4xl font-extrabold">৳ 2,450.00</h2>
-              <span className="mb-1 rounded-lg bg-white/15 px-2 py-1 text-xs">BDT</span>
-            </div>
-            <p className="text-sm text-white/75 mt-3 max-w-md leading-6">Manage wallet activity, review requests and keep your account information in one place.</p>
-            <div className="flex flex-wrap gap-2 mt-5">
-              <button onClick={() => showPage('recharge')} className="rounded-xl bg-lime-300 text-harvest-900 px-4 py-3 text-sm font-extrabold">＋ Recharge now</button>
-              <button onClick={() => showPage('transactions')} className="rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm font-bold">View transactions →</button>
-            </div>
+            <p className="text-xs text-white/60 mb-1">Recharge wallet</p>
+            {walletLoading
+              ? <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse" />
+              : <p className="text-3xl font-extrabold">৳{rechargeBalance}</p>
+            }
+            <p className="text-xs text-white/50 mt-1">Available for product purchase</p>
           </div>
-          {/* Decorative plant icon — desktop only */}
-          <div className="hidden md:flex justify-center">
-            <div className="w-40 h-40 rounded-full bg-gradient-to-br from-lime-200 to-emerald-400 shadow-2xl grid place-items-center text-7xl">🌱</div>
+          {/* Balance wallet */}
+          <div>
+            <p className="text-xs text-white/60 mb-1">Balance wallet</p>
+            {walletLoading
+              ? <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse" />
+              : <p className="text-3xl font-extrabold">৳{balanceAmount}</p>
+            }
+            <p className="text-xs text-white/50 mt-1">Earnings & commissions</p>
           </div>
+        </div>
+        <div className="relative z-10 flex gap-3 mt-6">
+          <button onClick={() => showPage('recharge')} className="rounded-xl bg-lime-300 text-harvest-900 px-4 py-3 text-sm font-extrabold">
+            ＋ Recharge now
+          </button>
+          <button onClick={() => showPage('withdraw')} className="rounded-xl bg-white/10 text-white px-4 py-3 text-sm font-bold border border-white/20">
+            ↗ Withdraw
+          </button>
         </div>
       </div>
 
-      {/* 4 stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        {[
-          { label: 'Available rewards',   value: '৳ 186.00',  sub: 'Eligible reward balance' },
-          { label: 'Purchased products',  value: '03',        sub: 'Current products' },
-          { label: 'Task bonuses',        value: '৳ 50.00',   sub: 'Rewards credited' },
-          { label: 'Referral bonus',      value: '৳ 120.00',  sub: 'Qualified referrals' },
-        ].map(({ label, value, sub }) => (
-          <div key={label} className="bg-white border rounded-2xl p-4 sm:p-5">
-            <p className="text-xs text-slate-500">{label}</p>
-            <b className="block text-xl sm:text-2xl mt-3">{value}</b>
-            <small className="text-xs text-slate-500">{sub}</small>
-          </div>
+      {/* ── Membership level badge ── */}
+      <div className="rounded-2xl bg-white border p-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-harvest-50 grid place-items-center text-2xl font-extrabold text-harvest-700">
+          {user?.membershipLevel ?? 1}
+        </div>
+        <div className="flex-1">
+          <p className="font-extrabold text-sm">Level {user?.membershipLevel ?? 1} Member</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {user?.membershipLevel >= 2
+              ? 'You have unlocked higher-tier products'
+              : 'Refer 5 valid members + deposit ৳1,300 to reach Level 2'}
+          </p>
+        </div>
+        <button onClick={() => showPage('referrals')} className="text-xs font-bold text-harvest-700 whitespace-nowrap">
+          View referrals →
+        </button>
+      </div>
+
+      {/* ── Quick action cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {quickActions.map(({ page, icon, label, sub, cta }) => (
+          <button
+            key={page}
+            onClick={() => showPage(page)}
+            className="bg-white border rounded-2xl p-4 text-left hover:border-harvest-300 hover:shadow-soft transition-all"
+          >
+            <span className="w-11 h-11 rounded-2xl bg-harvest-700 text-white grid place-items-center text-xl mb-3">{icon}</span>
+            <b className="block text-sm">{label}</b>
+            <p className="text-xs text-slate-500 mt-1">{sub}</p>
+            <span className="block mt-3 text-harvest-700 text-xs font-extrabold">{cta}</span>
+          </button>
         ))}
       </div>
 
-      {/* Quick action cards */}
-      <div className="mb-6">
-        <h2 className="text-lg sm:text-xl font-extrabold">Quick actions</h2>
-        <p className="text-sm text-slate-500 mt-1 mb-3">Your most-used account tools, right at your fingertips.</p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { page: 'recharge',  icon: '＋', color: 'harvest', bg: 'harvest', label: 'Recharge wallet',  sub: 'Add funds to your wallet',    cta: 'Recharge now →' },
-            { page: 'withdraw',  icon: '↗',  color: 'amber',   bg: 'amber',   label: 'Withdraw earnings', sub: 'Request an eligible payout', cta: 'Withdraw →' },
-            { page: 'purchased', icon: '▣',  color: 'sky',     bg: 'sky',     label: 'My products',      sub: 'View purchased items',        cta: 'View products →' },
-            { page: 'tasks',     icon: '✧',  color: 'violet',  bg: 'violet',  label: 'Task bonuses',     sub: 'Explore available tasks',     cta: 'See tasks →' },
-          ].map(({ page, icon, label, sub, cta }) => (
-            <button key={page} onClick={() => showPage(page)} className="text-left rounded-2xl border-2 border-slate-100 bg-white p-4 sm:p-5 hover:border-slate-300">
-              <span className="w-11 h-11 rounded-2xl bg-harvest-700 text-white grid place-items-center text-xl">{icon}</span>
-              <b className="block mt-3 text-sm sm:text-base">{label}</b>
-              <span className="block text-xs text-slate-500 mt-1">{sub}</span>
-              <span className="block mt-3 text-harvest-700 text-xs font-extrabold">{cta}</span>
-            </button>
-          ))}
+      {/* ── Recent purchases ── */}
+      <div className="bg-white border rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <b className="text-sm">Active products</b>
+          <button onClick={() => showPage('purchased')} className="text-harvest-700 text-xs font-extrabold">View all →</button>
         </div>
-      </div>
-
-      {/* Bottom two-column: products preview + task preview */}
-      <div className="grid xl:grid-cols-[1.2fr_.8fr] gap-4">
-
-        {/* Purchased products preview */}
-        <div className="bg-white border rounded-2xl p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h2 className="font-extrabold">My purchased products</h2>
-              <p className="text-xs text-slate-500 mt-1">Your current products.</p>
-            </div>
-            <button onClick={() => showPage('purchased')} className="text-harvest-700 text-xs font-extrabold">View all →</button>
+        {purchasesLoading ? (
+          <div className="space-y-3">
+            {[1,2].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
           </div>
-          {[
-            { emoji: '🌿', bg: 'bg-harvest-50', name: 'Maaza Green P1',   date: 'Purchased 20 Oct 2026', price: '৳ 1,000' },
-            { emoji: '🌾', bg: 'bg-amber-50',   name: 'Maaza Supply P2',  date: 'Purchased 12 Oct 2026', price: '৳ 2,500' },
-            { emoji: '🍎', bg: 'bg-sky-50',     name: 'Fresh Market P1',   date: 'Purchased 04 Oct 2026', price: '৳ 800' },
-          ].map(({ emoji, bg, name, date, price }, i, arr) => (
-            <div key={name} className={`flex items-center gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`}>
-              <div className={`w-12 h-12 rounded-xl ${bg} grid place-items-center text-2xl`}>{emoji}</div>
-              <div className="flex-1">
-                <b className="text-sm block">{name}</b>
-                <span className="text-xs text-slate-500">{date}</span>
-              </div>
-              <div className="text-right">
-                <b className="text-sm block">{price}</b>
-                <span className="text-xs text-emerald-700 font-bold">Active</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Task bonus preview */}
-        <div className="bg-white border rounded-2xl p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h2 className="font-extrabold">Task bonus</h2>
-              <p className="text-xs text-slate-500 mt-1">Available tasks and rewards.</p>
-            </div>
-            <button onClick={() => showPage('tasks')} className="text-harvest-700 text-xs font-extrabold">All tasks →</button>
-          </div>
-          {[
-            { emoji: '📣', bg: 'bg-violet-50', name: 'Share our announcement', desc: 'Help others discover community updates.', reward: '৳ 20 reward' },
-            { emoji: '📝', bg: 'bg-amber-50',  name: 'Complete your profile',  desc: 'Keep account information up to date.',   reward: '৳ 30 reward' },
-          ].map(({ emoji, bg, name, desc, reward }, i, arr) => (
-            <div key={name} className={`flex gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`}>
-              <div className={`w-14 h-14 rounded-xl ${bg} grid place-items-center text-2xl shrink-0`}>{emoji}</div>
-              <div className="flex-1">
-                <b className="text-sm">{name}</b>
-                <p className="text-xs text-slate-500 mt-1">{desc}</p>
-                <div className="flex justify-between mt-2">
-                  <b className="text-xs text-harvest-700">{reward}</b>
-                  <button onClick={() => openTask(name)} className="text-xs font-bold underline">Details</button>
+        ) : recentPurchases.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-6">No active products yet. <button onClick={() => showPage('products')} className="text-harvest-700 font-bold">Browse products →</button></p>
+        ) : (
+          <div className="space-y-3">
+            {recentPurchases.map((p) => (
+              <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                <div className="w-10 h-10 rounded-xl bg-harvest-50 grid place-items-center text-xl">🌿</div>
+                <div className="flex-1 min-w-0">
+                  <b className="text-xs block truncate">{p.productName}</b>
+                  <p className="text-[10px] text-slate-500">Daily income: ৳{(p.dailyIncome / 100).toFixed(2)}</p>
                 </div>
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${p.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                  {p.status}
+                </span>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* ── Recent transactions ── */}
+      <div className="bg-white border rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <b className="text-sm">Recent transactions</b>
+          <button onClick={() => showPage('transactions')} className="text-harvest-700 text-xs font-extrabold">All transactions →</button>
+        </div>
+        {txLoading ? (
+          <div className="space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-10 bg-slate-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : recentTx.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-6">No transactions yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentTx.map((tx) => (
+              <div key={tx._id} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div>
+                  <p className="text-xs font-semibold capitalize">{tx.type.replace(/_/g, ' ')}</p>
+                  <p className="text-[10px] text-slate-400">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className={`text-sm font-extrabold ${tx.flow === 'credit' ? 'text-green-600' : 'text-rose-500'}`}>
+                  {tx.flow === 'credit' ? '+' : '-'}৳{(tx.amount / 100).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

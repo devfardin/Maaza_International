@@ -1,123 +1,186 @@
 import status from 'http-status';
-import AppError from '../../errors/AppError';
-import { Tuser } from "./user.interface";
-import { UserModel } from "./user.model";
-import { generateUniqueReferralCode } from "./user.utils";
 import mongoose from 'mongoose';
-import { WalletServices } from '../wallets/wallet.services';
-import { sendEmail } from '../../utils/sendEmail';
+import AppError from '../../errors/AppError';
 import config from '../../config';
+import { sendEmail } from '../../utils/sendEmail';
+import { TClientInfo } from '../../utils/clientInfo';
+import { ActivityLogServices } from '../activityLogs/activityLog.services';
+import { ReferralServices } from '../referrals/referral.services';
+import { WalletServices } from '../wallets/wallet.services';
+import { Tuser, TUserRole } from './user.interface';
+import { UserModel } from './user.model';
+import { generateUniqueReferralCode } from './user.utils';
 
-const createUser = async (payload: Tuser) => {
+type TRegisterPayload = Pick<Tuser, 'fullName' | 'email' | 'phone' | 'passwordHash'> & {
+    referredBy?: string; // referral CODE
+};
+
+// Shared by public registration (role = user) and super_admin → create admin
+const registerAccount = async (
+    payload: TRegisterPayload,
+    role: TUserRole,
+    clientInfo?: TClientInfo
+) => {
     const session = await mongoose.startSession();
+    let created;
 
     try {
         session.startTransaction();
 
-        const userExist = await UserModel.findOne({ $or: [{ email: payload.email }, { phone: payload.phone }] });
-
+        const userExist = await UserModel.findOne({
+            $or: [{ email: payload.email }, { phone: payload.phone }],
+        }).session(session);
         if (userExist) {
             throw new AppError(status.CONFLICT, 'User already exists with this email or phone number');
         }
 
-        // generate unique referral code
-        const referralCode = await generateUniqueReferralCode(payload.phone);
-
-        // create user inside the session
-        const result = await UserModel.create([{ ...payload, referralCode }], { session });
-        if (!result.length) {
-            throw new AppError(status.INTERNAL_SERVER_ERROR, 'Failed to create user');
+        // resolve referral code → inviter (public registration only)
+        let referredBy: mongoose.Types.ObjectId | undefined;
+        if (payload.referredBy && role === 'user') {
+            const referrer = await UserModel.findOne({
+                referralCode: payload.referredBy,
+                isDeleted: false,
+            }).session(session);
+            if (!referrer) {
+                throw new AppError(status.BAD_REQUEST, 'Invalid referral code');
+            }
+            referredBy = referrer._id;
         }
 
-        // Welcome email with CTA
-        await sendEmail({
-            to: result[0]?.email,
-            subject: 'Welcome to Maaza International!',
-            heading: `Welcome, ${result[0].fullName}!`,
-            subheading: 'Your account has been created successfully.',
-            body: `<p>You can now log in and start exploring products, earning daily income, and inviting friends.</p>`,
-            button: { label: 'Go to Dashboard', url: `${config.frontend_url}/dashboard` },
-        });
+        const referralCode = await generateUniqueReferralCode(payload.phone);
 
-        // create both recharge and balance wallets for the new user
-        await WalletServices.createWalletsForUser(result[0]._id, session);
+        // role / status / membershipLevel are set by the SERVER, never by the client
+        const result = await UserModel.create(
+            [{
+                fullName: payload.fullName,
+                email: payload.email,
+                phone: payload.phone,
+                passwordHash: payload.passwordHash,
+                referralCode,
+                referredBy,
+                role,
+                status: 'active',
+                membershipLevel: 1,
+            }],
+            { session }
+        );
+        created = result[0];
+
+        // track the referral relationship (invalid until the invitee deposits + buys)
+        if (referredBy) {
+            await ReferralServices.createReferral(referredBy, created._id, session);
+        }
+
+        // wallets are only needed for normal users
+        if (role === 'user') {
+            await WalletServices.createWalletsForUser(created._id, session);
+        }
 
         await session.commitTransaction();
-        return result[0];
-
     } catch (error) {
         await session.abortTransaction();
-        // re-throw so the global error handler formats and returns the correct response
         throw error;
     } finally {
-        // always close the session whether it succeeded or failed
         await session.endSession();
     }
-};
-const getMe = async (userId: string, role: string) => {
 
-    const result = await UserModel.findOne({ _id: userId, role }).select('-passwordHash').populate('referredBy');
-    return result;
-}
+    // Side effects AFTER the commit: they must not roll back / fail a registration
+    if (clientInfo) {
+        await ActivityLogServices.record('register', clientInfo, { userId: created._id, phone: created.phone });
+    }
+    sendEmail({
+        to: created.email,
+        subject: 'Welcome to Maaza International!',
+        heading: `Welcome, ${created.fullName}!`,
+        subheading: 'Your account has been created successfully.',
+        body: `<p>You can now log in and start exploring products, earning daily income, and inviting friends.</p>`,
+        button: { label: 'Go to Dashboard', url: `${config.frontend_url}/dashboard` },
+    }).catch((err) => console.error('Welcome email failed', err));
+
+    return created;
+};
+
+const createUser = (payload: TRegisterPayload, clientInfo?: TClientInfo) =>
+    registerAccount(payload, 'user', clientInfo);
+
+const createAdmin = (payload: TRegisterPayload, clientInfo?: TClientInfo) =>
+    registerAccount({ ...payload, referredBy: undefined }, 'admin', clientInfo);
+
+const getMe = async (userId: string) => {
+    return UserModel.findOne({ _id: userId, isDeleted: false })
+        .select('-passwordHash')
+        .populate('referredBy', 'fullName phone referralCode');
+};
 
 const getAllUsers = async () => {
-    const result = await UserModel.find();
-    return result;
-}
+    return UserModel.find({ isDeleted: false }).select('-passwordHash').sort({ createdAt: -1 });
+};
 
 const getSingleUser = async (id: string) => {
-    const result = await UserModel.findById(id);
-    return result;
-}
+    return UserModel.findById(id).select('-passwordHash').populate('referredBy', 'fullName phone referralCode');
+};
 
-const updateUser = async (id: string, payload: Partial<Tuser>) => {
-    const isUserExists = await UserModel.findById(id);
-    if (!isUserExists) {
+// Who may modify whom:
+//  - nobody can modify themselves through the admin endpoints
+//  - nobody can modify a super_admin
+//  - only a super_admin can modify an admin
+const assertCanManage = (actor: { userId: string; role: string }, target: { _id: unknown; role: string }) => {
+    if (String(target._id) === actor.userId) {
+        throw new AppError(status.FORBIDDEN, 'You cannot perform this action on your own account');
+    }
+    if (target.role === 'super_admin') {
+        throw new AppError(status.FORBIDDEN, 'You do not have permission to modify a super admin');
+    }
+    if (target.role === 'admin' && actor.role !== 'super_admin') {
+        throw new AppError(status.FORBIDDEN, 'Only a super admin can modify an admin');
+    }
+};
+
+const updateUser = async (
+    actor: { userId: string; role: string },
+    id: string,
+    payload: Partial<Pick<Tuser, 'fullName' | 'email' | 'phone' | 'avatar' | 'membershipLevel' | 'role'>>
+) => {
+    const target = await UserModel.findById(id);
+    if (!target || target.isDeleted) {
         throw new AppError(status.NOT_FOUND, 'User not found');
     }
-    const result = await UserModel.findByIdAndUpdate(id, payload, { new: true });
-    return result;
-}
+    assertCanManage(actor, target);
 
-const deleteUser = async (id: string) => {
-    const isUserExists = await UserModel.findById(id);
-    if (!isUserExists) {
+    if (payload.role !== undefined && actor.role !== 'super_admin') {
+        throw new AppError(status.FORBIDDEN, 'Only a super admin can change roles');
+    }
+
+    return UserModel.findByIdAndUpdate(id, payload, { new: true, runValidators: true }).select('-passwordHash');
+};
+
+const deleteUser = async (actor: { userId: string; role: string }, id: string) => {
+    const target = await UserModel.findById(id);
+    if (!target || target.isDeleted) {
         throw new AppError(status.NOT_FOUND, 'User not found');
     }
-    const result = await UserModel.findByIdAndUpdate(
-        id,
-        { isDeleted: true },
-        { new: true, runValidators: true }
-    );
-    if (!result) {
-        throw new AppError(status.BAD_REQUEST, 'Failed to delete user');
-    }
-    return result;
-}
+    assertCanManage(actor, target);
 
-const changeUserStatus = async (id: string, payload: string) => {
-    const isUserExists = await UserModel.findById(id);
-    if (!isUserExists) {
+    return UserModel.findByIdAndUpdate(id, { isDeleted: true, status: 'blocked' }, { new: true }).select('-passwordHash');
+};
+
+const changeUserStatus = async (actor: { userId: string; role: string }, id: string, newStatus: string) => {
+    const target = await UserModel.findById(id);
+    if (!target || target.isDeleted) {
         throw new AppError(status.NOT_FOUND, 'User not found');
     }
-    if (isUserExists.role === 'super_admin') {
-        throw new AppError(status.FORBIDDEN, 'You do not have permission to change the status of a super admin');
-    }
-    const result = await UserModel.findByIdAndUpdate(
-        id,
-        { status: payload },
-        { new: true, runValidators: true }
-    );
-    return result;
-}
+    assertCanManage(actor, target);
 
+    return UserModel.findByIdAndUpdate(id, { status: newStatus }, { new: true, runValidators: true }).select('-passwordHash');
+};
 
 export const UserServices = {
     createUser,
+    createAdmin,
     getMe,
     getAllUsers,
     getSingleUser,
     updateUser,
     deleteUser,
     changeUserStatus,
-}
+};

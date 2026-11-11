@@ -33,10 +33,15 @@ const createPaymentAccount = async (payload: TPaymentAccounts) => {
 }
 
     // create account if not exist
-    const result = await PaymentAccountsModel.create(payload);
+    const result = await PaymentAccountsModel.create({ ...payload, status: 'pending', verifiedAt: null });
     return result;
 }
 
+const getMyPaymentAccounts = async (userId: string) => {
+    return await PaymentAccountsModel.find({ userId }).sort({ createdAt: -1 });
+};
+
 export const PaymentAccountsServices = {
-    createPaymentAccount
+    createPaymentAccount,
+    getMyPaymentAccounts,
 }

@@ -8,8 +8,6 @@ const createCategoryValidation = z.object({
         isFeatured: z.boolean().default(false),
         sortOrder: z.number().int("Sort order must be a whole number").default(0),
         status: z.enum(["active", "inactive"]).default("active"),
-        productCount: z.number().int("Product count must be a whole number").default(0),
-        isDeleted: z.boolean().default(false),
     }),
 });
 export const categoryValidation = {

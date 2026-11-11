@@ -97,6 +97,12 @@ const productSchema = new Schema<TProduct>({
         required: [true, "Product points are required"],
         default: 0,
     },
+    quantity: {
+        type: Number,
+        required: [true, "Stock quantity is required"],
+        min: [0, "Quantity cannot be negative"],
+        default: 0,
+    },
     rewardPlan: {
         type: productRewardSchema,
         required: [true, "Reward plan is required"],
@@ -108,9 +114,8 @@ const productSchema = new Schema<TProduct>({
     teamCommissions: {
         type: [teamCommissionSchema],
         default: [
-            { level: "B", rate: 0.10, basis: "purchase-price" },
-            { level: "C", rate: 0.05, basis: "purchase-price" },
-            { level: "D", rate: 0.02, basis: "purchase-price" },
+            { level: "B", rate: 0.10, basis: "daily-income" },
+            { level: "C", rate: 0.05, basis: "daily-income" },
         ],
     },
     purchaseRules: {

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.join((process.cwd(), '.env')) });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 export default {
   NODE_ENV: process.env.NODE_ENV,
@@ -15,6 +15,10 @@ export default {
   smtp_user: process.env.SMTP_USER,
   smtp_pass: process.env.SMTP_PASS,
   frontend_url: process.env.FRONTEND_URL,
+  cors_origins: (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
   cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
   cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,

@@ -1,8 +1,6 @@
 'use client';
-import NewsPage from "@/components/dashboard/pages/NewsPage";
-import { useProductModal } from "@/hooks/useDashboardModals";
+import NewsPage from '@/components/dashboard/pages/NewsPage';
 
 export default function Page() {
-  const openProduct = useProductModal();
-  return <NewsPage openProduct={openProduct} />;
+  return <NewsPage />;
 }

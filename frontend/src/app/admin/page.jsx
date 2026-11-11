@@ -1,142 +1,122 @@
-// src/app/admin/page.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN DASHBOARD PAGE
-//
-// IMPORTANT: Next.js does NOT pass custom props from layout.jsx to page.jsx.
-// So we cannot receive `userPermissions` as a prop here.
-//
-// For now, permissions are re-declared here matching layout.jsx.
-// TODO: When you add real auth, fetch permissions from a shared context,
-// a cookie, or a server-side session instead of hardcoding them.
-// ─────────────────────────────────────────────────────────────────────────────
-
-import { hasPermission } from '@/lib/adminPermissions';
-
-// ── Permissions for this page ─────────────────────────────────────────────────
-// Keep this in sync with mockAdminUser.permissions in layout.jsx
-// TODO: Replace with real auth data
-const userPermissions = [
-  'DASHBOARD_VIEW',
-  'USER_VIEW',
-  'USER_EDIT',
-  'PRODUCT_VIEW',
-  'PRODUCT_EDIT',
-  'PRODUCT_CREATE',
-  'TRANSACTION_VIEW',
-  'TRANSACTION_APPROVE',
-  'REPORT_VIEW',
-  'SETTINGS_VIEW',
-];
+'use client';
+import { useSelector } from 'react-redux';
+import {
+  useGetAllUsersQuery,
+  useGetAllTransactionsQuery,
+  useGetAllDepositRequestsQuery,
+} from '@/redux/features/apiSlice';
+import Link from 'next/link';
 
 export default function AdminDashboardPage() {
-  // Derive booleans from the permissions array — easier to read in JSX
-  const canViewUsers        = hasPermission(userPermissions, 'USER_VIEW');
-  const canViewProducts     = hasPermission(userPermissions, 'PRODUCT_VIEW');
-  const canViewTransactions = hasPermission(userPermissions, 'TRANSACTION_VIEW');
-  const canViewReports      = hasPermission(userPermissions, 'REPORT_VIEW');
-  const canApprove          = hasPermission(userPermissions, 'TRANSACTION_APPROVE');
+  const user = useSelector((s) => s.auth.user);
+
+  const { data: usersData,    isLoading: usersLoading }    = useGetAllUsersQuery();
+  const { data: txData,       isLoading: txLoading }       = useGetAllTransactionsQuery();
+  const { data: depositData,  isLoading: depositLoading }  = useGetAllDepositRequestsQuery();
+
+  const users    = usersData?.data    || [];
+  const txs      = txData?.data       || [];
+  const deposits = depositData?.data  || [];
+
+  const activeUsers   = users.filter((u) => u.status === 'active').length;
+  const pendingDeposits = deposits.filter((d) => d.status === 'pending').length;
+  const totalDeposited  = deposits
+    .filter((d) => d.status === 'approved')
+    .reduce((sum, d) => sum + (d.amount || 0), 0);
+
+  const stats = [
+    { icon: '👥', label: 'Total Users',        value: usersLoading   ? '…' : users.length,      sub: `${activeUsers} active`,          color: 'bg-blue-50 text-blue-700'    },
+    { icon: '💰', label: 'Total Transactions',  value: txLoading      ? '…' : txs.length,        sub: 'all time',                       color: 'bg-emerald-50 text-emerald-700' },
+    { icon: '⏳', label: 'Pending Deposits',    value: depositLoading ? '…' : pendingDeposits,   sub: 'awaiting approval',              color: 'bg-amber-50 text-amber-700'  },
+    { icon: '✅', label: 'Total Deposited',     value: depositLoading ? '…' : `৳${(totalDeposited/100).toLocaleString()}`, sub: 'approved deposits', color: 'bg-violet-50 text-violet-700' },
+  ];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-extrabold">Admin Dashboard</h1>
-        <p className="text-slate-500 mt-1">Overview of platform activity and management tools</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-extrabold">Admin Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.fullName}. Here&apos;s what&apos;s happening.</p>
       </div>
 
-      {/* ── Stats cards ─────────────────────────────────────────────────────── */}
-      {/* Each card only renders if the user has the matching permission */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {canViewUsers && (
-          <div className="bg-white border rounded-2xl p-5">
-            <div className="text-2xl mb-2">👥</div>
-            <p className="text-xs text-slate-500">Total Users</p>
-            <b className="block text-2xl mt-2">1,234</b>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <div key={s.label} className="bg-white border rounded-2xl p-5">
+            <div className={`w-10 h-10 rounded-xl grid place-items-center text-xl mb-3 ${s.color}`}>{s.icon}</div>
+            <p className="text-xs text-slate-500">{s.label}</p>
+            <p className="text-2xl font-extrabold mt-1">{s.value}</p>
+            <p className="text-xs text-slate-400 mt-1">{s.sub}</p>
           </div>
-        )}
-        {canViewProducts && (
-          <div className="bg-white border rounded-2xl p-5">
-            <div className="text-2xl mb-2">📦</div>
-            <p className="text-xs text-slate-500">Active Products</p>
-            <b className="block text-2xl mt-2">12</b>
-          </div>
-        )}
-        {canViewTransactions && (
-          <div className="bg-white border rounded-2xl p-5">
-            <div className="text-2xl mb-2">💰</div>
-            <p className="text-xs text-slate-500">Total Transactions</p>
-            <b className="block text-2xl mt-2">5,678</b>
-          </div>
-        )}
-        {canViewReports && (
-          <div className="bg-white border rounded-2xl p-5">
-            <div className="text-2xl mb-2">📈</div>
-            <p className="text-xs text-slate-500">Pending Requests</p>
-            <b className="block text-2xl mt-2">23</b>
-          </div>
-        )}
+        ))}
       </div>
 
-      {/* ── Recent activity tables ───────────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-2 gap-6">
-
-        {/* Recent users — only visible with USER_VIEW permission */}
-        {canViewUsers && (
-          <div className="bg-white border rounded-2xl p-6">
-            <h2 className="font-extrabold mb-4">Recent Users</h2>
-            <div className="space-y-3">
-              {[
-                { name: 'Fardin Ahmed', email: 'fardin@example.com', joined: '2 hours ago' },
-                { name: 'Jane Smith',   email: 'jane@example.com',   joined: '5 hours ago' },
-                { name: 'John Doe',     email: 'john@example.com',   joined: '1 day ago'   },
-              ].map(({ name, email, joined }) => (
-                <div key={email} className="flex justify-between items-start py-3 border-b last:border-0">
-                  <div>
-                    <b className="text-sm block">{name}</b>
-                    <span className="text-xs text-slate-500">{email}</span>
-                  </div>
-                  <span className="text-xs text-slate-500">{joined}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pending approvals — only visible with TRANSACTION_VIEW permission */}
-        {canViewTransactions && (
-          <div className="bg-white border rounded-2xl p-6">
-            <h2 className="font-extrabold mb-4">Pending Approvals</h2>
-            <div className="space-y-3">
-              {[
-                { type: 'Recharge Request',   user: 'Fardin Ahmed', amount: '৳5,000', status: 'Pending' },
-                { type: 'Withdrawal Request', user: 'Jane Smith',   amount: '৳2,500', status: 'Pending' },
-                { type: 'Product Purchase',   user: 'John Doe',     amount: '৳1,000', status: 'Pending' },
-              ].map(({ type, user, amount, status }) => (
-                <div key={`${user}-${type}`} className="flex justify-between items-start py-3 border-b last:border-0">
-                  <div>
-                    <b className="text-sm block">{type}</b>
-                    <span className="text-xs text-slate-500">{user} · {amount}</span>
-                  </div>
-                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-bold">{status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Quick links */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { href: '/admin/users',        icon: '👥', label: 'Manage Users',        desc: 'View, block or delete users' },
+          { href: '/admin/products',     icon: '📦', label: 'Products & Stock',    desc: 'Upload and manage products' },
+          { href: '/admin/deposits',     icon: '💳', label: 'Deposit Requests',    desc: 'Approve or reject deposits' },
+          { href: '/admin/transactions', icon: '📋', label: 'All Transactions',    desc: 'Full transaction history' },
+          { href: '/admin/activity',     icon: '🛡️', label: 'Activity & Devices',  desc: 'IP, device, browser, OS' },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} className="bg-white border rounded-2xl p-5 hover:border-blue-300 hover:shadow-sm transition-all">
+            <div className="text-2xl mb-3">{item.icon}</div>
+            <b className="block text-sm">{item.label}</b>
+            <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+          </Link>
+        ))}
       </div>
 
-      {/* ── Quick actions — only visible with TRANSACTION_APPROVE permission ─── */}
-      {canApprove && (
-        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-6">
-          <h3 className="font-extrabold text-blue-900 mb-2">Quick Actions</h3>
-          <p className="text-sm text-blue-700 mb-4">
-            You have permission to approve transactions. Review pending requests in the Transactions section.
-          </p>
-          {/* TODO: Link this button to /admin/transactions when that page exists */}
-          <button className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">
-            Review Pending Transactions →
-          </button>
+      {/* Recent pending deposits */}
+      <div className="bg-white border rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-extrabold">Pending Deposit Requests</h2>
+          <Link href="/admin/deposits" className="text-xs font-bold text-blue-600 hover:underline">View all</Link>
         </div>
-      )}
+        {depositLoading && <div className="h-20 bg-slate-100 rounded-xl animate-pulse" />}
+        {!depositLoading && deposits.filter((d) => d.status === 'pending').length === 0 && (
+          <p className="text-sm text-slate-400 py-4 text-center">No pending deposit requests.</p>
+        )}
+        {!depositLoading && deposits.filter((d) => d.status === 'pending').slice(0, 5).map((d) => (
+          <div key={d._id} className="flex items-center justify-between py-3 border-b last:border-0">
+            <div>
+              <p className="text-sm font-semibold">{d.userId?.fullName || 'Unknown'}</p>
+              <p className="text-xs text-slate-400">{d.methodCode} · TxID: {d.transactionId}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold">৳{(d.amount / 100).toFixed(2)}</p>
+              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold">pending</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent users */}
+      <div className="bg-white border rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-extrabold">Recent Users</h2>
+          <Link href="/admin/users" className="text-xs font-bold text-blue-600 hover:underline">View all</Link>
+        </div>
+        {usersLoading && <div className="h-20 bg-slate-100 rounded-xl animate-pulse" />}
+        {!usersLoading && users.slice(0, 5).map((u) => (
+          <div key={u._id} className="flex items-center justify-between py-3 border-b last:border-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 grid place-items-center text-xs font-bold shrink-0">
+                {u.fullName?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{u.fullName}</p>
+                <p className="text-xs text-slate-400">{u.phone}</p>
+              </div>
+            </div>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+              u.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+              u.status === 'suspended' ? 'bg-amber-50 text-amber-700' :
+              'bg-rose-50 text-rose-700'
+            }`}>{u.status}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

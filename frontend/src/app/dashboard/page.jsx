@@ -1,16 +1,14 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useTaskModal } from '@/hooks/useDashboardModals';
 import OverviewPage from '@/components/dashboard/pages/OverviewPage';
 
 export default function Page() {
-  const router   = useRouter();
-  const openTask = useTaskModal();
+  const router = useRouter();
 
-  // showPage converts page name → URL and navigates
+  // showPage converts a page name to a URL and navigates
   function showPage(page) {
     router.push(page === 'overview' ? '/dashboard' : `/dashboard/${page}`);
   }
 
-  return <OverviewPage showPage={showPage} openTask={openTask} />;
+  return <OverviewPage showPage={showPage} />;
 }

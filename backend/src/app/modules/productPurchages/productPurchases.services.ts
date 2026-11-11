@@ -7,6 +7,8 @@ import { WalletModel } from '../wallets/wallet.model';
 import { TransactionServices } from '../transactions/transaction.services';
 import { ProductPurchaseModel } from './productPurchases.model';
 import { DailyClaimModel } from './dailyClaim.model';
+import { ReferralServices } from '../referrals/referral.services';
+import { MembershipServices } from '../users/membership.services';
 import { TPaymentSource, TReferralCommissionSnapshot } from './productPurchases.interface';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -23,6 +25,51 @@ const startOfNextUTCDay = (from: Date): Date => {
 
 // ─── Purchase ─────────────────────────────────────────────────────────────────
 
+// Per-claim commission for one team level, according to the product's own setting.
+//  daily-income   → rate × dailyIncome
+//  total-reward   → rate × (total revenue spread over the validity period)
+//  purchase-price → rate × (price spread over the validity period)
+const commissionPerClaim = (
+    c: { rate: number; basis: string },
+    p: { price: number; rewardPlan: { dailyIncome: number; totalEstimatedRevenue: number; validityDays: number } }
+): number => {
+    const days = Math.max(p.rewardPlan.validityDays, 1);
+    const base =
+        c.basis === 'total-reward' ? p.rewardPlan.totalEstimatedRevenue / days
+        : c.basis === 'purchase-price' ? p.price / days
+        : p.rewardPlan.dailyIncome;
+    return Math.floor(base * c.rate);
+};
+
+// Credits a user's BALANCE wallet and logs it. Returns false if the wallet is missing/inactive.
+const creditBalance = async (
+    userId: Types.ObjectId | string,
+    amount: number,
+    note: string,
+    referenceId: Types.ObjectId,
+    session: mongoose.ClientSession
+) => {
+    if (amount <= 0) return false;
+    const wallet = await WalletModel.findOneAndUpdate(
+        { userId, walletType: 'balance', isActive: true },
+        { $inc: { balance: amount } },
+        { new: true, session }
+    );
+    if (!wallet) return false;
+    await TransactionServices.recordTransaction({
+        userId,
+        type: 'commission',
+        flow: 'credit',
+        amount,
+        walletAffected: 'balance',
+        balanceAfter: wallet.balance,
+        note,
+        referenceId,
+        session,
+    });
+    return true;
+};
+
 const purchaseProduct = async (userId: string, productId: string, paymentSource: TPaymentSource) => {
     const session = await mongoose.startSession();
 
@@ -31,7 +78,7 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
 
         // 1. Verify user
         const user = await UserModel.findById(userId).session(session);
-        if (!user || user.isDeleted || user.status !== 'active') {
+        if (!user || user.isDeleted || user.status !== 'active' || user.role !== 'user') {
             throw new AppError(status.FORBIDDEN, 'User account is not eligible for purchases');
         }
 
@@ -41,27 +88,42 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
             throw new AppError(status.NOT_FOUND, 'Product not available');
         }
 
-        // 3. Membership eligibility
-        // if (!product.purchaseRules.allowedMembershipLevels.includes(user.membershipLevel as any)) {
-        //     throw new AppError(status.FORBIDDEN, 'Your membership level is not eligible for this product');
-        // }
-
-        // 4. Single purchase rule — one active purchase per product per user
-        if (product.purchaseRules.purchaseLimit === 1) {
-            const existing = await ProductPurchaseModel.findOne({
-                userId,
-                productId,
-                status: 'active',
-            }).session(session);
-            if (existing) {
-                throw new AppError(status.CONFLICT, 'You already have an active purchase for this product');
-            }
+        // 3. Membership eligibility (an empty list means "everyone")
+        const allowed = product.purchaseRules.allowedMembershipLevels ?? [];
+        if (allowed.length && !allowed.includes(user.membershipLevel as never)) {
+            throw new AppError(status.FORBIDDEN, 'Your membership level is not eligible for this product');
         }
 
-        // 5. Price in poisha (integer) — product.price is stored in poisha
+        // 4. Per-user purchase limit (cancelled purchases don't count)
+        const alreadyBought = await ProductPurchaseModel.countDocuments({
+            userId,
+            productId,
+            status: { $ne: 'cancelled' },
+        }).session(session);
+        if (alreadyBought >= product.purchaseRules.purchaseLimit) {
+            throw new AppError(
+                status.CONFLICT,
+                `Purchase limit reached: you can buy this product ${product.purchaseRules.purchaseLimit} time(s)`
+            );
+        }
+
+        // 5. Reserve one unit of stock atomically (no overselling under concurrency)
+        const reserved = await ProductModel.findOneAndUpdate(
+            { _id: productId, quantity: { $gt: 0 }, status: 'active', isDeleted: false },
+            { $inc: { quantity: -1, purchaseCount: 1 } },
+            { new: true, session }
+        );
+        if (!reserved) {
+            throw new AppError(status.CONFLICT, 'This product is out of stock');
+        }
+        if (reserved.quantity === 0) {
+            await ProductModel.updateOne({ _id: productId }, { status: 'outofstock' }, { session });
+        }
+
+        // 6. Price in poisha (integer)
         const purchasePrice = product.price;
 
-        // 6. Deduct from wallet atomically
+        // 7. Deduct from wallet atomically
         const debitedWallet = await WalletModel.findOneAndUpdate(
             { userId, walletType: paymentSource, balance: { $gte: purchasePrice }, isActive: true },
             { $inc: { balance: -purchasePrice } },
@@ -71,56 +133,45 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
             throw new AppError(status.BAD_REQUEST, `Insufficient ${paymentSource} wallet balance`);
         }
 
-        // 7. Build referral commission snapshot (level B and C)
-        //    Hierarchy: buyer → level A (buyer.referredBy) → level B (A.referredBy) → level C (B.referredBy)
-        const dailyIncome = product.rewardPlan.dailyIncome; // integer in poisha
-
+        // 8. Referral chain:  buyer → A (buyer's inviter) → B (A's inviter) → C (B's inviter)
+        //    A gets the one-off invitation bonus now;
+        //    B and C get a commission of the buyer's daily income on EVERY claim (snapshot below).
+        const dailyIncome = product.rewardPlan.dailyIncome;
         const referralCommissions: TReferralCommissionSnapshot[] = [];
 
-        const levelAUser = user.referredBy
-            ? await UserModel.findById(user.referredBy).session(session)
-            : null;
+        const levelAUser = user.referredBy ? await UserModel.findById(user.referredBy).session(session) : null;
+        const levelBUser = levelAUser?.referredBy ? await UserModel.findById(levelAUser.referredBy).session(session) : null;
+        const levelCUser = levelBUser?.referredBy ? await UserModel.findById(levelBUser.referredBy).session(session) : null;
 
-        if (levelAUser) {
-            // Level B = level A's referrer
-            const levelBUser = levelAUser.referredBy
-                ? await UserModel.findById(levelAUser.referredBy).session(session)
-                : null;
+        const teamRules = (product.teamCommissions ?? []).filter((c) => c.level === 'B' || c.level === 'C');
+        const ruleB = teamRules.find((c) => c.level === 'B');
+        const ruleC = teamRules.find((c) => c.level === 'C');
 
-            if (levelBUser) {
-                const bRate = 0.10;
-                referralCommissions.push({
-                    level: 'B',
-                    userId: levelBUser._id as Types.ObjectId,
-                    commissionRate: bRate,
-                    commissionAmount: Math.floor(dailyIncome * bRate),
-                });
-
-                // Level C = level B's referrer
-                const levelCUser = levelBUser.referredBy
-                    ? await UserModel.findById(levelBUser.referredBy).session(session)
-                    : null;
-
-                if (levelCUser) {
-                    const cRate = 0.05;
-                    referralCommissions.push({
-                        level: 'C',
-                        userId: levelCUser._id as Types.ObjectId,
-                        commissionRate: cRate,
-                        commissionAmount: Math.floor(dailyIncome * cRate),
-                    });
-                }
-            }
+        if (levelBUser && ruleB) {
+            referralCommissions.push({
+                level: 'B',
+                userId: levelBUser._id as Types.ObjectId,
+                commissionRate: ruleB.rate,
+                commissionAmount: commissionPerClaim(ruleB, product),
+            });
+        }
+        if (levelCUser && ruleC) {
+            referralCommissions.push({
+                level: 'C',
+                userId: levelCUser._id as Types.ObjectId,
+                commissionRate: ruleC.rate,
+                commissionAmount: commissionPerClaim(ruleC, product),
+            });
         }
 
-        // 8. Determine first claim availability
+        // 9. First claim availability
         const now = new Date();
         const startAfter = product.rewardPlan.startAfterPurchaseDays ?? 0;
         const nextClaimAt = startAfter > 0
             ? new Date(now.getTime() + startAfter * 24 * 60 * 60 * 1000)
             : startOfNextUTCDay(now);
 
-        // 9. Create ProductPurchase document
+        // 10. Create the purchase
         const [purchase] = await ProductPurchaseModel.insertMany(
             [
                 {
@@ -143,7 +194,7 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
             { session }
         );
 
-        // 10. Record purchase transaction
+        // 11. Purchase transaction
         await TransactionServices.recordTransaction({
             userId,
             type: 'product_purchase',
@@ -156,8 +207,35 @@ const purchaseProduct = async (userId: string, productId: string, paymentSource:
             session,
         });
 
-        // 11. Increment product purchase count
-        await ProductModel.findByIdAndUpdate(productId, { $inc: { purchaseCount: 1 } }, { session });
+        // 12. Invitation bonus → buyer's direct inviter (level A)
+        if (levelAUser) {
+            await creditBalance(
+                levelAUser._id,
+                product.bonuses?.invitationBonus ?? 0,
+                `Invitation bonus: ${user.fullName} purchased ${product.name}`,
+                purchase._id as Types.ObjectId,
+                session
+            );
+        }
+
+        // 13. The invited user is now a VALID referral (deposited + bought a product)
+        await ReferralServices.markReferralValid(user._id, session);
+
+        // 14. Membership upgrades — the buyer (spend went up) and the inviter (valid referrals went up).
+        //     The product's upgrade bonus is paid to whoever moved up a level.
+        const toCheck = [user._id, ...(levelAUser ? [levelAUser._id] : [])];
+        for (const id of toCheck) {
+            const newLevel = await MembershipServices.evaluateUpgrade(id, session);
+            if (newLevel) {
+                await creditBalance(
+                    id,
+                    product.bonuses?.upgradeBonus ?? 0,
+                    `Upgrade bonus: membership level ${newLevel} reached`,
+                    purchase._id as Types.ObjectId,
+                    session
+                );
+            }
+        }
 
         await session.commitTransaction();
         return purchase;

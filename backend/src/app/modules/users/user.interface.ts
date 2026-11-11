@@ -1,5 +1,4 @@
 import { Model, Types } from "mongoose";
-import { is } from "zod/locales";
 import { USER_ROLE } from "./user.constant";
 
 export interface Tuser  {
@@ -14,13 +13,14 @@ export interface Tuser  {
     membershipLevel: number;
     avatar?: string;
     isDeleted: boolean;
+    welcomeBonusClaimed?: boolean;
     passwordChangedAt?: Date;
 }
 
 export type TuserDocument = Tuser & { _id: Types.ObjectId };
 
 export interface User extends Model<Tuser> {
-    isUserExistsById(id: string): Promise<TuserDocument | null>;
+    isUserExistsById(id: Types.ObjectId | string): Promise<TuserDocument | null>;
     isUserExistsByEmail(email: string): Promise<TuserDocument | null>;
     isUserExistsByPhone(phone: string): Promise<TuserDocument | null>;
 }

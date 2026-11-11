@@ -14,15 +14,11 @@ export const sendImageToCloudinary = async (imageName: string, path: string): Pr
         cloudinary.uploader.upload(path,
             { public_id: imageName },
             (error, result) => {
+                // always remove the temp file, whether the upload worked or not
+                fs.unlink(path, () => undefined);
+
                 if (error) reject(error);
                 else resolve(result as UploadApiResponse);
-
-                // delete a file asynchronously
-                fs.unlink(path, (err) => {
-                    if (err) reject(err)
-                    else console.log('file deleted successfully');
-
-                });
             });
     });
 };
@@ -37,4 +33,9 @@ const storage = multer.diskStorage({
     },
 });
 
-export const upload = multer({ storage });
+const imageFilter: multer.Options['fileFilter'] = (req, file, cb) => {
+    if (/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only JPEG, PNG, WEBP or GIF images are allowed'));
+};
+
+export const upload = multer({ storage, fileFilter: imageFilter, limits: { fileSize: 5 * 1024 * 1024 } });

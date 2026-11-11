@@ -2,10 +2,11 @@ import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { DepositRequestServices } from "./depositRequests.services";
+import { assertSelfOrAdmin } from "../../utils/assertOwnership";
 
 // create a new deposit request
 const createDepositRequest = catchAsync(async (req, res) => {
-    const result = await DepositRequestServices.createDepositRequest(req.body);
+    const result = await DepositRequestServices.createDepositRequest(req.user!.userId, req.body);
     sendResponse(res, {
         success: true,
         statusCode: status.CREATED,
@@ -28,6 +29,7 @@ const getAllDepositRequests = catchAsync(async (req, res) => {
 // get deposit requests for a specific user
 const getDepositRequestsByUser = catchAsync(async (req, res) => {
     const { userId } = req.params;
+    assertSelfOrAdmin(req, userId);
     const result = await DepositRequestServices.getDepositRequestsByUser(userId);
     sendResponse(res, {
         success: true,
@@ -40,7 +42,7 @@ const getDepositRequestsByUser = catchAsync(async (req, res) => {
 // approve or reject a deposit request (admin only)
 const updateDepositRequestStatus = catchAsync(async (req, res) => {
     const { id } = req.params;
-    const result = await DepositRequestServices.updateDepositRequestStatus(id, req.body);
+    const result = await DepositRequestServices.updateDepositRequestStatus(id, req.body, req.user!.userId);
     sendResponse(res, {
         success: true,
         statusCode: status.OK,

@@ -2,13 +2,10 @@ import z from "zod";
 
 const createPaymentAccountValidation = z.object({
     body: z.object({
-        userId: z.string({ message: "User ID is required" }),
         method: z.enum(["bkash", "nogod"], { message: "Payment method is required" }),
         accountNumber: z.string({ message: "Account number is required" }).trim(),
         isPrimary: z.boolean().default(true),
         accountHolderName: z.string({ message: "Account holder name is required" }).trim(),
-        verifiedAt: z.date().nullable().default(null),
-        status: z.enum(["active", "pending"]).default("pending"),
     }),
 });
 

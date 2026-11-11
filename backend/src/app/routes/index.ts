@@ -1,71 +1,42 @@
-import { Router } from 'express'
+import { Router } from 'express';
+import { AuthRoutes } from '../modules/Auth/auth.route';
 import { UserRoutes } from '../modules/users/user.route';
 import { CategoryRoutes } from '../modules/categories/category.route';
 import { ProductRoutes } from '../modules/products/product.route';
-import { PaymentAccountRoutes } from '../modules/paymentAccounts/paymentAccounts.route';
 import { TaskRoutes } from '../modules/tasks/tasks.route';
-import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.route';
-import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.route';
-import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests.route';
 import { WalletRoutes } from '../modules/wallets/wallet.route';
 import { TransactionRoutes } from '../modules/transactions/transaction.route';
+import { CommunityPostRoutes } from '../modules/communityPosts/communityPosts.route';
+import { DepositRequestRoutes } from '../modules/depositRequests/depositRequests.route';
+import { PaymentAccountRoutes } from '../modules/paymentAccounts/paymentAccounts.route';
+import { PaymentMethodRoutes } from '../modules/paymentMethods/paymentMethods.route';
 import { ProductPurchaseRoutes } from '../modules/productPurchages/productPurchases.route';
-import { AuthRoutes } from '../modules/Auth/auth.route';
+import { ReferralRoutes } from '../modules/referrals/referral.route';
+import { ActivityLogRoutes } from '../modules/activityLogs/activityLog.route';
 
+const router = Router();
 
-const router = Router()
+/**
+ * All application module routes.
+ * Base path: /api/v1
+ */
+const moduleRoutes = [
+  { path: '/auth', route: AuthRoutes },                         // Authentication (login, refresh, password)
+  { path: '/users', route: UserRoutes },                        // User management
+  { path: '/categories', route: CategoryRoutes },               // Product categories
+  { path: '/products', route: ProductRoutes },                  // Products
+  { path: '/product-purchases', route: ProductPurchaseRoutes }, // Product purchases & daily income claims
+  { path: '/tasks', route: TaskRoutes },                        // Promotional tasks
+  { path: '/wallets', route: WalletRoutes },                    // User wallets
+  { path: '/transactions', route: TransactionRoutes },          // Transaction history
+  { path: '/deposit-requests', route: DepositRequestRoutes },   // Deposit/recharge requests
+  { path: '/payment-accounts', route: PaymentAccountRoutes },   // User payout accounts (bKash/Nagad)
+  { path: '/payment-methods', route: PaymentMethodRoutes },     // Admin-managed payment methods
+  { path: '/community-posts', route: CommunityPostRoutes },     // Community posts
+  { path: '/referrals', route: ReferralRoutes },                // Referral relationships & stats
+  { path: '/activity-logs', route: ActivityLogRoutes },         // Admin: login/register IP, device, browser, OS
+];
 
-const moduelRoutes = [
-    {   
-        path: '/users',
-        route: UserRoutes,
-    },
-    {
-        path: '/categories',
-        route: CategoryRoutes,
-    },
-    {
-        path: '/products',
-        route: ProductRoutes,
-    },
-    {
-        path: '/paymentaccounts',
-        route: PaymentAccountRoutes,
-    },
-    {
-        path: '/tasks',
-        route: TaskRoutes,
-    },
-    {
-        path: '/community-posts',
-        route: CommunityPostRoutes,
-    },
-    {
-        path: '/payment-methods',
-        route: PaymentMethodRoutes,
-    },
-    {
-        path: '/deposit-requests',
-        route: DepositRequestRoutes,
-    },
-    {
-        path: '/wallets',
-        route: WalletRoutes,
-    },
-    {
-        path: '/transactions',
-        route: TransactionRoutes,
-    },
-    {
-        path: '/product-purchases',
-        route: ProductPurchaseRoutes,
-    },
-    {
-        path: '/auth',
-        route: AuthRoutes,
-    },
-
-]
-moduelRoutes.forEach(route => router.use(route.path, route.route))
+moduleRoutes.forEach((route) => router.use(route.path, route.route));
 
 export default router;

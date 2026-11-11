@@ -1,6 +1,6 @@
 import { model, Schema } from "mongoose";
 import { Tuser, User, } from "./user.interface";
-import { ObjectId } from "mongodb";
+import { Types } from "mongoose";
 import config from "../../config";
 import bcrypt from 'bcrypt';
 
@@ -82,6 +82,11 @@ const userSchema = new Schema<Tuser, User>(
             type: Boolean,
             default: false
         },
+        // one-time 120 BDT bonus, paid when the first deposit is approved
+        welcomeBonusClaimed: {
+            type: Boolean,
+            default: false
+        },
         passwordChangedAt: {
             type: Date
         }
@@ -91,19 +96,18 @@ const userSchema = new Schema<Tuser, User>(
         timestamps: true
     }
 );
-// make Encrypt password
-userSchema.pre('save', async function (next) {
-    const user = this;
-    user.passwordHash = await bcrypt.hash(
-        user.passwordHash,
-        Number(config.bcrypt_salt_rounds)
+// Hash the password only when it was set / changed
+userSchema.pre('save', async function () {
+    if (!this.isModified('passwordHash')) return;
+    this.passwordHash = await bcrypt.hash(
+        this.passwordHash,
+        Number(config.bcrypt_salt_rounds) || 12
     );
 });
 
-//response sent empty pass
-userSchema.post("save", function (doc: any, next: any) {
+// Never return the hash in the response of a save()
+userSchema.post('save', function (doc) {
     doc.passwordHash = '';
-    next();
 });
 
 userSchema.statics.isUserExistsByEmail = async function (email: string) {
@@ -114,7 +118,7 @@ userSchema.statics.isUserExistsByPhone = async function (phone: string) {
     return await UserModel.findOne({ phone });
 }
 
-userSchema.statics.isUserExistsById = async function (id: ObjectId) {
+userSchema.statics.isUserExistsById = async function (id: Types.ObjectId | string) {
     return await UserModel.findById(id);
 }
 

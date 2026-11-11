@@ -1,37 +1,40 @@
-import express from "express";
-import validationRequest from "../../middlewares/validateRequest";
-import { DepositRequestController } from "./depositRequests.controller";
-import { DepositRequestValidations } from "./depositRequests.validations";
-import auth from "../../middlewares/auth";
-import { USER_ROLE } from "../users/user.constant";
+import express from 'express';
+import validationRequest from '../../middlewares/validateRequest';
+import { DepositRequestController } from './depositRequests.controller';
+import { DepositRequestValidations } from './depositRequests.validations';
+import auth from '../../middlewares/auth';
+import { USER_ROLE } from '../users/user.constant';
 
 const router = express.Router();
 
-// submit a new deposit request
+// Submit a new deposit/recharge request (user only)
 router.post(
-    "/create-deposit-request",
-    auth(USER_ROLE.user),
-    validationRequest(DepositRequestValidations.createDepositRequestValidation),
-    DepositRequestController.createDepositRequest
+  '/create-deposit-request',
+  auth(USER_ROLE.user),
+  validationRequest(DepositRequestValidations.createDepositRequestValidation),
+  DepositRequestController.createDepositRequest,
 );
 
-// get all deposit requests (admin)
+// Get all deposit requests (admin only)
 router.get(
-    "/", auth(USER_ROLE.admin, USER_ROLE.super_admin),
-    DepositRequestController.getAllDepositRequests
+  '/',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  DepositRequestController.getAllDepositRequests,
 );
 
-// get deposit requests by user ID
+// Get deposit requests for a specific user
 router.get(
-    "/user/:userId",
-    DepositRequestController.getDepositRequestsByUser
+  '/user/:userId',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
+  DepositRequestController.getDepositRequestsByUser,
 );
 
-// approve or reject a deposit request (admin)
+// Approve or reject a deposit request (admin only)
 router.patch(
-    "/:id/status",
-    validationRequest(DepositRequestValidations.updateDepositRequestStatusValidation),
-    DepositRequestController.updateDepositRequestStatus
+  '/:id/status',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  validationRequest(DepositRequestValidations.updateDepositRequestStatusValidation),
+  DepositRequestController.updateDepositRequestStatus,
 );
 
 export const DepositRequestRoutes = router;

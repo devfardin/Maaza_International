@@ -2,31 +2,38 @@ import express from 'express';
 import { CategoryController } from './category.controller';
 import validationRequest from '../../middlewares/validateRequest';
 import { categoryValidation } from './category.validations';
+import auth from '../../middlewares/auth';
+import { USER_ROLE } from '../users/user.constant';
 
-const router = express.Router()
+const router = express.Router();
 
-// create a category
+// Create a new category (admin only)
 router.post(
   '/create-category',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
   validationRequest(categoryValidation.createCategoryValidation),
-  CategoryController.createCategory
+  CategoryController.createCategory,
 );
 
-// get all categories
-router.get( '/',CategoryController.getAllCategories
-);
+// Get all categories (public)
+router.get('/', CategoryController.getAllCategories);
 
-// get single category
+// Get a single category by ID (public)
 router.get('/:id', CategoryController.getSingleCategory);
 
-// update category
-router.patch('/:id',
+// Update a category (admin only)
+router.patch(
+  '/:id',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
   validationRequest(categoryValidation.createCategoryValidation),
-  CategoryController.updateCategory
+  CategoryController.updateCategory,
 );
 
-// delete category
-router.delete('/:id', CategoryController.deleteCategory
+// Delete a category (admin only)
+router.delete(
+  '/:id',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  CategoryController.deleteCategory,
 );
 
 export const CategoryRoutes = router;

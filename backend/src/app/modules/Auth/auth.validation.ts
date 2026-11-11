@@ -27,7 +27,7 @@ const chagnePasswordValidationSchema = z.object({
         }),
         newPassword: z.string({
             message: 'New Password is required',
-        }),
+        }).min(8, 'Password must be at least 8 characters').max(72),
     })
 })
 
@@ -46,7 +46,7 @@ const resetPasswordValidationSchema = z.object({
         }),
         newPassword: z.string({
             message: 'Password is required',
-        }),
+        }).min(8, 'Password must be at least 8 characters').max(72),
     })
 })
 

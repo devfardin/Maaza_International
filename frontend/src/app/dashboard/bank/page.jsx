@@ -1,9 +1,8 @@
 'use client';
-import BankPage from "@/components/dashboard/pages/BankPage";
-import TasksPage from "@/components/dashboard/pages/TasksPage";
-import { useProductModal } from "@/hooks/useDashboardModals";
+import BankPage from '@/components/dashboard/pages/BankPage';
+import { useDashboard } from '@/context/DashboardContext';
 
 export default function Page() {
-  const openProduct = useProductModal();
-  return <BankPage openProduct={openProduct} />;
+  const { showToast } = useDashboard();
+  return <BankPage showToast={showToast} />;
 }

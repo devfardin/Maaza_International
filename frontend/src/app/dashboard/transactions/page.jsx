@@ -1,10 +1,6 @@
 'use client';
-
-import TransactionsPage from "@/components/dashboard/pages/TransactionsPage";
-import { useProductModal } from "@/hooks/useDashboardModals";
-
+import TransactionsPage from '@/components/dashboard/pages/TransactionsPage';
 
 export default function Page() {
-  const openProduct = useProductModal();
-  return <TransactionsPage openProduct={openProduct} />;
+  return <TransactionsPage />;
 }

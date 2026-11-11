@@ -21,8 +21,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '@/redux/features/apiSlice';
-import { setCredentials } from '@/redux/features/authSlice';
+import { setCredentials, logout } from '@/redux/features/authSlice';
 import { Suspense } from 'react';
+import { setAuthCookies, isAdminRole, safeRedirect } from '@/lib/authCookies';
 
 // ── Small reusable SVG components ─────────────────────────────────────────────
 
@@ -69,27 +70,29 @@ function LoginForm() {
     const password = form.password.value;
 
     try {
+      // Clear any stale user from a previous session before setting new credentials
+      dispatch(logout());
+
       // Call POST /auth/login — backend expects { phone, password }
       // Response shape: { success, message, data: { accessToken, refreshToken } }
       const result = await login({ phone, password }).unwrap();
 
-      // Backend returns tokens inside result.data — there is no user object
-      // in the login response. The user profile is fetched separately via
-      // GET /users/me in the dashboard layout after redirect.
       dispatch(setCredentials({
         user:         null,
         accessToken:  result.data?.accessToken,
         refreshToken: result.data?.refreshToken,
       }));
 
-      // Set accessToken as a cookie so Next.js middleware (middleware.js)
-      // can read it for server-side route protection — middleware cannot
-      // access localStorage, only cookies.
-      document.cookie = `accessToken=${result.data?.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      // Cookies let middleware.js route each role to its own interface
+      // (users → /dashboard, admin & super_admin → /admin).
+      const role = result.data?.role;
+      setAuthCookies(result.data?.accessToken, role);
 
-      // Redirect to the page the user originally tried to visit, or dashboard
-      const redirect = searchParams.get('redirect') || '/dashboard';
-      router.push(redirect);
+      const defaultRedirect = isAdminRole(role) ? '/admin' : '/dashboard';
+      const requested = safeRedirect(searchParams.get('redirect'), defaultRedirect);
+      // never send a member into /admin (or an admin into /dashboard) via ?redirect=
+      const redirect = isAdminRole(role) === requested.startsWith('/admin') || requested === '/' ? requested : defaultRedirect;
+      router.replace(redirect);
 
     } catch (err) {
       // Show the error message returned by the server, or a generic fallback
@@ -201,9 +204,9 @@ function LoginForm() {
                   <div>
                     <div className="mb-1.5 flex items-center justify-between">
                       <label className="text-sm font-semibold text-slate-700">Password</label>
-                      <button type="button" className="text-xs font-semibold text-emerald-700 hover:underline">
+                      <Link href="/forgot-password" className="text-xs font-semibold text-emerald-700 hover:underline">
                         Forgot password?
-                      </button>
+                      </Link>
                     </div>
                     <div className="relative">
                       <input

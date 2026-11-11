@@ -3,16 +3,20 @@ import config from "../../config";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AuthServices } from "./auth.service";
+import { getClientInfo } from "../../utils/clientInfo";
+import { extractToken } from "../../middlewares/auth";
 import AppError from "../../errors/AppError";
 
 const loginUser = catchAsync(
     async (req, res) => {
-        const result = await AuthServices.loginUser(req.body);
+        const result = await AuthServices.loginUser(req.body, getClientInfo(req));
         const { refreshToken, accessToken } = result;
 
         res.cookie('refreshToken', refreshToken, {
             secure: config.NODE_ENV === 'production',
             httpOnly: true,
+            sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 90 * 24 * 60 * 60 * 1000,
         })
 
         sendResponse(res, {
@@ -22,6 +26,7 @@ const loginUser = catchAsync(
             data: {
                 accessToken,
                 refreshToken,
+                role: result.role,
             },
         })
     }
@@ -61,14 +66,15 @@ const forgetPassword = catchAsync(async (req, res) => {
     sendResponse(res, {
         success: true,
         statusCode: status.OK,
-        message: 'Reset link is sent to your email address',
+        message: 'If an account exists for this phone number, a reset link has been sent to its email',
     })
 })
 
 // reset password
 const resetPassword = catchAsync(async (req, res) => {
-    const token = req.headers.authorization as string;
-    
+    const token = extractToken(req.headers.authorization);
+    if (!token) throw new AppError(status.UNAUTHORIZED, 'Reset token is required');
+
     const result = await AuthServices.resetPassword( token, req.body);
     sendResponse(res, {
         success: true,
