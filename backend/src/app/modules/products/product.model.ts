@@ -4,7 +4,7 @@ import { TProduct, TProductBonus, TProductPurchaseRules, TProductReward, TTeamCo
 const teamCommissionSchema = new Schema<TTeamCommission>({
     level: {
         type: String,
-        enum: ["B", "C", "D"],
+        enum: ["A", "B"],
         required: [true, "Commission level is required"],
     },
     rate: {
@@ -53,6 +53,22 @@ const productRewardSchema = new Schema<TProductReward>({
         type: Number,
         required: [true, "Start after purchase days is required"],
         default: 0,
+    },
+    claimUnit: {
+        type: String,
+        enum: { values: ["hour", "day"], message: "Claim unit must be hour or day" },
+        default: "day",
+    },
+    claimIntervalHours: {
+        type: Number,
+        min: [1, "Claim interval must be at least 1 hour"],
+        max: [720, "Claim interval cannot exceed 720 hours"],
+        default: 1,
+    },
+    claimIntervalDays: {
+        type: Number,
+        min: [1, "Claim interval must be at least 1 day"],
+        default: 1,
     },
 }, { _id: false });
 
@@ -114,8 +130,8 @@ const productSchema = new Schema<TProduct>({
     teamCommissions: {
         type: [teamCommissionSchema],
         default: [
-            { level: "B", rate: 0.10, basis: "daily-income" },
-            { level: "C", rate: 0.05, basis: "daily-income" },
+            { level: "A", rate: 0.10, basis: "daily-income" },
+            { level: "B", rate: 0.05, basis: "daily-income" },
         ],
     },
     purchaseRules: {
@@ -143,6 +159,14 @@ const productSchema = new Schema<TProduct>({
         enum: ["active", "inactive", "outofstock"],
         default: "active",
     },
+    approvalStatus: {
+        type: String,
+        enum: { values: ["pending", "approved", "rejected"], message: "Approval must be pending, approved or rejected" },
+        default: "approved", // products that existed before approval was introduced stay visible
+    },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    approvedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    approvedAt: { type: Date, default: null },
     isDeleted: {
         type: Boolean,
         default: false,

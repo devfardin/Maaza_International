@@ -22,4 +22,12 @@ router.get(
   PaymentAccountsController.getMyPaymentAccounts,
 );
 
+// Edit own payout account, or make it active / inactive
+router.patch(
+  '/:id',
+  auth(USER_ROLE.user),
+  validationRequest(PaymentAccountsValidations.updatePaymentAccountValidation),
+  PaymentAccountsController.updateMyPaymentAccount,
+);
+
 export const PaymentAccountRoutes = router;

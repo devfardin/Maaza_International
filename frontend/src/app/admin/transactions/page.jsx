@@ -1,23 +1,27 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useGetAllTransactionsQuery } from '@/redux/features/apiSlice';
+import DateRangeFilter from '@/components/shared/DateRangeFilter';
+import { inDateRange } from '@/lib/dates';
 
-const TYPES = ['all', 'deposit', 'withdrawal', 'product_purchase', 'profit', 'commission', 'new_user_bonus', 'daily_checkin'];
-const bdt = (p) => `৳${((p || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const TYPES = ['all', 'deposit', 'withdrawal', 'product_purchase', 'profit', 'commission', 'invitation_bonus', 'upgrade_bonus', 'new_user_bonus', 'daily_checkin', 'wallet_exchange'];
+const bdt = (amount) => `৳${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const label = (t) => t.replace(/_/g, ' ');
 
 export default function AdminTransactionsPage() {
   const [type, setType] = useState('all');
   const [search, setSearch] = useState('');
+  const [dates, setDates] = useState({ from: '', to: '' });
   const { data, isLoading } = useGetAllTransactionsQuery();
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (data?.data || []).filter((t) =>
       (type === 'all' || t.type === type) &&
+      inDateRange(t.createdAt, dates.from, dates.to) &&
       (!q || t.userId?.fullName?.toLowerCase().includes(q) || t.userId?.phone?.includes(q) || t.note?.toLowerCase().includes(q))
     );
-  }, [data, type, search]);
+  }, [data, type, search, dates]);
 
   return (
     <div className="space-y-5">
@@ -29,6 +33,7 @@ export default function AdminTransactionsPage() {
       <div className="bg-white border rounded-2xl p-4 space-y-3">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by user, phone or note…"
           className="w-full rounded-xl border bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500" />
+        <DateRangeFilter from={dates.from} to={dates.to} onChange={setDates} />
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {TYPES.map((t) => (
             <button key={t} onClick={() => setType(t)}

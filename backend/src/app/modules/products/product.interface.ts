@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
 // Membership levels
-export type TMembershipLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type TMembershipLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 // Product status
 export type TProductStatus = "active" | "inactive" | "outofstock";
@@ -9,7 +9,7 @@ export type TProductStatus = "active" | "inactive" | "outofstock";
 
 // Team commission configuration
 export type TTeamCommission = {
-    level: "B" | "C" | "D"; // B = inviter's inviter, C = B's inviter
+    level: "A" | "B"; // A = buyer's direct inviter, B = the inviter's inviter
     rate: number; // Example: 0.10 = 10%
     basis: "daily-income" | "total-reward" | "purchase-price";
 };
@@ -27,6 +27,9 @@ export type TProductReward = {
     totalEstimatedRevenue: number;
     frequency: "daily" | "weekly" | "monthly";
     startAfterPurchaseDays: number;
+    claimUnit?: "hour" | "day";  // hourly products claim every N hours, daily products every N days
+    claimIntervalHours?: number; // used when claimUnit = "hour"
+    claimIntervalDays: number;   // used when claimUnit = "day": each claim pays the income of N days
 };
 
 // Product purchase restrictions
@@ -77,4 +80,10 @@ export type TProduct = {
     // Product status
     status: TProductStatus;
     isDeleted: boolean;
+
+    // Approval: products added by an admin wait for a super admin before members can see them
+    approvalStatus?: "pending" | "approved" | "rejected";
+    createdBy?: Types.ObjectId;
+    approvedBy?: Types.ObjectId | null;
+    approvedAt?: Date | null;
 };

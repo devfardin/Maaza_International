@@ -10,7 +10,7 @@ const router = express.Router();
 // Create a new category (admin only)
 router.post(
   '/create-category',
-  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  auth(USER_ROLE.super_admin),
   validationRequest(categoryValidation.createCategoryValidation),
   CategoryController.createCategory,
 );
@@ -32,7 +32,7 @@ router.patch(
 // Delete a category (admin only)
 router.delete(
   '/:id',
-  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  auth(USER_ROLE.super_admin),
   CategoryController.deleteCategory,
 );
 

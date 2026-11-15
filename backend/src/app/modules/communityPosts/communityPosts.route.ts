@@ -4,6 +4,7 @@ import validationRequest from '../../middlewares/validateRequest';
 import { communityPostValidation } from './communityPosts.validations';
 import auth from '../../middlewares/auth';
 import { USER_ROLE } from '../users/user.constant';
+import { upload } from '../../utils/sendImageToCloudinary';
 
 const router = express.Router();
 
@@ -15,7 +16,28 @@ router.post(
   CommunityPostController.createCommunityPost,
 );
 
-// Get all community posts (public)
+// Upload an image for a post (multipart field "file") — VIP 3+ only
+router.post(
+  '/upload-image',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
+  upload.single('file'),
+  CommunityPostController.uploadPostImage,
+);
+
+// My posts, any state (members, admins)
+router.get(
+  '/mine',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
+  CommunityPostController.getMyCommunityPosts,
+);
+
+// Approval queue (super admin) — declared before '/:id'
+router.get('/pending', auth(USER_ROLE.super_admin), CommunityPostController.getPendingCommunityPosts);
+
+// Approve or reject a post (super admin)
+router.patch('/:id/status', auth(USER_ROLE.super_admin), CommunityPostController.decideCommunityPost);
+
+// Get all approved community posts (public)
 router.get('/', CommunityPostController.getAllCommunityPosts);
 
 // Get a single community post by ID (public)

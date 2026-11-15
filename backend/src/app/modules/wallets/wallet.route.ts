@@ -2,8 +2,18 @@ import express from 'express';
 import { WalletController } from './wallet.controller';
 import auth from '../../middlewares/auth';
 import { USER_ROLE } from '../users/user.constant';
+import validationRequest from '../../middlewares/validateRequest';
+import { WalletValidations } from './wallet.validations';
 
 const router = express.Router();
+
+// Move money between a member's balance and recharge wallets (admin / super_admin)
+router.post(
+  '/:userId/exchange',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  validationRequest(WalletValidations.exchangeWalletValidation),
+  WalletController.exchangeWallets,
+);
 
 // Get all wallets for a user by userId
 router.get(

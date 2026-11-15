@@ -3,10 +3,9 @@ import { TProductPurchase, TReferralCommissionSnapshot } from './productPurchase
 
 const referralCommissionSnapshotSchema = new Schema<TReferralCommissionSnapshot>(
     {
-        level: { type: String, enum: ['B', 'C'], required: true },
+        level: { type: String, enum: ['A', 'B'], required: true },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         commissionRate: { type: Number, required: true },
-        commissionAmount: { type: Number, required: true },
     },
     { _id: false }
 );
@@ -32,17 +31,34 @@ const productPurchaseSchema = new Schema<TProductPurchase>(
         purchasePrice: {
             type: Number,
             required: true,
+            min: 0.01
+        },
+        claimUnit: {
+            type: String,
+            enum: ['hour', 'day'],
+        },
+        claimEveryHours: {
+            type: Number,
+            min: 1,
+        },
+        // no default: older purchases fall back to totalClaimedDays × 24
+        claimedHours: {
+            type: Number,
+        },
+        claimIntervalDays: {
+            type: Number,
+            default: 1,   // snapshot — old purchases (pre-interval) keep daily claims
             min: 1
         },
         dailyIncome: {
             type: Number,
             required: true,
-            min: 1
+            min: 0.01
         },
         totalRevenue: {
             type: Number,
             required: true,
-            min: 1
+            min: 0.01
         },
         validityDays: {
             type: Number,

@@ -10,7 +10,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed:admin": "ts-node-dev --transpile-only src/scripts/seedSuperAdmin.ts"
+    "seed:admin": "ts-node-dev --transpile-only src/scripts/seedSuperAdmin.ts",
+    "migrate:vip-base": "ts-node-dev --transpile-only src/scripts/migrateVipBaseLevel.ts",
+    "migrate:money-bdt": "ts-node-dev --transpile-only src/scripts/migrateMoneyToBdt.ts"
   },
   "keywords": [],
   "author": "",

@@ -9,7 +9,10 @@ export type TTransactionType =
     | "profit"           // product profit credited to balance wallet
     | "commission"       // referral / team commission credited to balance wallet
     | "product_purchase" // user buys a product (deducted from recharge wallet)
-    | "new_user_bonus";  // one-time bonus on new user registration
+    | "new_user_bonus"   // one-time bonus on new user registration
+    | "invitation_bonus" // inviter's bonus when an invited member makes their first purchase
+    | "upgrade_bonus"    // buyer's bonus on a purchase after their first one
+    | "wallet_exchange"; // admin moved money between a member's balance and recharge wallets
 
 // which wallet was affected by this transaction
 export type TWalletAffected = "recharge" | "balance";

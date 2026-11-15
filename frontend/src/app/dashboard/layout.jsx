@@ -11,7 +11,8 @@ import { usePathname, useRouter }          from 'next/navigation';
 import { useDispatch, useSelector }        from 'react-redux';
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
 import { useGetMeQuery }                   from '@/redux/features/apiSlice';
-import { clearAuthCookies } from '@/lib/authCookies';
+import { clearAuthCookies, setAuthCookies } from '@/lib/authCookies';
+import PageLoader from '@/components/shared/PageLoader';
 import { setUser, logout }                 from '@/redux/features/authSlice';
 import Sidebar                             from '@/components/dashboard/Sidebar';
 import Header                              from '@/components/dashboard/Header';
@@ -49,6 +50,11 @@ function DashboardInner({ children }) {
     }
   }, [user, router]);
 
+  // Keep the role cookie in step with the real profile, so the middleware routes correctly
+  useEffect(() => {
+    if (token && user?.role) setAuthCookies(token, user.role);
+  }, [token, user?.role]);
+
   // If the profile fetch returns 401, the token is invalid — force logout
   useEffect(() => {
     if (meError) {
@@ -71,6 +77,17 @@ function DashboardInner({ children }) {
     dispatch(logout());
     clearAuthCookies();
     router.push('/login');
+  }
+
+  // Only a confirmed member gets the member shell. Admins are sent to /admin and never
+  // see member pages (tasks, community, ...) — not even for a moment.
+  if (user?.role !== 'user') {
+    return (
+      <PageLoader
+        label={user && user.role !== 'user' ? 'Opening the admin panel…' : 'Loading your dashboard…'}
+        className="min-h-screen"
+      />
+    );
   }
 
   return (

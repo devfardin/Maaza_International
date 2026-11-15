@@ -11,7 +11,7 @@ export type TNotification = {
     actorId: Types.ObjectId;
     actorName: string;
     actorPhone: string;
-    // poisha — optional for events that have no amount
+    // BDT — optional for events that have no amount
     amount: number | null;
     // id of the deposit request / withdrawal / purchase the event refers to
     referenceId: Types.ObjectId | null;

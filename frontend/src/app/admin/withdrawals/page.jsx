@@ -8,21 +8,41 @@ import CopyButton from '@/components/shared/CopyButton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import PageLoader from '@/components/shared/PageLoader';
 import { formatBDT, formatDateTime } from '@/components/shared/money';
+import { floorMoney, roundMoney } from '@/lib/money';
+
+// Fee and net payout for a withdrawal (BDT). Falls back to the 8% rule for older records.
+const feeOf = (w) => w.fee ?? floorMoney((w.amount * 8) / 100);
+const netOf = (w) => w.netAmount ?? roundMoney(w.amount - feeOf(w));
+
+// Amount requested, the fee taken, and the net the admin must actually pay out
+function PayoutBreakdown({ w, compact = false }) {
+  return (
+    <div className={compact ? 'space-y-0.5' : 'space-y-1'}>
+      <p className={compact ? 'text-sm font-bold' : 'font-bold'}>{formatBDT(w.amount)} <span className="text-[11px] font-semibold text-slate-400">requested</span></p>
+      <p className="text-xs text-rose-600">− {formatBDT(feeOf(w))} fee (8%)</p>
+      <p className="text-sm font-extrabold text-emerald-700">Pay {formatBDT(netOf(w))}</p>
+    </div>
+  );
+}
 import { notify, getErrorMessage } from '@/lib/toast';
 
 const TABS = ['pending', 'approved', 'rejected', 'all'];
 
 export default function AdminWithdrawalsPage() {
   const [tab, setTab] = useState('pending');
-  const [decision, setDecision] = useState(null); // { id, action }
+  const [decision, setDecision] = useState(null); // { id, action, net }
 
   const { data, isLoading } = useGetAllWithdrawalsQuery(undefined, { pollingInterval: 30000 });
   const [updateWithdrawal, { isLoading: updating }] = useUpdateWithdrawalStatusMutation();
 
   const all = data?.data || [];
-  const filtered = tab === 'all' ? all : all.filter((w) => w.status === tab);
-  const counts = Object.fromEntries(TABS.map((t) => [t, t === 'all' ? all.length : all.filter((w) => w.status === t).length]));
-  const pendingTotal = all.filter((w) => w.status === 'pending').reduce((s, w) => s + w.amount, 0);
+  // payout method filter: all, bKash or Nagad
+  const [methodFilter, setMethodFilter] = useState('all');
+  const byMethod = methodFilter === 'all' ? all : all.filter((w) => w.method === methodFilter);
+  const filtered = tab === 'all' ? byMethod : byMethod.filter((w) => w.status === tab);
+  const counts = Object.fromEntries(TABS.map((t) => [t, t === 'all' ? byMethod.length : byMethod.filter((w) => w.status === t).length]));
+  // what the admin must send for the pending requests: the net after the fee
+  const pendingTotal = all.filter((w) => w.status === 'pending').reduce((s, w) => s + netOf(w), 0);
 
   async function confirmDecision({ adminNote, payoutReference }) {
     try {
@@ -51,11 +71,20 @@ export default function AdminWithdrawalsPage() {
           <b className="block text-xl mt-1">{counts.pending}</b>
         </div>
         <div className="bg-white border rounded-2xl p-4 min-w-0 col-span-1 lg:col-span-2">
-          <small className="text-xs text-slate-500">Pending payout amount</small>
+          <small className="text-xs text-slate-500">Pending payout (after 8% fee)</small>
           <b className="block text-xl mt-1 truncate">{formatBDT(pendingTotal)}</b>
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold text-slate-500 mr-1">Payout method</span>
+        {[{ v: 'all', l: 'All' }, { v: 'bkash', l: 'bKash' }, { v: 'nogod', l: 'Nagad' }].map((m) => (
+          <button key={m.v} onClick={() => setMethodFilter(m.v)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border ${methodFilter === m.v ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+            {m.l}
+          </button>
+        ))}
+      </div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)}
@@ -81,8 +110,11 @@ export default function AdminWithdrawalsPage() {
                   </div>
                   <StatusBadge status={w.status} />
                 </div>
-                <p className="mt-3 text-lg font-extrabold">{formatBDT(w.amount)}</p>
-                <p className="text-xs text-slate-600">{w.method === 'bkash' ? 'bKash' : 'Nagad'} · {w.accountNumber} · {w.accountHolderName}</p>
+                <div className="mt-3"><PayoutBreakdown w={w} compact /></div>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-xs text-slate-600">{w.method === 'bkash' ? 'bKash' : 'Nagad'} · {w.accountNumber} · {w.accountHolderName}</p>
+                  <CopyButton value={w.accountNumber} label="Copy number" />
+                </div>
                 <p className="text-[11px] text-slate-400 mt-1">{formatDateTime(w.createdAt)}</p>
                 {w.payoutReference && <p className="text-xs mt-1">Payout ref: <b>{w.payoutReference}</b></p>}
                 <div className="mt-3 flex items-center gap-2">
@@ -91,7 +123,7 @@ export default function AdminWithdrawalsPage() {
                 </div>
                 {w.status === 'pending' && (
                   <div className="grid grid-cols-2 gap-2 mt-3">
-                    <button onClick={() => setDecision({ id: w._id, action: 'approved' })} className="rounded-xl bg-emerald-50 text-emerald-700 py-2.5 text-sm font-bold">Approve (paid)</button>
+                    <button onClick={() => setDecision({ id: w._id, action: 'approved', net: netOf(w) })} className="rounded-xl bg-emerald-50 text-emerald-700 py-2.5 text-sm font-bold">Approve (paid)</button>
                     <button onClick={() => setDecision({ id: w._id, action: 'rejected' })} className="rounded-xl bg-rose-50 text-rose-700 py-2.5 text-sm font-bold">Reject</button>
                   </div>
                 )}
@@ -105,7 +137,7 @@ export default function AdminWithdrawalsPage() {
                 <tr className="border-b bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                   <th className="text-left px-5 py-3">User</th>
                   <th className="text-left px-5 py-3">Request ID</th>
-                  <th className="text-left px-5 py-3">Amount</th>
+                  <th className="text-left px-5 py-3">Amount &amp; payout</th>
                   <th className="text-left px-5 py-3">Payout to</th>
                   <th className="text-left px-5 py-3">Requested</th>
                   <th className="text-left px-5 py-3">Status</th>
@@ -122,8 +154,15 @@ export default function AdminWithdrawalsPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2"><code className="text-[11px]">{w._id.slice(-8)}</code><CopyButton value={w._id} /></div>
                     </td>
-                    <td className="px-5 py-3 font-bold">{formatBDT(w.amount)}</td>
-                    <td className="px-5 py-3 text-slate-600">{w.method === 'bkash' ? 'bKash' : 'Nagad'}<br /><span className="text-xs">{w.accountNumber}</span><br /><span className="text-xs text-slate-400">{w.accountHolderName}</span></td>
+                    <td className="px-5 py-3 whitespace-nowrap"><PayoutBreakdown w={w} compact /></td>
+                    <td className="px-5 py-3 text-slate-600">
+                      <p>{w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-800">{w.accountNumber}</span>
+                        <CopyButton value={w.accountNumber} label="Copy" />
+                      </div>
+                      <p className="text-xs text-slate-400">{w.accountHolderName}</p>
+                    </td>
                     <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">{formatDateTime(w.createdAt)}</td>
                     <td className="px-5 py-3">
                       <StatusBadge status={w.status} />
@@ -132,7 +171,7 @@ export default function AdminWithdrawalsPage() {
                     <td className="px-5 py-3">
                       {w.status === 'pending' && (
                         <div className="flex gap-2">
-                          <button onClick={() => setDecision({ id: w._id, action: 'approved' })} className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
+                          <button onClick={() => setDecision({ id: w._id, action: 'approved', net: netOf(w) })} className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
                           <button onClick={() => setDecision({ id: w._id, action: 'rejected' })} className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100">Reject</button>
                         </div>
                       )}
@@ -152,7 +191,7 @@ export default function AdminWithdrawalsPage() {
         showReference
         title={decision?.action === 'approved' ? 'Mark withdrawal as paid?' : 'Reject withdrawal?'}
         description={decision?.action === 'approved'
-          ? 'Confirm you have already sent this amount to the user’s bKash / Nagad. The user will be emailed.'
+          ? `Confirm you have sent ${formatBDT(decision?.net ?? 0)} (the amount after the 8% fee) to the user’s bKash / Nagad. The user will be emailed.`
           : 'The amount will be returned to the user’s balance and they will be emailed the reason.'}
         busy={updating}
         onCancel={() => setDecision(null)}

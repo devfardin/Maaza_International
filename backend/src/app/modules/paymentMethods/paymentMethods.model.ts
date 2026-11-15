@@ -12,7 +12,16 @@ const paymentMethodsSchema = new Schema<TPaymentMethods>(
             type: String,
             required: [true, "Code is required"],
             trim: true,
+            lowercase: true,
             unique: true,
+        },
+        image: {
+            type: String,
+            trim: true,
+        },
+        description: {
+            type: String,
+            default: "",
         },
         accountNumber: {
             type: String,
@@ -26,8 +35,7 @@ const paymentMethodsSchema = new Schema<TPaymentMethods>(
         },
         instructions: {
             type: String,
-            required: [true, "Instructions are required"],
-            trim: true,
+            default: "",
         },
         isActive: {
             type: Boolean,

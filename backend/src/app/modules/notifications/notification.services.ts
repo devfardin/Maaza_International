@@ -2,12 +2,15 @@ import status from 'http-status';
 import { Types } from 'mongoose';
 import AppError from '../../errors/AppError';
 import { NotificationModel, TNotification } from './notification.model';
+import { ADMIN_TAGS, RealtimeServices } from '../realtime/realtime.services';
 
 // Creates an admin-facing notification. Never throws: a notification failure
 // must not break the user's deposit / withdrawal / purchase.
 const notifyAdmins = async (payload: Omit<TNotification, 'readBy'>) => {
     try {
         await NotificationModel.create({ ...payload, readBy: [] });
+        // admin bell + admin request lists update live
+        RealtimeServices.notifyAdmins(ADMIN_TAGS);
     } catch (err) {
         console.error('Failed to create admin notification', err);
     }

@@ -33,8 +33,8 @@ const paymentAccountsSchema = new Schema<TPaymentAccounts>(
     },
         status: {
             type: String,
-            enum: ["active", "pending"],
-            default: "pending",
+            enum: ["active", "inactive", "pending"],
+            default: "active",
         },
     },
     { timestamps: true }

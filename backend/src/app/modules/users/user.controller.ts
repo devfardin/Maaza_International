@@ -8,6 +8,20 @@ import { AdminActivityServices } from '../adminActivity/adminActivity.services';
 
 // Self-service profile update. Only the fields a user may change themselves;
 // referralCode, membershipLevel, status, role and wallets can never be changed here.
+// POST /users/me/avatar — multipart field "file" (image, max 5 MB)
+const uploadMyAvatar = catchAsync(async (req, res) => {
+  if (!req.file) {
+    throw new AppError(status.BAD_REQUEST, 'Please choose an image to upload');
+  }
+  const result = await UserServices.uploadMyAvatar(req.user!.userId, req.file.path);
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: 'Profile photo updated',
+    data: result,
+  });
+});
+
 const updateMyProfile = catchAsync(async (req, res) => {
   const result = await UserServices.updateMyProfile(req.user!.userId, req.body);
   sendResponse(res, {
@@ -122,6 +136,7 @@ const changeUserStatus = catchAsync(async (req, res) => {
 
 export const UserController = {
   updateMyProfile,
+  uploadMyAvatar,
   createUser,
   createAdmin,
   deleteUser,

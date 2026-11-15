@@ -29,17 +29,20 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+// Cache invalidation tags — add a new tag whenever you add a new resource type
+export const ALL_TAG_TYPES = [
+  'User', 'Products', 'Categories', 'Wallet', 'Transactions',
+  'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
+  'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
+  'Withdrawals', 'Notifications', 'AdminActivity', 'VipLevels', 'DailyCheckin',
+  'News', 'AdminNews',
+];
+
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
 
-  // Cache invalidation tags — add a new tag whenever you add a new resource type
-  tagTypes: [
-    'User', 'Products', 'Categories', 'Wallet', 'Transactions',
-    'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
-    'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
-    'Withdrawals', 'Notifications', 'AdminActivity',
-  ],
+  tagTypes: ALL_TAG_TYPES,
 
   endpoints: (builder) => ({
 
@@ -111,6 +114,53 @@ export const apiSlice = createApi({
       invalidatesTags: ['User'],
     }),
 
+    // ── NEWS & UPDATES ────────────────────────────────────────────────────────
+    // GET /news  (members, published posts without the body)
+    getNews: builder.query({
+      query: () => '/news',
+      providesTags: ['News'],
+    }),
+
+    // GET /news/:id  (one post incl. HTML + CSS body)
+    getNewsById: builder.query({
+      query: (id) => `/news/${id}`,
+      providesTags: ['News'],
+    }),
+
+    // GET /news/admin/all  (admin + super admin, drafts included)
+    getAdminNews: builder.query({
+      query: () => '/news/admin/all',
+      providesTags: ['AdminNews'],
+    }),
+
+    // POST /news/create-news  (admin) — multipart: optional file + data(JSON)
+    createNews: builder.mutation({
+      query: ({ file, data }) => {
+        const form = new FormData();
+        if (file) form.append('file', file);
+        form.append('data', JSON.stringify(data));
+        return { url: '/news/create-news', method: 'POST', body: form };
+      },
+      invalidatesTags: ['AdminNews', 'News'],
+    }),
+
+    // PUT /news/:id  (admin) — optional new cover image + data(JSON)
+    updateNews: builder.mutation({
+      query: ({ id, file, data }) => {
+        const form = new FormData();
+        if (file) form.append('file', file);
+        form.append('data', JSON.stringify(data));
+        return { url: `/news/${id}`, method: 'PUT', body: form };
+      },
+      invalidatesTags: ['AdminNews', 'News'],
+    }),
+
+    // DELETE /news/:id  (admin) — soft delete
+    deleteNews: builder.mutation({
+      query: (id) => ({ url: `/news/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['AdminNews', 'News'],
+    }),
+
     // ── CATEGORIES ────────────────────────────────────────────────────────────
     // GET /categories  (public)
     getCategories: builder.query({
@@ -154,6 +204,12 @@ export const apiSlice = createApi({
       providesTags: ['Purchases'],
     }),
 
+    // GET /product-purchases/income-summary  → { todayIncome, totalEarned } in BDT
+    getIncomeSummary: builder.query({
+      query: () => '/product-purchases/income-summary',
+      providesTags: ['Purchases', 'Transactions'],
+    }),
+
     // GET /product-purchases/:purchaseId  (authenticated user)
     getSinglePurchase: builder.query({
       query: (purchaseId) => `/product-purchases/${purchaseId}`,
@@ -162,7 +218,7 @@ export const apiSlice = createApi({
 
     // POST /product-purchases/:purchaseId/claim  (authenticated user)
     // Claims daily income for a purchase — credits balance wallet
-    // Also credits referral commissions (level B and C) automatically
+    // Also credits referral commissions (level A and B) automatically
     claimDailyIncome: builder.mutation({
       query: (purchaseId) => ({
         url: `/product-purchases/${purchaseId}/claim`,
@@ -188,7 +244,7 @@ export const apiSlice = createApi({
     // ── DEPOSIT REQUESTS (RECHARGE) ───────────────────────────────────────────
     // POST /deposit-requests/create-deposit-request  (authenticated user)
     // Body: { userId, amount, methodCode, senderNumber, transactionId }
-    // amount is in BDT integer (min 200). Backend stores in poisha (×100).
+    // amount is in BDT (min 200, up to 2 decimals).
     createDepositRequest: builder.mutation({
       query: (data) => ({
         url: '/deposit-requests/create-deposit-request',
@@ -272,10 +328,50 @@ export const apiSlice = createApi({
 
     // ── PAYMENT METHODS ───────────────────────────────────────────────────────
     // GET /payment-methods  (public)
-    // Returns active payment methods (bKash, Nagad) with account numbers for deposit
+    // Returns ACTIVE payment methods only: { _id, name, code, image, description, accountNumber, accountType, instructions, isActive }
     getPaymentMethods: builder.query({
       query: () => '/payment-methods',
       providesTags: ['PaymentMethods'],
+    }),
+
+    // GET /payment-methods/admin/all  (admin + super_admin) — includes inactive methods
+    getAdminPaymentMethods: builder.query({
+      query: () => '/payment-methods/admin/all',
+      providesTags: ['PaymentMethods'],
+    }),
+
+    // POST /payment-methods/create-payment-method  (super_admin) — multipart: file + data(JSON)
+    createPaymentMethod: builder.mutation({
+      query: ({ file, data }) => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('data', JSON.stringify(data));
+        return { url: '/payment-methods/create-payment-method', method: 'POST', body: form };
+      },
+      invalidatesTags: ['PaymentMethods'],
+    }),
+
+    // PUT /payment-methods/:id  (super_admin) — multipart: optional file + data(JSON, partial)
+    updatePaymentMethod: builder.mutation({
+      query: ({ id, file, data }) => {
+        const form = new FormData();
+        if (file) form.append('file', file);
+        form.append('data', JSON.stringify(data));
+        return { url: `/payment-methods/${id}`, method: 'PUT', body: form };
+      },
+      invalidatesTags: ['PaymentMethods'],
+    }),
+
+    // PATCH /payment-methods/toggle-status/:id  (super_admin)
+    togglePaymentMethodStatus: builder.mutation({
+      query: (id) => ({ url: `/payment-methods/toggle-status/${id}`, method: 'PATCH' }),
+      invalidatesTags: ['PaymentMethods'],
+    }),
+
+    // DELETE /payment-methods/:id  (super_admin)
+    deletePaymentMethod: builder.mutation({
+      query: (id) => ({ url: `/payment-methods/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['PaymentMethods'],
     }),
 
     // ── PAYMENT ACCOUNTS (USER PAYOUT ACCOUNTS) ───────────────────────────────
@@ -299,6 +395,16 @@ export const apiSlice = createApi({
       providesTags: ['PaymentAccounts'],
     }),
 
+    // PATCH /payment-accounts/:id  — body: { accountNumber?, accountHolderName?, status?: 'active'|'inactive' }
+    updateMyPaymentAccount: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/payment-accounts/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['PaymentAccounts'],
+    }),
+
     // ── TRANSACTIONS ──────────────────────────────────────────────────────────
     // GET /transactions/user/:userId  (authenticated)
     // Returns full transaction history for the user, newest first
@@ -314,11 +420,54 @@ export const apiSlice = createApi({
       providesTags: ['Transactions'],
     }),
 
+    // ── VIP LEVELS & DAILY CHECK-IN ───────────────────────────────────────────
+    // GET /vip-levels  (any logged-in user)
+    // Returns [{ level: 1..8, qualifiedReferrals, minSpent (BDT), dailyCheckinBonus (BDT) }]
+    getVipLevels: builder.query({
+      query: () => '/vip-levels',
+      providesTags: ['VipLevels'],
+    }),
+
+    // PUT /vip-levels  (admin + super_admin) — body { levels: [...8 objects] } replaces all
+    updateVipLevels: builder.mutation({
+      query: (body) => ({ url: '/vip-levels', method: 'PUT', body }),
+      invalidatesTags: ['VipLevels', 'DailyCheckin'],
+    }),
+
+    // GET /daily-checkin/status  (user)
+    // → { vipLevel (0 = no VIP), qualifiedReferrals, checkedInToday, bonusAmount (BDT), lastCheckinAt }
+    getDailyCheckinStatus: builder.query({
+      query: () => '/daily-checkin/status',
+      providesTags: ['DailyCheckin'],
+    }),
+
+    // POST /daily-checkin  (user) → { amount (BDT), vipLevel, balanceAfter }
+    // 400 "already checked in today" when repeated
+    dailyCheckin: builder.mutation({
+      query: () => ({ url: '/daily-checkin', method: 'POST' }),
+      invalidatesTags: ['DailyCheckin', 'Wallet', 'Transactions'],
+    }),
+
     // ── TASKS ─────────────────────────────────────────────────────────────────
     // GET /tasks  (public)
     getTasks: builder.query({
       query: () => '/tasks',
       providesTags: ['Tasks'],
+    }),
+
+    // POST /tasks/create-task  (admin / super admin) — body: title, description, instructions, specialNote, image, rewardAmount (৳), rewardType, startsAt, endsAt
+    createTask: builder.mutation({
+      query: (body) => ({ url: '/tasks/create-task', method: 'POST', body }),
+      invalidatesTags: ['Tasks'],
+    }),
+
+    // POST /tasks/upload-image  (admin) — multipart field "file"; returns { url }
+    uploadTaskImage: builder.mutation({
+      query: (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        return { url: '/tasks/upload-image', method: 'POST', body };
+      },
     }),
 
     // GET /tasks/:id  (public)
@@ -345,6 +494,39 @@ export const apiSlice = createApi({
       invalidatesTags: ['CommunityPosts'],
     }),
 
+    // GET /community-posts/mine — my posts in any state (pending included)
+    getMyCommunityPosts: builder.query({
+      query: () => '/community-posts/mine',
+      providesTags: ['CommunityPosts'],
+    }),
+
+    // GET /community-posts/pending — super admin approval queue
+    getPendingCommunityPosts: builder.query({
+      query: () => '/community-posts/pending',
+      providesTags: ['CommunityPosts'],
+    }),
+
+    // PATCH /community-posts/:id/status — super admin: { status: 'approved' | 'rejected' }
+    decideCommunityPost: builder.mutation({
+      query: ({ id, status }) => ({ url: `/community-posts/${id}/status`, method: 'PATCH', body: { status } }),
+      invalidatesTags: ['CommunityPosts'],
+    }),
+
+    // PATCH /products/:id/approval — super admin: { approvalStatus: 'approved' | 'rejected' }
+    decideProductApproval: builder.mutation({
+      query: ({ id, approvalStatus }) => ({ url: `/products/${id}/approval`, method: 'PATCH', body: { approvalStatus } }),
+      invalidatesTags: ['Products', 'AdminProducts'],
+    }),
+
+    // POST /community-posts/upload-image — multipart field "file"; returns { url } (VIP 3+)
+    uploadPostImage: builder.mutation({
+      query: (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        return { url: '/community-posts/upload-image', method: 'POST', body };
+      },
+    }),
+
     // PATCH /community-posts/:postId/like  (authenticated)
     likePost: builder.mutation({
       query: (postId) => ({
@@ -361,6 +543,22 @@ export const apiSlice = createApi({
       providesTags: ['Referrals'],
     }),
 
+    // GET /referrals/my-team → members with relation (A/B/C), products and earnings from them
+    getMyTeam: builder.query({
+      query: () => '/referrals/my-team',
+      providesTags: ['Referrals'],
+    }),
+
+    // POST /users/me/avatar — multipart field "file"
+    uploadMyAvatar: builder.mutation({
+      query: (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        return { url: '/users/me/avatar', method: 'POST', body };
+      },
+      invalidatesTags: ['User'],
+    }),
+
     // ── ADMIN ──────────────────────────────────────────────────────────────────────────────
     // GET /users  (admin only)
     getAllUsers: builder.query({
@@ -375,8 +573,9 @@ export const apiSlice = createApi({
     }),
 
     // GET /deposit-requests  (admin only)
+    // GET /deposit-requests?methodCode=<code>  (admin only) — methodCode is optional
     getAllDepositRequests: builder.query({
-      query: () => '/deposit-requests',
+      query: (methodCode) => (methodCode ? `/deposit-requests?methodCode=${encodeURIComponent(methodCode)}` : '/deposit-requests'),
       providesTags: ['DepositRequests'],
     }),
 
@@ -398,6 +597,16 @@ export const apiSlice = createApi({
         body: { status },
       }),
       invalidatesTags: ['User'],
+    }),
+
+    // POST /wallets/:id/exchange  (admin / super_admin) — move money between a member's wallets
+    exchangeUserWallets: builder.mutation({
+      query: ({ id, from, to, amount }) => ({
+        url: `/wallets/${id}/exchange`,
+        method: 'POST',
+        body: { from, to, amount },
+      }),
+      invalidatesTags: ['User', 'Wallet', 'Transactions'],
     }),
 
     // ── ADMIN: USERS ──────────────────────────────────────────────────────────
@@ -467,11 +676,42 @@ export const apiSlice = createApi({
       invalidatesTags: ['Categories'],
     }),
 
+    // GET /admin-dashboard/stats  (admin) → { totalUsers, totalDeposits, totalWithdrawals, pendingDeposits, pendingWithdrawals, ... } in BDT
+    getAdminDashboardStats: builder.query({
+      query: () => '/admin-dashboard/stats',
+      providesTags: ['Notifications', 'DepositRequests', 'Withdrawals', 'User', 'Transactions', 'Wallet'],
+    }),
+
+    // DELETE /categories/:id  (super admin only)
+    deleteCategory: builder.mutation({
+      query: (id) => ({ url: `/categories/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Categories'],
+    }),
+
   }),
 });
 
 // ── Export all auto-generated hooks ──────────────────────────────────────────
 export const {
+  useGetNewsQuery,
+  useGetNewsByIdQuery,
+  useGetAdminNewsQuery,
+  useCreateNewsMutation,
+  useUpdateNewsMutation,
+  useDeleteNewsMutation,
+  useGetMyCommunityPostsQuery,
+  useGetPendingCommunityPostsQuery,
+  useDecideCommunityPostMutation,
+  useDecideProductApprovalMutation,
+  useCreateTaskMutation,
+  useUploadTaskImageMutation,
+  useGetAdminDashboardStatsQuery,
+  useDeleteCategoryMutation,
+  useUploadPostImageMutation,
+  useGetIncomeSummaryQuery,
+  useUpdateMyPaymentAccountMutation,
+  useGetMyTeamQuery,
+  useUploadMyAvatarMutation,
   // Auth
   useLoginMutation,
   useRefreshTokenMutation,
@@ -513,6 +753,16 @@ export const {
   useGetMyDepositRequestsQuery,
   // Payment methods
   useGetPaymentMethodsQuery,
+  useGetAdminPaymentMethodsQuery,
+  useCreatePaymentMethodMutation,
+  useUpdatePaymentMethodMutation,
+  useTogglePaymentMethodStatusMutation,
+  useDeletePaymentMethodMutation,
+  // VIP & daily check-in
+  useGetVipLevelsQuery,
+  useUpdateVipLevelsMutation,
+  useGetDailyCheckinStatusQuery,
+  useDailyCheckinMutation,
   // Payment accounts
   useCreatePaymentAccountMutation,
   useGetMyPaymentAccountsQuery,
@@ -534,6 +784,7 @@ export const {
   useGetAllDepositRequestsQuery,
   useUpdateDepositStatusMutation,
   useChangeUserStatusMutation,
+  useExchangeUserWalletsMutation,
   useCreateAdminMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,

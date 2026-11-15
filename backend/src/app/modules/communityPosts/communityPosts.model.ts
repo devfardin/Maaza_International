@@ -32,7 +32,7 @@ const communityPostSchema = new Schema<TCommunityPost>({
     },
     media: {
         type: [mediaSchema],
-        required: [true, "At least one media item is required"],
+        default: [],
     },
     status: {
         type: String,

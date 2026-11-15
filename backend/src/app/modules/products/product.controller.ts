@@ -8,7 +8,7 @@ import { AdminActivityServices } from "../adminActivity/adminActivity.services";
 const createProduct = catchAsync(
     async (req, res) => {
         const { ...payload } = req.body;
-        const result = await ProductService.createProduct(req.file, payload);
+        const result = await ProductService.createProduct(req.file, payload, req.user!);
         await AdminActivityServices.record(req.user!, "product_created", `Created product ${result?.name ?? ""}`, { type: "product", id: result?._id });
         sendResponse(res, {
             statusCode: status.OK,
@@ -63,12 +63,27 @@ const updateProduct = catchAsync(
     async (req, res) => {
         const { id } = req.params;
         const { ...payload } = req.body;
-        const result = await ProductService.updateProduct(id, payload);
+        const result = await ProductService.updateProduct(id, payload, req.user!);
         await AdminActivityServices.record(req.user!, "product_updated", `Updated product ${result?.name ?? id}`, { type: "product", id });
         sendResponse(res, {
             statusCode: status.OK,
             success: true,
             message: "Product updated successfully",
+            data: result
+        });
+    });
+
+// super admin: approve or reject a product
+const decideApproval = catchAsync(
+    async (req, res) => {
+        const { id } = req.params;
+        const decision = req.body.approvalStatus === "rejected" ? "rejected" : "approved";
+        const result = await ProductService.decideProductApproval(id, decision, req.user!);
+        await AdminActivityServices.record(req.user!, "product_approval", `${decision === "approved" ? "Approved" : "Rejected"} product ${result?.name ?? id}`, { type: "product", id });
+        sendResponse(res, {
+            statusCode: status.OK,
+            success: true,
+            message: decision === "approved" ? "Product approved and published" : "Product rejected",
             data: result
         });
     });
@@ -93,5 +108,6 @@ export const ProductController = {
     getAllProductsForAdmin,
     getSingleProduct,
     updateProduct,
+    decideApproval,
     deleteProduct
 }

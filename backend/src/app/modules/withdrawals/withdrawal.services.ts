@@ -2,7 +2,10 @@ import status from 'http-status';
 import mongoose, { Types } from 'mongoose';
 import AppError from '../../errors/AppError';
 import config from '../../config';
-import { BDT } from '../../config/constants';
+import { MIN_WITHDRAWAL, WITHDRAWAL_FEE_PERCENT } from '../../config/constants';
+import { moneyIncrement, moneyText, roundMoney, shareOf } from '../../utils/money';
+import { DepositRequestModel } from '../depositRequests/depositRequests.model';
+import { ProductPurchaseModel } from '../productPurchages/productPurchases.model';
 import { sendEmail } from '../../utils/sendEmail';
 import { escapeHtml } from '../../utils/escapeHtml';
 import { UserModel } from '../users/user.model';
@@ -10,12 +13,12 @@ import { PaymentAccountsModel } from '../paymentAccounts/paymentAccounts.model';
 import { WalletModel } from '../wallets/wallet.model';
 import { TransactionServices } from '../transactions/transaction.services';
 import { NotificationServices } from '../notifications/notification.services';
+import { RealtimeServices } from '../realtime/realtime.services';
 import { WithdrawalModel, TWithdrawalStatus } from './withdrawal.model';
 
-const MIN_WITHDRAWAL = 100 * BDT;
 const MAX_PENDING = 5;
 
-const formatBDT = (poisha: number) => `৳${(poisha / BDT).toFixed(2)}`;
+const formatBDT = (amount: number) => moneyText(amount);
 
 // ─── User: request a withdrawal ───────────────────────────────────────────────
 // The amount is moved out of the balance wallet immediately (so the same money
@@ -26,16 +29,28 @@ const createWithdrawal = async (userId: string, payload: { amount: number; payme
     if (user.role !== 'user') throw new AppError(status.FORBIDDEN, 'Only users can request withdrawals!');
     if (user.status !== 'active') throw new AppError(status.FORBIDDEN, 'Your account is not allowed to withdraw. Contact support.');
 
-    const amount = Math.round(payload.amount * BDT);
-    if (!Number.isInteger(amount) || amount < MIN_WITHDRAWAL) {
-        throw new AppError(status.BAD_REQUEST, 'Minimum withdrawal is 100 BDT');
+    // A valid member has made an approved deposit AND bought at least one product
+    const [approvedDeposits, purchases] = await Promise.all([
+        DepositRequestModel.countDocuments({ userId, status: 'approved' }),
+        ProductPurchaseModel.countDocuments({ userId }),
+    ]);
+    if (approvedDeposits === 0 || purchases === 0) {
+        throw new AppError(status.FORBIDDEN, 'Only valid members can withdraw. Make a deposit and buy a product first.');
     }
+
+    const amount = roundMoney(payload.amount);
+    if (!Number.isInteger(amount) || amount < MIN_WITHDRAWAL) {
+        throw new AppError(status.BAD_REQUEST, `Minimum withdrawal is ${MIN_WITHDRAWAL} BDT`);
+    }
+    const fee = shareOf(amount, WITHDRAWAL_FEE_PERCENT / 100);
+    const netAmount = roundMoney(amount - fee);
 
     if (!Types.ObjectId.isValid(payload.paymentAccountId)) {
         throw new AppError(status.BAD_REQUEST, 'Invalid payout account');
     }
-    const account = await PaymentAccountsModel.findOne({ _id: payload.paymentAccountId, userId });
-    if (!account) throw new AppError(status.NOT_FOUND, 'Payout account not found. Add a bKash or Nagad account first.');
+    // only an ACTIVE payout account can receive a withdrawal
+    const account = await PaymentAccountsModel.findOne({ _id: payload.paymentAccountId, userId, status: 'active' });
+    if (!account) throw new AppError(status.NOT_FOUND, 'Payout account not found or inactive. Activate a bKash or Nagad account first.');
 
     const pending = await WithdrawalModel.countDocuments({ userId, status: 'pending' });
     if (pending >= MAX_PENDING) {
@@ -49,7 +64,7 @@ const createWithdrawal = async (userId: string, payload: { amount: number; payme
 
         const wallet = await WalletModel.findOneAndUpdate(
             { userId, walletType: 'balance', isActive: true, balance: { $gte: amount } },
-            { $inc: { balance: -amount } },
+            moneyIncrement('balance', -amount),
             { new: true, session }
         );
         if (!wallet) {
@@ -60,6 +75,8 @@ const createWithdrawal = async (userId: string, payload: { amount: number; payme
             [{
                 userId,
                 amount,
+                fee,
+                netAmount,
                 currency: 'BDT',
                 method: account.method,
                 accountNumber: account.accountNumber,
@@ -125,15 +142,26 @@ const createWithdrawal = async (userId: string, payload: { amount: number; payme
 
 // ─── User: own withdrawals ────────────────────────────────────────────────────
 const getMyWithdrawals = async (userId: string) => {
-    return WithdrawalModel.find({ userId }).sort({ createdAt: -1 });
+    const docs = await WithdrawalModel.find({ userId }).sort({ createdAt: -1 }).lean();
+    return docs.map(withPayout);
 };
 
 // ─── Admin: all withdrawals ───────────────────────────────────────────────────
+// Adds the fee and the net payout. Older records were saved before the fee existed,
+// so their fee and net are worked out from the amount.
+const withPayout = <T extends { amount: number; fee?: number; netAmount?: number }>(w: T) => {
+    const fee = w.fee && w.fee > 0 ? w.fee : shareOf(w.amount, WITHDRAWAL_FEE_PERCENT / 100);
+    const netAmount = w.netAmount && w.netAmount > 0 ? w.netAmount : roundMoney(w.amount - fee);
+    return { ...w, fee, netAmount };
+};
+
 const getAllWithdrawals = async (filter: { status?: TWithdrawalStatus } = {}) => {
-    return WithdrawalModel.find(filter.status ? { status: filter.status } : {})
+    const docs = await WithdrawalModel.find(filter.status ? { status: filter.status } : {})
         .populate('userId', 'fullName email phone')
         .populate('processedBy', 'fullName')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
+    return docs.map(withPayout);
 };
 
 // ─── Admin: approve (paid out) or reject (refund) ─────────────────────────────
@@ -171,7 +199,7 @@ const updateWithdrawalStatus = async (
         if (payload.status === 'rejected') {
             const wallet = await WalletModel.findOneAndUpdate(
                 { userId: updated.userId, walletType: 'balance' },
-                { $inc: { balance: updated.amount } },
+                moneyIncrement('balance', updated.amount),
                 { new: true, session }
             );
             if (!wallet) throw new AppError(status.NOT_FOUND, 'User balance wallet not found!');
@@ -196,6 +224,10 @@ const updateWithdrawalStatus = async (
     } finally {
         await session.endSession();
     }
+
+    // Live update: the requester's balance / withdrawal list, and the admin lists
+    RealtimeServices.notifyUser(updated.userId, ['Withdrawals', 'Wallet', 'Transactions']);
+    RealtimeServices.notifyAdmins(['Withdrawals', 'Transactions']);
 
     const user = await UserModel.findById(updated.userId);
     if (user?.email) {

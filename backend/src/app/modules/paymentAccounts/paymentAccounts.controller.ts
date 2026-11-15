@@ -28,7 +28,19 @@ const getMyPaymentAccounts = catchAsync(async (req, res) => {
     });
 });
 
+// edit own payout account (number, holder name, active / inactive)
+const updateMyPaymentAccount = catchAsync(async (req, res) => {
+    const result = await PaymentAccountsServices.updateMyPaymentAccount(req.user!.userId, req.params.id, req.body);
+    sendResponse(res, {
+        success: true,
+        statusCode: status.OK,
+        message: "Payment account updated successfully",
+        data: result,
+    });
+});
+
 export const PaymentAccountsController = {
     createPaymentAccount,
     getMyPaymentAccounts,
+    updateMyPaymentAccount,
 }

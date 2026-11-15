@@ -79,10 +79,21 @@ const getClaimHistory = catchAsync(async (req, res) => {
     });
 });
 
+const getIncomeSummary = catchAsync(async (req, res) => {
+  const result = await ProductPurchaseServices.getIncomeSummary(req.user!.userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: 'Income summary retrieved',
+    data: result,
+  });
+});
+
 export const ProductPurchaseController = {
     purchaseProduct,
     claimDailyIncome,
     getMyPurchases,
+    getIncomeSummary,
     getSinglePurchase,
     getClaimHistory,
 };

@@ -23,12 +23,18 @@ export function getErrorMessage(err, fallback = 'Something went wrong. Please tr
   if (err.status === 'FETCH_ERROR' || err.status === 'TIMEOUT_ERROR') {
     return 'Network error. Check your internet connection and try again.';
   }
-  if (err.status === 401) return 'Your session has expired. Please log in again.';
-  if (err.status === 403) return 'You do not have permission to do that.';
-  if (err.status === 404) return 'The requested item could not be found.';
-  if (err.status === 429) return 'Too many attempts. Please wait a moment and try again.';
-
   const data = err.data;
+
+  // 401 from /auth/login means "wrong phone or password" — the server message says so.
+  // Only fall back to the generic "session expired" text when the server gave no message.
+  if (err.status === 401) {
+    if (data?.message) return data.message;
+    return 'Your session has expired. Please log in again.';
+  }
+  if (err.status === 403) return data?.message || 'You do not have permission to do that.';
+  if (err.status === 404) return data?.message || 'The requested item could not be found.';
+  if (err.status === 429) return data?.message || 'Too many attempts. Please wait a moment and try again.';
+
   // Validation errors carry a field-level list — show the first clear one
   const firstSource = Array.isArray(data?.errorSources) ? data.errorSources.find((e) => e?.message) : null;
   if (firstSource?.message && firstSource.message !== 'Someting want wrong') return firstSource.message;

@@ -7,6 +7,7 @@
 //   onLogout  — function to sign the user out
 import { useI18n } from '@/lib/i18n';
 import { notify } from '@/lib/toast';
+import { vipLabel, vipLevelOf } from '@/lib/vip';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 export default function Header({ showPage, user, onLogout }) {
@@ -58,7 +59,7 @@ export default function Header({ showPage, user, onLogout }) {
             </span>
             <span className="hidden md:block text-left min-w-0">
               <b className="block text-xs truncate max-w-[140px]">{user?.fullName || t('common.loading')}</b>
-              <small className="text-[10px] text-slate-500">Level {user?.membershipLevel || 1}</small>
+              <small className="text-[10px] text-slate-500">{vipLabel(vipLevelOf(user?.membershipLevel))}</small>
             </span>
           </button>
 

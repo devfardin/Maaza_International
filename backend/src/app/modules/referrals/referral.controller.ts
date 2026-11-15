@@ -18,4 +18,14 @@ const getMyReferrals = catchAsync(async (req, res) => {
     });
 });
 
-export const ReferralController = { getMyReferrals };
+const getMyTeam = catchAsync(async (req, res) => {
+    const result = await ReferralServices.getMyTeamDetails(req.user!.userId);
+    sendResponse(res, {
+        success: true,
+        statusCode: status.OK,
+        message: 'Team retrieved successfully',
+        data: result,
+    });
+});
+
+export const ReferralController = { getMyReferrals, getMyTeam };

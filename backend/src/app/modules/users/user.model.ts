@@ -68,7 +68,7 @@ const userSchema = new Schema<Tuser, User>(
             type: Number,
             default: 1,
             min: 1,
-            max: 8
+            max: 9 // 1 = normal member, 2..9 = VIP 1..8
         },
         avatar: {
             type: String,

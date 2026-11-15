@@ -12,4 +12,11 @@ router.get(
     ReferralController.getMyReferrals,
 );
 
+// GET /referrals/my-team — members with relation (A/B/C), products bought and earnings from them
+router.get(
+    '/my-team',
+    auth(USER_ROLE.user, USER_ROLE.admin, USER_ROLE.super_admin),
+    ReferralController.getMyTeam,
+);
+
 export const ReferralRoutes = router;

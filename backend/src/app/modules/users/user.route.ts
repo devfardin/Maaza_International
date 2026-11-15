@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth';
 import { USER_ROLE } from './user.constant';
 import validationRequest from '../../middlewares/validateRequest';
 import { UserValidations } from './user.validations';
+import { upload } from '../../utils/sendImageToCloudinary';
 
 const router = express.Router();
 
@@ -20,6 +21,14 @@ router.patch(
   auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
   validationRequest(UserValidations.updateMyProfileValidation),
   UserController.updateMyProfile,
+);
+
+// Upload own profile photo (multipart field "file")
+router.post(
+  '/me/avatar',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user),
+  upload.single('file'),
+  UserController.uploadMyAvatar,
 );
 
 // Create an admin account (super_admin only)
@@ -60,6 +69,7 @@ router.patch(
 );
 
 // Soft-delete a user (admin only)
-router.delete('/:id', auth(USER_ROLE.super_admin, USER_ROLE.admin), UserController.deleteUser);
+// Soft-delete a user (super admin only)
+router.delete('/:id', auth(USER_ROLE.super_admin), UserController.deleteUser);
 
 export const UserRoutes = router;

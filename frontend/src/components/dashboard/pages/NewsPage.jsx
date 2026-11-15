@@ -1,52 +1,71 @@
 'use client';
-
-// News page — shows announcements and educational articles
-
-const NEWS = [
-  {
-    emoji: '🌿',
-    gradient: 'from-lime-100 to-harvest-200',
-    tag: 'ANNOUNCEMENT',
-    tagColor: 'text-harvest-700',
-    title: 'Welcome to the updated member dashboard',
-    desc: 'A more organized place to manage wallet activity, view products, follow requests and discover community updates.',
-    date: '27 October 2026 · 3 min read',
-  },
-  {
-    emoji: '🛡️',
-    gradient: 'from-sky-100 to-teal-200',
-    tag: 'ACCOUNT SECURITY',
-    tagColor: 'text-sky-700',
-    title: 'Keep your account and payment details safe',
-    desc: 'Never share PINs or OTPs. Review recipient details carefully and keep payment receipts.',
-    date: '24 October 2026 · 4 min read',
-  },
-];
+// News & Updates list — one card per row: notice image on the left (full image, never cut),
+// notice type, title, short description and published date on the right.
+import Link from 'next/link';
+import { useGetNewsQuery } from '@/redux/features/apiSlice';
+import { NOTICE_STYLE, formatNewsDate } from '@/lib/news';
 
 export default function NewsPage() {
+  const { data, isLoading, isError } = useGetNewsQuery(undefined, { pollingInterval: 120000 });
+  const posts = data?.data ?? [];
+
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">News & announcements</h1>
-        <p className="text-sm text-slate-500 mt-1">Important notices and educational updates.</p>
+    <div className="space-y-5">
+      <div>
+        <p className="text-xs tracking-widest font-extrabold text-harvest-700">NEWS &amp; UPDATES</p>
+        <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold">News &amp; announcements</h1>
+        <p className="mt-1 text-sm text-slate-500">Important notices, security tips and product updates.</p>
       </div>
 
-      <div className="space-y-4">
-        {NEWS.map(({ emoji, gradient, tag, tagColor, title, desc, date }) => (
-          <article key={title} className="bg-white border rounded-2xl p-4 flex gap-4">
-            {/* Article thumbnail */}
-            <div className={`w-24 sm:w-32 shrink-0 rounded-xl bg-gradient-to-br ${gradient} grid place-items-center text-4xl`}>
-              {emoji}
-            </div>
-            <div>
-              <span className={`text-xs font-extrabold ${tagColor}`}>{tag}</span>
-              <h2 className="font-extrabold mt-2">{title}</h2>
-              <p className="text-sm text-slate-500 leading-6 mt-2">{desc}</p>
-              <small className="text-xs text-slate-400 block mt-3">{date}</small>
-            </div>
-          </article>
-        ))}
-      </div>
+      {isLoading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl border bg-white" />)}
+        </div>
+      )}
+
+      {isError && <p className="py-12 text-center text-sm text-slate-500">Could not load news. Please try again later.</p>}
+
+      {!isLoading && !isError && posts.length === 0 && (
+        <div className="rounded-3xl border bg-white p-10 text-center">
+          <p className="text-4xl">📰</p>
+          <p className="mt-3 font-bold text-slate-700">No news yet</p>
+          <p className="mt-1 text-sm text-slate-500">New announcements will appear here.</p>
+        </div>
+      )}
+
+      {posts.length > 0 && (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <Link
+              key={post._id}
+              href={`/dashboard/news/${post._id}`}
+              className="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:flex-row"
+            >
+              {/* Left: the whole notice image, contained — nothing is cut on any side */}
+              <div className="flex shrink-0 items-center justify-center bg-slate-100 p-3 sm:w-64 md:w-72">
+                {post.coverImage ? (
+                  <img src={post.coverImage} alt={post.title} className="max-h-56 w-full object-contain sm:max-h-44" />
+                ) : (
+                  <div className="grid h-40 w-full place-items-center rounded-2xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-lime-400 text-5xl">📰</div>
+                )}
+              </div>
+
+              {/* Right: information */}
+              <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold ${NOTICE_STYLE[post.tag] || 'bg-slate-100 text-slate-600'}`}>
+                    {post.tag}
+                  </span>
+                  <small className="text-xs text-slate-400">{formatNewsDate(post.publishedAt)}</small>
+                </div>
+                <h2 className="mt-3 text-lg font-extrabold leading-snug text-slate-900 sm:text-xl">{post.title}</h2>
+                {post.summary && <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{post.summary}</p>}
+                <span className="mt-auto pt-4 text-sm font-extrabold text-harvest-700 group-hover:underline">Read more →</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

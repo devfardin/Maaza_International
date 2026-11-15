@@ -16,6 +16,11 @@ import { ActivityLogRoutes } from '../modules/activityLogs/activityLog.route';
 import { WithdrawalRoutes } from '../modules/withdrawals/withdrawal.route';
 import { NotificationRoutes } from '../modules/notifications/notification.route';
 import { AdminActivityRoutes } from '../modules/adminActivity/adminActivity.route';
+import { VipLevelRoutes } from '../modules/vipLevels/vipLevel.route';
+import { DailyCheckinRoutes } from '../modules/dailyCheckins/dailyCheckin.route';
+import { RealtimeRoutes } from '../modules/realtime/realtime.route';
+import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.route';
+import { NewsRoutes } from '../modules/news/news.route';
 
 const router = Router();
 
@@ -41,6 +46,11 @@ const moduleRoutes = [
   { path: '/withdrawals', route: WithdrawalRoutes },            // User withdrawal requests & admin payouts
   { path: '/notifications', route: NotificationRoutes },        // Admin bell notifications
   { path: '/admin-activity', route: AdminActivityRoutes },      // Super admin: what each admin did
+  { path: '/vip-levels', route: VipLevelRoutes },               // VIP ladder: referrals, spend, daily bonus
+  { path: '/daily-checkin', route: DailyCheckinRoutes },        // Daily check-in bonus
+  { path: '/realtime', route: RealtimeRoutes },                 // Live refresh (Server-Sent Events)
+  { path: '/admin-dashboard', route: AdminDashboardRoutes },    // Admin dashboard headline stats
+  { path: '/news', route: NewsRoutes },                         // News & updates posts (HTML + CSS)
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

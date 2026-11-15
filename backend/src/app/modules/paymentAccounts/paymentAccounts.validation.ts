@@ -11,12 +11,9 @@ const createPaymentAccountValidation = z.object({
 
 const updatePaymentAccountValidation = z.object({
     body: z.object({
-        method: z.enum(["bkash", "nogod"]).optional(),
         accountNumber: z.string().trim().optional(),
-        accountHolderName: z.string().trim().optional(),
-        isPrimary: z.boolean().optional(),
-        verifiedAt: z.date().optional(),
-        status: z.enum(["active", "pending"]).optional(),
+        accountHolderName: z.string().trim().min(2, "Account holder name is required").optional(),
+        status: z.enum(["active", "inactive"], { message: "Status must be active or inactive" }).optional(),
     }),
 });
 

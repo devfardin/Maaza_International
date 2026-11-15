@@ -1,9 +1,15 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useChangePasswordMutation, useUpdateMyProfileMutation } from '@/redux/features/apiSlice';
+import {
+  useChangePasswordMutation,
+  useGetMeQuery,
+  useUpdateMyProfileMutation,
+  useUploadMyAvatarMutation,
+} from '@/redux/features/apiSlice';
 import { setUser } from '@/redux/features/authSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
+import { vipLabel, vipLevelOf } from '@/lib/vip';
 import { useI18n } from '@/lib/i18n';
 import CopyButton from '@/components/shared/CopyButton';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -14,7 +20,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function ProfilePage({ showPage }) {
   const { t } = useI18n();
   const dispatch = useDispatch();
-  const user = useSelector((s) => s.auth.user);
+  const sessionUser = useSelector((s) => s.auth.user);
+  // Always fetch the profile here, so the saved details show as soon as the page opens
+  const { data: meData } = useGetMeQuery();
+  const user = meData?.data || sessionUser;
+  const [uploadAvatar, { isLoading: uploadingAvatar }] = useUploadMyAvatarMutation();
+  const fileRef = useRef(null);
 
   const [changePassword, { isLoading: changingPw }] = useChangePasswordMutation();
   const [updateProfile, { isLoading: saving }] = useUpdateMyProfileMutation();
@@ -25,6 +36,11 @@ export default function ProfilePage({ showPage }) {
   const [oldPw, setOldPw]   = useState('');
   const [newPw, setNewPw]   = useState('');
   const [confPw, setConfPw] = useState('');
+
+  // Saved values shown while not editing; the draft form is used while editing
+  const shown = editing
+    ? form
+    : { fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '' };
 
   const initials = user?.fullName
     ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -70,6 +86,21 @@ export default function ProfilePage({ showPage }) {
     }
   }
 
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return notify.error('Please choose an image file.');
+    if (file.size > 5 * 1024 * 1024) return notify.error('Image must be 5 MB or smaller.');
+    try {
+      const res = await uploadAvatar(file).unwrap();
+      if (res?.data) dispatch(setUser(res.data));
+      notify.success('Profile photo updated.');
+    } catch (err) {
+      notify.error(getErrorMessage(err, 'Could not upload your photo.'));
+    }
+  }
+
   async function handleChangePassword(e) {
     e.preventDefault();
     if (newPw !== confPw) return notify.error('New passwords do not match.');
@@ -95,14 +126,31 @@ export default function ProfilePage({ showPage }) {
       <div className="grid lg:grid-cols-[280px_1fr] gap-5">
         {/* Left: summary card */}
         <div className="bg-white border rounded-2xl p-6 text-center h-fit">
-          <div className="w-20 h-20 rounded-3xl bg-harvest-100 text-harvest-700 grid place-items-center text-2xl font-extrabold mx-auto">
-            {initials}
+          <div className="relative mx-auto h-24 w-24">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Profile" className="h-24 w-24 rounded-3xl object-cover" />
+            ) : (
+              <div className="grid h-24 w-24 place-items-center rounded-3xl bg-harvest-100 text-2xl font-extrabold text-harvest-700">
+                {initials}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploadingAvatar}
+              aria-label="Change profile photo"
+              className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full bg-harvest-700 text-white shadow disabled:opacity-60"
+            >
+              {uploadingAvatar ? '…' : '✎'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
           </div>
+          <p className="mt-2 text-[11px] text-slate-400">JPG or PNG, up to 5 MB</p>
           <h2 className="font-extrabold text-lg mt-4 break-words">{user?.fullName || '—'}</h2>
           <p className="text-sm text-slate-500 mt-1 break-all">{user?.email || '—'}</p>
           <p className="text-sm text-slate-500">{user?.phone || '—'}</p>
           <span className="inline-block rounded-full bg-emerald-50 text-emerald-700 px-3 py-1.5 text-xs font-extrabold mt-3">
-            Level {user?.membershipLevel || 1}
+            {vipLabel(vipLevelOf(user?.membershipLevel))}
           </span>
           <div className="mt-2"><StatusBadge status={user?.status === 'active' ? 'active' : 'cancelled'} /></div>
           <button onClick={() => showPage('bank')} className="block w-full text-left py-4 border-t mt-5 text-sm">
@@ -130,15 +178,15 @@ export default function ProfilePage({ showPage }) {
 
             <div className="grid sm:grid-cols-2 gap-4 mt-5">
               <Field label="Full name" htmlFor="pf-name">
-                <input id="pf-name" className={inputCls} disabled={!editing} value={form.fullName}
+                <input id="pf-name" className={inputCls} disabled={!editing} value={shown.fullName}
                   onChange={(e) => setForm({ ...form, fullName: e.target.value })} maxLength={50} />
               </Field>
               <Field label="Email address" htmlFor="pf-email">
-                <input id="pf-email" type="email" className={inputCls} disabled={!editing} value={form.email}
+                <input id="pf-email" type="email" className={inputCls} disabled={!editing} value={shown.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </Field>
               <Field label="Phone number" htmlFor="pf-phone">
-                <input id="pf-phone" type="tel" inputMode="tel" className={inputCls} disabled={!editing} value={form.phone}
+                <input id="pf-phone" type="tel" inputMode="tel" className={inputCls} disabled={!editing} value={shown.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </Field>
 
@@ -150,7 +198,7 @@ export default function ProfilePage({ showPage }) {
                 </div>
               </Field>
               <Field label="🔒 Membership level">
-                <div className="border rounded-xl px-3.5 py-3 text-sm bg-slate-50 text-slate-700">Level {user?.membershipLevel || 1}</div>
+                <div className="border rounded-xl px-3.5 py-3 text-sm bg-slate-50 text-slate-700">{vipLabel(vipLevelOf(user?.membershipLevel))}</div>
               </Field>
               <Field label="🔒 Account status">
                 <div className="border rounded-xl px-3.5 py-3 text-sm bg-slate-50 text-slate-700 capitalize">{user?.status || 'active'}</div>

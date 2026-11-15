@@ -1,6 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { useGetAllDepositRequestsQuery, useUpdateDepositStatusMutation } from '@/redux/features/apiSlice';
+import {
+  useGetAllDepositRequestsQuery,
+  useGetAdminPaymentMethodsQuery,
+  useUpdateDepositStatusMutation,
+} from '@/redux/features/apiSlice';
 import DecisionDialog from '@/components/admin/DecisionDialog';
 import CopyButton from '@/components/shared/CopyButton';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -14,7 +18,10 @@ export default function AdminDepositsPage() {
   const [tab, setTab]       = useState('pending');
   const [decision, setDecision] = useState(null); // { id, action, label }
 
-  const { data, isLoading } = useGetAllDepositRequestsQuery(undefined, { pollingInterval: 30000 });
+  const [methodFilter, setMethodFilter] = useState(''); // payment method code, '' = all
+  const { data, isLoading } = useGetAllDepositRequestsQuery(methodFilter || undefined, { pollingInterval: 30000 });
+  const { data: methodsData } = useGetAdminPaymentMethodsQuery();
+  const methodOptions = (methodsData?.data || []).map((m) => ({ code: m.code, name: m.name }));
   const [updateStatus, { isLoading: updating }] = useUpdateDepositStatusMutation();
 
   const all      = data?.data || [];
@@ -36,6 +43,24 @@ export default function AdminDepositsPage() {
       <div>
         <h1 className="text-2xl font-extrabold">Deposit requests</h1>
         <p className="text-sm text-slate-500 mt-1">Review deposits. Approving credits the recharge wallet and emails the user.</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Payment code</span>
+          {[{ code: '', name: 'All codes' }, ...methodOptions].map((m) => (
+            <button
+              key={m.code || 'all'}
+              type="button"
+              onClick={() => setMethodFilter(m.code)}
+              className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+                methodFilter === m.code ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {m.name}{m.code && <span className="ml-1 font-mono opacity-80">{m.code.toUpperCase()}</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">

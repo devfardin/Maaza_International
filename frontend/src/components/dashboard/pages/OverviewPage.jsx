@@ -6,7 +6,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useSelector } from 'react-redux';
-import { useGetMyWalletsQuery, useGetMyPurchasesQuery, useGetUserTransactionsQuery } from '@/redux/features/apiSlice';
+import { useGetMyWalletsQuery, useGetMyPurchasesQuery, useGetUserTransactionsQuery, useGetMyReferralsQuery } from '@/redux/features/apiSlice';
+import DailyCheckinCard from '@/components/dashboard/DailyCheckinCard';
+import DailyCheckinPopup from '@/components/dashboard/DailyCheckinPopup';
+import { vipLevelOf, vipLabel } from '@/lib/vip';
 
 export default function OverviewPage({ showPage }) {
   // Get userId from Redux — needed for wallet and transaction queries
@@ -26,9 +29,13 @@ export default function OverviewPage({ showPage }) {
     skip: !userId,
   });
 
-  // Extract wallet balances — backend stores in poisha, formattedBalance is in BDT
+  // Extract wallet balances (plain BDT)
   const rechargeBalance = walletData?.data?.rechargeWallet?.formattedBalance ?? '0.00';
   const balanceAmount   = walletData?.data?.balanceWallet?.formattedBalance   ?? '0.00';
+
+  // Team commission earned so far — paid into the balance (withdraw) wallet
+  const { data: referralData } = useGetMyReferralsQuery(undefined, { skip: !userId });
+  const teamEarnings = (referralData?.data?.totalCommission ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   // Get the 3 most recent purchases for the quick list
   const recentPurchases = purchasesData?.data?.slice(0, 3) ?? [];
@@ -63,51 +70,75 @@ export default function OverviewPage({ showPage }) {
         </button>
       </div>
 
-      {/* ── Wallet balance card ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-5 sm:p-8 shadow-soft">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5" />
-        <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
-        <div className="relative z-10 grid sm:grid-cols-2 gap-6">
-          {/* Recharge wallet */}
-          <div>
-            <p className="text-xs text-white/60 mb-1">Recharge wallet</p>
-            {walletLoading
-              ? <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse" />
-              : <p className="text-3xl font-extrabold">৳{rechargeBalance}</p>
-            }
-            <p className="text-xs text-white/50 mt-1">Available for product purchase</p>
-          </div>
-          {/* Balance wallet */}
-          <div>
-            <p className="text-xs text-white/60 mb-1">Balance wallet</p>
-            {walletLoading
-              ? <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse" />
-              : <p className="text-3xl font-extrabold">৳{balanceAmount}</p>
-            }
-            <p className="text-xs text-white/50 mt-1">Earnings & commissions</p>
-          </div>
-        </div>
-        <div className="relative z-10 flex gap-3 mt-6">
-          <button onClick={() => showPage('recharge')} className="rounded-xl bg-lime-300 text-harvest-900 px-4 py-3 text-sm font-extrabold">
-            ＋ Recharge now
-          </button>
-          <button onClick={() => showPage('withdraw')} className="rounded-xl bg-white/10 text-white px-4 py-3 text-sm font-bold border border-white/20">
+      {/* ── Fast section: withdraw balance & recharge balance ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-5 sm:p-6 shadow-soft">
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5" />
+          <p className="relative text-xs font-bold tracking-wider text-white/70">WITHDRAW BALANCE</p>
+          {walletLoading
+            ? <div className="relative mt-2 h-9 w-32 bg-white/20 rounded-lg animate-pulse" />
+            : <p className="relative mt-2 text-3xl font-extrabold">৳{balanceAmount}</p>
+          }
+          <p className="relative mt-1 text-xs text-white/60">Earnings &amp; commissions you can withdraw</p>
+          <button
+            onClick={() => showPage('withdraw')}
+            className="relative mt-5 w-full rounded-xl bg-lime-300 py-3 text-sm font-extrabold text-harvest-900 hover:bg-lime-200"
+          >
             ↗ Withdraw
+          </button>
+        </div>
+
+        <div className="relative overflow-hidden rounded-3xl bg-white border p-5 sm:p-6 shadow-soft">
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-harvest-50" />
+          <p className="relative text-xs font-bold tracking-wider text-slate-500">RECHARGE BALANCE</p>
+          {walletLoading
+            ? <div className="relative mt-2 h-9 w-32 bg-slate-100 rounded-lg animate-pulse" />
+            : <p className="relative mt-2 text-3xl font-extrabold text-slate-900">৳{rechargeBalance}</p>
+          }
+          <p className="relative mt-1 text-xs text-slate-500">Available for product purchases</p>
+          <button
+            onClick={() => showPage('recharge')}
+            className="relative mt-5 w-full rounded-xl bg-harvest-700 py-3 text-sm font-extrabold text-white hover:bg-harvest-800"
+          >
+            ＋ Recharge
           </button>
         </div>
       </div>
 
-      {/* ── Membership level badge ── */}
+      {/* ── Team earnings (already added to the withdraw balance) ── */}
+      <div className="relative overflow-hidden rounded-3xl border border-harvest-100 bg-gradient-to-br from-harvest-50 via-white to-lime-50 p-5 shadow-soft">
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-harvest-100/60" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-harvest-700 text-xl text-white shadow-soft">👥</span>
+            <div>
+              <p className="text-xs font-extrabold tracking-widest text-harvest-700">TEAM EARNINGS</p>
+              <p className="mt-1 text-2xl font-extrabold text-harvest-900">৳{teamEarnings}</p>
+              <p className="text-xs text-harvest-800/70">Team commission, added to your withdraw balance</p>
+            </div>
+          </div>
+          <button
+            onClick={() => showPage('referrals')}
+            className="rounded-xl border border-harvest-200 bg-white px-4 py-2.5 text-xs font-extrabold text-harvest-700 hover:bg-harvest-50"
+          >
+            View team →
+          </button>
+        </div>
+      </div>
+
+      {/* ── Daily check-in ── */}
+      <DailyCheckinCard />
+      <DailyCheckinPopup />
+
+      {/* ── VIP level badge ── */}
       <div className="rounded-2xl bg-white border p-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-harvest-50 grid place-items-center text-2xl font-extrabold text-harvest-700">
-          {user?.membershipLevel ?? 1}
+        <div className="w-12 h-12 rounded-2xl bg-harvest-50 grid place-items-center text-sm font-extrabold text-harvest-700">
+          {vipLevelOf(user?.membershipLevel) || 'M'}
         </div>
         <div className="flex-1">
-          <p className="font-extrabold text-sm">Level {user?.membershipLevel ?? 1} Member</p>
+          <p className="font-extrabold text-sm">{vipLabel(vipLevelOf(user?.membershipLevel))}</p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {user?.membershipLevel >= 2
-              ? 'You have unlocked higher-tier products'
-              : 'Refer 5 valid members + deposit ৳1,300 to reach Level 2'}
+            Keep referring qualified members and spending to reach the next VIP level
           </p>
         </div>
         <button onClick={() => showPage('referrals')} className="text-xs font-bold text-harvest-700 whitespace-nowrap">
@@ -150,7 +181,7 @@ export default function OverviewPage({ showPage }) {
                 <div className="w-10 h-10 rounded-xl bg-harvest-50 grid place-items-center text-xl">🌿</div>
                 <div className="flex-1 min-w-0">
                   <b className="text-xs block truncate">{p.productName}</b>
-                  <p className="text-[10px] text-slate-500">Daily income: ৳{(p.dailyIncome / 100).toFixed(2)}</p>
+                  <p className="text-[10px] text-slate-500">Daily income: ৳{Number(p.dailyIncome).toFixed(2)}</p>
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${p.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                   {p.status}
@@ -182,7 +213,7 @@ export default function OverviewPage({ showPage }) {
                   <p className="text-[10px] text-slate-400">{new Date(tx.createdAt).toLocaleDateString()}</p>
                 </div>
                 <span className={`text-sm font-extrabold ${tx.flow === 'credit' ? 'text-green-600' : 'text-rose-500'}`}>
-                  {tx.flow === 'credit' ? '+' : '-'}৳{(tx.amount / 100).toFixed(2)}
+                  {tx.flow === 'credit' ? '+' : '-'}৳{Number(tx.amount).toFixed(2)}
                 </span>
               </div>
             ))}

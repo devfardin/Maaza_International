@@ -8,8 +8,11 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useCreateAdminMutation,
+  useExchangeUserWalletsMutation,
 } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
+import { roundMoney } from '@/lib/money';
+import { formatBDT } from '@/components/shared/money';
 
 const STATUS_COLORS = {
   active:    'bg-emerald-50 text-emerald-700',
@@ -21,6 +24,7 @@ const ROLE_COLORS = {
   admin:       'bg-blue-50 text-blue-700',
   super_admin: 'bg-violet-50 text-violet-700',
 };
+const WALLET_NAME = { balance: 'Balance wallet', recharge: 'Recharge wallet' };
 
 const inputCls = 'w-full rounded-xl border bg-slate-50 px-3.5 py-2.5 text-sm outline-none focus:border-blue-500';
 
@@ -32,6 +36,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [confirm, setConfirm] = useState(null); // { user, action: 'active'|'suspended'|'blocked'|'delete'|'promote'|'demote' }
   const [showCreate, setShowCreate] = useState(false);
+  const [exchangeUserId, setExchangeUserId] = useState(null);
 
   const { data, isLoading } = useGetAllUsersQuery();
   const [changeStatus, { isLoading: changing }] = useChangeUserStatusMutation();
@@ -40,17 +45,19 @@ export default function AdminUsersPage() {
   const [createAdmin, { isLoading: creating }] = useCreateAdminMutation();
 
   const q = search.trim().toLowerCase();
-  const users = (data?.data || []).filter((u) =>
+  const allUsers = data?.data || [];
+  const users = allUsers.filter((u) =>
     (roleFilter === 'all' || u.role === roleFilter) &&
     (!q || u.fullName?.toLowerCase().includes(q) || u.phone?.includes(q) || u.email?.toLowerCase().includes(q))
   );
+  const exchangeUser = allUsers.find((u) => u._id === exchangeUserId) || null;
 
   // Mirrors the backend rules: never yourself, never a super_admin, admins only by a super_admin
   const canManage = (u) => u._id !== me?._id && u.role !== 'super_admin' && (u.role !== 'admin' || isSuper);
 
   async function runConfirm() {
     if (!confirm) return;
-    
+
     const { user, action } = confirm;
     try {
       if (action === 'delete') await deleteUser(user._id).unwrap();
@@ -71,7 +78,7 @@ export default function AdminUsersPage() {
 
   async function handleCreateAdmin(e) {
     e.preventDefault();
-    
+
     const f = new FormData(e.target);
     try {
       await createAdmin({
@@ -95,12 +102,16 @@ export default function AdminUsersPage() {
     );
     return (
       <div className="flex flex-wrap gap-1.5">
+        {u.role === 'user' && (
+          <button key="exchange" onClick={() => setExchangeUserId(u._id)}
+            className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Exchange wallets</button>
+        )}
         {u.status !== 'active'    && btn('active',    'Activate', 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100')}
         {u.status !== 'suspended' && btn('suspended', 'Suspend',  'bg-amber-50 text-amber-700 hover:bg-amber-100')}
         {u.status !== 'blocked'   && btn('blocked',   'Block',    'bg-rose-50 text-rose-700 hover:bg-rose-100')}
         {isSuper && u.role === 'user'  && btn('promote', 'Make admin', 'bg-blue-50 text-blue-700 hover:bg-blue-100')}
         {isSuper && u.role === 'admin' && btn('demote',  'Make user',  'bg-slate-100 text-slate-700 hover:bg-slate-200')}
-        {btn('delete', 'Delete', 'bg-slate-100 text-rose-700 hover:bg-rose-50')}
+        {me?.role === 'super_admin' && btn('delete', 'Delete', 'bg-slate-100 text-rose-700 hover:bg-rose-50')}
       </div>
     );
   };
@@ -110,6 +121,9 @@ export default function AdminUsersPage() {
     promote: 'give this user ADMIN access',
     demote:  'remove admin access from this account',
   };
+
+  // Money columns only mean something for members
+  const walletCell = (u, key) => (u.role === 'user' ? formatBDT(u[key] ?? 0) : <span className="text-slate-400">—</span>);
 
   return (
     <div className="space-y-5">
@@ -154,6 +168,22 @@ export default function AdminUsersPage() {
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100">Lv {u.membershipLevel}</span>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[u.status]}`}>{u.status}</span>
             </div>
+            {u.role === 'user' && (
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl bg-slate-50 p-2">
+                  <p className="text-[10px] text-slate-500">Products</p>
+                  <p className="text-sm font-extrabold">{u.productCount ?? 0}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-2">
+                  <p className="text-[10px] text-slate-500">Balance</p>
+                  <p className="text-xs font-extrabold">{walletCell(u, 'balanceWallet')}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-2">
+                  <p className="text-[10px] text-slate-500">Recharge</p>
+                  <p className="text-xs font-extrabold">{walletCell(u, 'rechargeWallet')}</p>
+                </div>
+              </div>
+            )}
             <div className="mt-3 pt-3 border-t space-y-2">
               {actionButtons(u)}
               <Link href={`/admin/activity?userId=${u._id}`} className="inline-block text-xs font-bold text-blue-600">View devices &amp; IPs →</Link>
@@ -168,12 +198,12 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                {['User', 'Phone', 'Role', 'Level', 'Status', 'Actions'].map((h) => <th key={h} className="text-left px-5 py-3">{h}</th>)}
+                {['User', 'Phone', 'Role', 'Level', 'Products', 'Balance wallet', 'Recharge wallet', 'Status', 'Actions'].map((h) => <th key={h} className="text-left px-5 py-3 whitespace-nowrap">{h}</th>)}
               </tr>
             </thead>
             <tbody>
-              {isLoading && <tr><td colSpan={6} className="text-center py-10 text-slate-400">Loading…</td></tr>}
-              {!isLoading && users.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-slate-400">No users found.</td></tr>}
+              {isLoading && <tr><td colSpan={9} className="text-center py-10 text-slate-400">Loading…</td></tr>}
+              {!isLoading && users.length === 0 && <tr><td colSpan={9} className="text-center py-10 text-slate-400">No users found.</td></tr>}
               {users.map((u) => (
                 <tr key={u._id} className="border-b last:border-0 hover:bg-slate-50 align-top">
                   <td className="px-5 py-3">
@@ -189,6 +219,9 @@ export default function AdminUsersPage() {
                   <td className="px-5 py-3 text-slate-600">{u.phone}</td>
                   <td className="px-5 py-3"><span className={`text-xs font-bold capitalize px-2 py-1 rounded-full ${ROLE_COLORS[u.role]}`}>{u.role.replace('_', ' ')}</span></td>
                   <td className="px-5 py-3 font-semibold">Lv {u.membershipLevel}</td>
+                  <td className="px-5 py-3 font-semibold">{u.role === 'user' ? u.productCount ?? 0 : <span className="text-slate-400">—</span>}</td>
+                  <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'balanceWallet')}</td>
+                  <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'rechargeWallet')}</td>
                   <td className="px-5 py-3"><span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[u.status]}`}>{u.status}</span></td>
                   <td className="px-5 py-3 max-w-[280px]">{actionButtons(u)}</td>
                 </tr>
@@ -216,6 +249,8 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {exchangeUser && <ExchangeWalletsModal user={exchangeUser} onClose={() => setExchangeUserId(null)} />}
+
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
           <form onSubmit={handleCreateAdmin} className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-xl space-y-4">
@@ -231,6 +266,96 @@ export default function AdminUsersPage() {
           </form>
         </div>
       )}
+    </div>
+  );
+}
+
+// Move money between a member's balance wallet and recharge wallet (admin / super_admin)
+function ExchangeWalletsModal({ user, onClose }) {
+  const [direction, setDirection] = useState('balance'); // the wallet money moves OUT of
+  const [amount, setAmount] = useState('');
+  const [exchangeWallets, { isLoading }] = useExchangeUserWalletsMutation();
+
+  const from = direction;
+  const to = direction === 'balance' ? 'recharge' : 'balance';
+  const available = Number(user[from === 'balance' ? 'balanceWallet' : 'rechargeWallet'] ?? 0);
+  const value = roundMoney(amount || 0);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!(value > 0)) return notify.error('Enter an amount greater than 0.');
+    if (value > available) return notify.error(`Only ${formatBDT(available)} is available in the ${WALLET_NAME[from]}.`);
+    try {
+      await exchangeWallets({ id: user._id, from, to, amount: value }).unwrap();
+      notify.success(`Moved ${formatBDT(value)} to the ${WALLET_NAME[to]}.`);
+      onClose();
+    } catch (err) {
+      notify.error(getErrorMessage(err, 'Could not exchange wallets.'));
+    }
+  }
+
+  const tab = (key, label) => (
+    <button type="button" onClick={() => setDirection(key)} aria-pressed={direction === key}
+      className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-bold ${direction === key ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+      <form onSubmit={handleSubmit} className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-xl space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-extrabold text-lg">Exchange wallets</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{user.fullName} · {user.phone}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-xl border grid place-items-center">✕</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-slate-50 p-3">
+            <p className="text-[11px] font-bold text-slate-500">Balance wallet</p>
+            <p className="font-extrabold">{formatBDT(user.balanceWallet ?? 0)}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-3">
+            <p className="text-[11px] font-bold text-slate-500">Recharge wallet</p>
+            <p className="font-extrabold">{formatBDT(user.rechargeWallet ?? 0)}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold text-slate-600 mb-2">Move money from</p>
+          <div className="flex gap-2">
+            {tab('balance', 'Balance → Recharge')}
+            {tab('recharge', 'Recharge → Balance')}
+          </div>
+        </div>
+
+        <label className="block">
+          <span className="block text-xs font-bold text-slate-600 mb-1">Amount (BDT)</span>
+          <div className="flex gap-2">
+            <input type="number" inputMode="decimal" step="0.01" min="0.01" value={amount}
+              onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className={inputCls} />
+            <button type="button" onClick={() => setAmount(String(available))} disabled={available <= 0}
+              className="shrink-0 rounded-xl border px-3 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Use all</button>
+          </div>
+          <span className="mt-1 block text-[11px] text-slate-400">Available in the {WALLET_NAME[from]}: {formatBDT(available)}</span>
+        </label>
+
+        {value > 0 && (
+          <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            Move <b>{formatBDT(value)}</b> from the {WALLET_NAME[from]} to the {WALLET_NAME[to]}.
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 border rounded-xl py-3 text-sm font-bold">Cancel</button>
+          <button type="submit" disabled={isLoading || available <= 0}
+            className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-bold disabled:opacity-60">
+            {isLoading ? 'Moving…' : 'Confirm exchange'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -11,7 +11,7 @@ const transactionSchema = new Schema<TTransaction>(
         type: {
             type: String,
             enum: {
-                values: ["deposit", "withdrawal", "withdrawal_refund", "daily_checkin", "profit", "commission", "product_purchase", "new_user_bonus"],
+                values: ["deposit", "withdrawal", "withdrawal_refund", "daily_checkin", "profit", "commission", "product_purchase", "new_user_bonus", "invitation_bonus", "upgrade_bonus", "wallet_exchange"],
                 message: "Invalid transaction type",
             },
             required: [true, "Transaction type is required"],
@@ -27,7 +27,7 @@ const transactionSchema = new Schema<TTransaction>(
         amount: {
             type: Number,
             required: [true, "Amount is required"],
-            min: [1, "Amount must be at least 1 BDT"],
+            min: [0.01, "Amount must be at least 0.01 BDT"],
         },
         walletAffected: {
             type: String,

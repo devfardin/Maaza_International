@@ -60,7 +60,7 @@ const updateWithdrawalStatus = catchAsync(async (req, res) => {
     await AdminActivityServices.record(
         req.user!,
         `withdrawal_${req.body.status}`,
-        `${req.body.status === 'approved' ? 'Approved' : 'Rejected'} withdrawal of ${(result.amount / 100).toFixed(2)} BDT`,
+        `${req.body.status === 'approved' ? 'Approved' : 'Rejected'} withdrawal of ${Number(result.amount).toFixed(2)} BDT`,
         { type: 'withdrawal', id }
     );
     sendResponse(res, {

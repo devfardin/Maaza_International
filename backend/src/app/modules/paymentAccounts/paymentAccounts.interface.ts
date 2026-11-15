@@ -8,5 +8,5 @@ export type TPaymentAccounts = {
     isPrimary: boolean;
     accountHolderName: string;
     verifiedAt: Date | null;
-    status: 'active' | 'pending';
+    status: 'active' | 'inactive' | 'pending';
 }

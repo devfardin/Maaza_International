@@ -1,12 +1,11 @@
 import z from 'zod';
+import { moneySchema } from '../../utils/money';
 
-// amount is whole BDT from the client; the server converts it to poisha
+// amount is BDT from the client (up to 2 decimals)
 const createWithdrawalValidation = z.object({
     body: z.object({
-        amount: z
-            .number({ message: 'Amount is required' })
-            .int('Amount must be a whole number of BDT')
-            .min(100, 'Minimum withdrawal is 100 BDT')
+        amount: moneySchema('Amount is required')
+            .min(120, 'Minimum withdrawal is 120 BDT')
             .max(1000000, 'Amount is too large'),
         paymentAccountId: z.string({ message: 'Select a payout account' }).min(1, 'Select a payout account'),
     }),

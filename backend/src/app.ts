@@ -7,6 +7,7 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import securityHeaders from './app/middlewares/securityHeaders';
 import { rateLimit } from './app/middlewares/rateLimit';
+import realtimeMutations from './app/middlewares/realtimeMutations';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/v1/auth/forget-password', authLimiter);
 app.use('/api/v1/auth/reset-password', authLimiter);
 app.use('/api/v1/users/create-user', rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: 'Too many registrations from this IP.' }));
 
+app.use('/api/v1', realtimeMutations);
 app.use('/api/v1', router);
 
 app.get('/', (req: Request, res: Response) => {

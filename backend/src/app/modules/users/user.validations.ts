@@ -38,7 +38,7 @@ const updateUserValidation = z.object({
         email: z.string().trim().toLowerCase().email().optional(),
         phone: z.string().trim().regex(phoneRegex, "Please provide a valid phone number (11 digits)").optional(),
         avatar: z.string().url("Avatar must be a valid URL").optional(),
-        membershipLevel: z.number().int().min(1).max(8).optional(),
+        membershipLevel: z.number().int().min(1).max(9).optional(),
         role: z.enum(["user", "admin"]).optional(), // super_admin only — enforced in the service
     }).strict(),
 });

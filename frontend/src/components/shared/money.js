@@ -1,8 +1,9 @@
-// Money helpers. The backend stores every amount in poisha (1 BDT = 100 poisha).
-export const bdtFromPoisha = (poisha) => (Number(poisha) || 0) / 100;
+import { roundMoney } from '@/lib/money';
 
-export const formatBDT = (poisha, { decimals = 2 } = {}) =>
-  `৳${bdtFromPoisha(poisha).toLocaleString('en-BD', {
+// Money helpers. The backend sends amounts as plain BDT (up to 2 decimals).
+// Format a BDT amount for display, e.g. 12 → "৳12.00", 14025.54 → "৳14,025.54"
+export const formatBDT = (amount, { decimals = 2 } = {}) =>
+  `৳${roundMoney(amount).toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`;

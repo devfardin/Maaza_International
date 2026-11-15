@@ -4,6 +4,7 @@
 // Each nav button calls showPage() from the parent dashboard
 import { useI18n } from '@/lib/i18n';
 import { notify } from '@/lib/toast';
+import { vipLabel, vipLevelOf } from '@/lib/vip';
 
 const workspaceNav = [
   { page: 'overview',  icon: '⌂', key: 'nav.overview' },
@@ -83,7 +84,7 @@ export default function Sidebar({ activePage, showPage, user, onLogout }) {
         </div>
         <div className="flex-1 min-w-0">
           <b className="text-xs block truncate">{user?.fullName || t('common.loading')}</b>
-          <small className="text-[10px] text-slate-500">Level {user?.membershipLevel || 1}</small>
+          <small className="text-[10px] text-slate-500">{vipLabel(vipLevelOf(user?.membershipLevel))}</small>
         </div>
         <button onClick={onLogout} title={t('header.signOut')} className="text-slate-400 hover:text-rose-500 transition-colors text-xl">
           ⏻

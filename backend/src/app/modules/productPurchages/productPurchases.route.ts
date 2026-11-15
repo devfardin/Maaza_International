@@ -23,6 +23,13 @@ router.post(
 );
 
 // Get all purchases for the authenticated user
+// Today's income + total earned (declared before '/:purchaseId')
+router.get(
+  '/income-summary',
+  auth(USER_ROLE.user),
+  ProductPurchaseController.getIncomeSummary,
+);
+
 router.get(
   '/my-purchases',
   auth(USER_ROLE.user),

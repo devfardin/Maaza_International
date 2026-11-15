@@ -5,6 +5,8 @@ import { WalletServices } from './wallet.services';
 import AppError from '../../errors/AppError';
 import { TWalletType } from './wallet.interface';
 import { assertSelfOrAdmin } from '../../utils/assertOwnership';
+import { moneyText } from '../../utils/money';
+import { AdminActivityServices } from '../adminActivity/adminActivity.services';
 
 const getMyWallets = catchAsync(async (req, res) => {
     const { userId } = req.params;
@@ -53,8 +55,27 @@ const { walletType } = req.query;
     });
 });
 
+// Admin / super_admin: move money between a member's balance and recharge wallets
+const exchangeWallets = catchAsync(async (req, res) => {
+    const { userId } = req.params;
+    const result = await WalletServices.exchangeWallets(userId, req.body);
+    await AdminActivityServices.record(
+        req.user!,
+        'wallet_exchanged',
+        `Moved ${moneyText(req.body.amount)} from ${req.body.from} to ${req.body.to} wallet`,
+        { type: 'user', id: userId }
+    );
+    sendResponse(res, {
+        statusCode: status.OK,
+        success: true,
+        message: 'Wallet exchange completed',
+        data: result,
+    });
+});
+
 export const WalletController = {
     getMyWallets,
     getMyWalletByType,
-    checkBalance
+    checkBalance,
+    exchangeWallets,
 };

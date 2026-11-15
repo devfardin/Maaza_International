@@ -1,13 +1,15 @@
 'use client';
-// Wallet activity. Backend stores amounts in poisha; formatBDT converts for display.
+// Wallet activity. Amounts are plain BDT; formatBDT formats them for display.
 import { useState } from 'react';
+import DateRangeFilter from '@/components/shared/DateRangeFilter';
+import { inDateRange } from '@/lib/dates';
 import { useSelector } from 'react-redux';
 import { useGetUserTransactionsQuery, useGetMyWalletsQuery } from '@/redux/features/apiSlice';
 import { formatBDT, formatDateTime } from '@/components/shared/money';
 import PageLoader from '@/components/shared/PageLoader';
 import { useI18n } from '@/lib/i18n';
 
-const CREDIT_TYPES = ['deposit', 'daily_checkin', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund'];
+const CREDIT_TYPES = ['deposit', 'daily_checkin', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus'];
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -15,9 +17,12 @@ const FILTERS = [
   { value: 'profit', label: 'Daily income' },
   { value: 'commission', label: 'Commission' },
   { value: 'new_user_bonus', label: 'Welcome bonus' },
+  { value: 'invitation_bonus', label: 'Invitation bonus' },
+  { value: 'upgrade_bonus', label: 'Upgrade bonus' },
   { value: 'withdrawal', label: 'Withdrawal' },
   { value: 'withdrawal_refund', label: 'Refund' },
   { value: 'product_purchase', label: 'Purchase' },
+  { value: 'wallet_exchange', label: 'Wallet exchange' },
 ];
 
 export default function TransactionsPage() {
@@ -33,7 +38,10 @@ export default function TransactionsPage() {
   const recharge = walletData?.data?.rechargeWallet?.balance ?? 0;
   const balance  = walletData?.data?.balanceWallet?.balance ?? 0;
 
-  const visible = filter === 'all' ? txList : txList.filter((tx) => tx.type === filter);
+  const [dates, setDates] = useState({ from: '', to: '' });
+  const visible = txList
+    .filter((tx) => filter === 'all' || tx.type === filter)
+    .filter((tx) => inDateRange(tx.createdAt, dates.from, dates.to));
   const totalDeposited = txList
     .filter((tx) => tx.type === 'deposit')
     .reduce((sum, tx) => sum + (tx.amount || 0), 0);
@@ -64,6 +72,9 @@ export default function TransactionsPage() {
           <select value={filter} onChange={(e) => setFilter(e.target.value)} className="border rounded-xl px-3 py-2 text-xs">
             {FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
           </select>
+        </div>
+        <div className="mb-4">
+          <DateRangeFilter from={dates.from} to={dates.to} onChange={setDates} />
         </div>
 
         {isLoading && <PageLoader label="Loading transactions…" className="py-8" />}

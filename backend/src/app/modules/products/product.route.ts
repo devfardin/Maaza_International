@@ -48,6 +48,13 @@ router.put(
   ProductController.updateProduct,
 );
 
+// Super admin: approve (publish) or reject a product uploaded by an admin
+router.patch(
+  '/:id/approval',
+  auth(USER_ROLE.super_admin),
+  ProductController.decideApproval,
+);
+
 // Soft-delete a product (admin only)
 router.patch(
   '/:id',

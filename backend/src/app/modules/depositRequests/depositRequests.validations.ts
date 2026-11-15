@@ -1,10 +1,11 @@
+import { moneySchema } from "../../utils/money";
 import z from "zod";
 
 // user submits: amount (BDT), methodCode, senderNumber, transactionId.
 // userId comes from the auth token; status / adminNote / approvedBy are set by the server.
 const createDepositRequestValidation = z.object({
     body: z.object({
-        amount: z.number({ message: "Amount is required" }).int("Amount must be a whole number").min(200, "Amount must be at least 200 BDT").max(1000000, "Amount is too large"),
+        amount: moneySchema("Amount is required").min(200, "Amount must be at least 200 BDT").max(1000000, "Amount is too large"),
         currency: z.literal("BDT").default("BDT"),
         methodCode: z.string({ message: "Method code is required" }).trim().min(1),
         senderNumber: z.string({ message: "Sender number is required" }).trim(),

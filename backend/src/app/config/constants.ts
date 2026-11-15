@@ -1,19 +1,40 @@
-// Business rules — all money values are in poisha (1 BDT = 100 poisha)
-export const BDT = 100;
+// Business rules — money values are in BDT (e.g. 120, 12.50)
 
 // One-time bonus credited on the user's first approved deposit
-export const WELCOME_BONUS = 120 * BDT;
+export const WELCOME_BONUS = 120;
 
 // Referral commission fallback (only used when a product has no teamCommissions)
 export const DEFAULT_TEAM_COMMISSIONS = [
-  { level: 'B', rate: 0.1, basis: 'daily-income' },
-  { level: 'C', rate: 0.05, basis: 'daily-income' },
+  { level: 'A', rate: 0.1, basis: 'daily-income' },
+  { level: 'B', rate: 0.05, basis: 'daily-income' },
 ] as const;
 
-// Membership upgrade rules: to reach `level` a user needs
-// `validReferrals` valid direct referrals AND `totalSpent` of own purchases.
-export const MEMBERSHIP_RULES = [
-  { level: 2, validReferrals: 5, totalSpent: 15000 * BDT },
+// VIP ladder — seeded into the database on first use and then managed from the admin dashboard.
+// membershipLevel IS the VIP level. Every new member starts at VIP 1 (BASE_VIP_LEVEL); VIP 1 needs nothing.
+// qualifiedReferrals = valid referrals needed to reach the VIP level.
+// dailyCheckinBonus is paid per daily check-in (BDT).
+// Everyone starts at this VIP level when they register
+export const BASE_VIP_LEVEL = 1;
+
+export const DEFAULT_VIP_LEVELS = [
+  { level: 1, qualifiedReferrals: 0, minSpent: 0, dailyCheckinBonus: 3 },
+  { level: 2, qualifiedReferrals: 10, minSpent: 0, dailyCheckinBonus: 15 },
+  { level: 3, qualifiedReferrals: 15, minSpent: 0, dailyCheckinBonus: 0 },
+  { level: 4, qualifiedReferrals: 30, minSpent: 0, dailyCheckinBonus: 0 },
+  { level: 5, qualifiedReferrals: 50, minSpent: 0, dailyCheckinBonus: 0 },
+  { level: 6, qualifiedReferrals: 100, minSpent: 0, dailyCheckinBonus: 0 },
+  { level: 7, qualifiedReferrals: 200, minSpent: 0, dailyCheckinBonus: 0 },
+  { level: 8, qualifiedReferrals: 500, minSpent: 0, dailyCheckinBonus: 0 },
 ] as const;
 
-export const MIN_DEPOSIT = 200 * BDT;
+export const MIN_DEPOSIT = 200;
+
+// Withdrawals: minimum request, and the processing + tax fee taken from each withdrawal (percent of the amount)
+export const MIN_WITHDRAWAL = 120;
+export const WITHDRAWAL_FEE_PERCENT = 8;
+
+// Community: members at this VIP level (or higher) can create posts
+export const COMMUNITY_POST_MIN_VIP = 3;
+
+// Default product claim cadence: the user can claim every 2 days.
+export const DEFAULT_CLAIM_INTERVAL_DAYS = 2;

@@ -2,33 +2,38 @@
 import { useSelector } from 'react-redux';
 import {
   useGetAllUsersQuery,
-  useGetAllTransactionsQuery,
   useGetAllDepositRequestsQuery,
+  useGetAdminDashboardStatsQuery,
+  useGetAdminPaymentMethodsQuery,
 } from '@/redux/features/apiSlice';
+import { useState } from 'react';
+import { formatBDT } from '@/components/shared/money';
 import Link from 'next/link';
 
 export default function AdminDashboardPage() {
   const user = useSelector((s) => s.auth.user);
 
   const { data: usersData,    isLoading: usersLoading }    = useGetAllUsersQuery();
-  const { data: txData,       isLoading: txLoading }       = useGetAllTransactionsQuery();
   const { data: depositData,  isLoading: depositLoading }  = useGetAllDepositRequestsQuery();
+  const { data: statsData,    isLoading: statsLoading }    = useGetAdminDashboardStatsQuery();
 
   const users    = usersData?.data    || [];
-  const txs      = txData?.data       || [];
   const deposits = depositData?.data  || [];
 
-  const activeUsers   = users.filter((u) => u.status === 'active').length;
-  const pendingDeposits = deposits.filter((d) => d.status === 'pending').length;
-  const totalDeposited  = deposits
-    .filter((d) => d.status === 'approved')
-    .reduce((sum, d) => sum + (d.amount || 0), 0);
+  // Pending deposits filtered by payment method code (e.g. bk-9157)
+  const [codeFilter, setCodeFilter] = useState('');
+  const { data: methodsData } = useGetAdminPaymentMethodsQuery();
+  const pendingDeposits_ = deposits.filter((d) => d.status === 'pending');
+  const pendingFiltered = codeFilter ? pendingDeposits_.filter((d) => d.methodCode === codeFilter) : pendingDeposits_;
+  const s0 = statsData?.data;
+  const money = (v) => (statsLoading || !s0 ? '…' : formatBDT(v));
 
   const stats = [
-    { icon: '👥', label: 'Total Users',        value: usersLoading   ? '…' : users.length,      sub: `${activeUsers} active`,          color: 'bg-blue-50 text-blue-700'    },
-    { icon: '💰', label: 'Total Transactions',  value: txLoading      ? '…' : txs.length,        sub: 'all time',                       color: 'bg-emerald-50 text-emerald-700' },
-    { icon: '⏳', label: 'Pending Deposits',    value: depositLoading ? '…' : pendingDeposits,   sub: 'awaiting approval',              color: 'bg-amber-50 text-amber-700'  },
-    { icon: '✅', label: 'Total Deposited',     value: depositLoading ? '…' : `৳${(totalDeposited/100).toLocaleString()}`, sub: 'approved deposits', color: 'bg-violet-50 text-violet-700' },
+    { icon: '👥', label: 'Total Users',         value: statsLoading ? '…' : s0?.totalUsers ?? 0,           sub: 'registered members',          color: 'bg-blue-50 text-blue-700' },
+    { icon: '💳', label: 'Total Deposits',      value: money(s0?.totalDeposits),                             sub: `${s0?.depositCount ?? 0} approved`, color: 'bg-emerald-50 text-emerald-700' },
+    { icon: '💸', label: 'Total Withdrawals',   value: money(s0?.totalWithdrawals),                          sub: `${s0?.withdrawalCount ?? 0} paid`,  color: 'bg-violet-50 text-violet-700' },
+    { icon: '⏳', label: 'Pending Deposits',    value: statsLoading ? '…' : s0?.pendingDeposits ?? 0,      sub: 'awaiting approval',           color: 'bg-amber-50 text-amber-700' },
+    { icon: '🧾', label: 'Pending Withdrawals', value: statsLoading ? '…' : s0?.pendingWithdrawals ?? 0,   sub: 'awaiting payout',             color: 'bg-rose-50 text-rose-700' },
   ];
 
   return (
@@ -39,13 +44,30 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((s) => (
           <div key={s.label} className="bg-white border rounded-2xl p-5">
             <div className={`w-10 h-10 rounded-xl grid place-items-center text-xl mb-3 ${s.color}`}>{s.icon}</div>
             <p className="text-xs text-slate-500">{s.label}</p>
             <p className="text-2xl font-extrabold mt-1">{s.value}</p>
             <p className="text-xs text-slate-400 mt-1">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Member wallets: how much money members hold right now (all members added together) */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {[
+          { icon: '💰', label: 'Member balance wallets', value: money(s0?.balanceWalletTotal), sub: 'withdrawable, all members combined', color: 'bg-harvest-50 text-harvest-700' },
+          { icon: '🔋', label: 'Member recharge wallets', value: money(s0?.rechargeWalletTotal), sub: 'deposit wallet, all members combined', color: 'bg-sky-50 text-sky-700' },
+        ].map((s) => (
+          <div key={s.label} className="bg-white border rounded-2xl p-5 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl grid place-items-center text-2xl shrink-0 ${s.color}`}>{s.icon}</div>
+            <div>
+              <p className="text-xs text-slate-500">{s.label}</p>
+              <p className="text-2xl font-extrabold mt-0.5">{s.value}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{s.sub}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -74,17 +96,29 @@ export default function AdminDashboardPage() {
           <Link href="/admin/deposits" className="text-xs font-bold text-blue-600 hover:underline">View all</Link>
         </div>
         {depositLoading && <div className="h-20 bg-slate-100 rounded-xl animate-pulse" />}
-        {!depositLoading && deposits.filter((d) => d.status === 'pending').length === 0 && (
-          <p className="text-sm text-slate-400 py-4 text-center">No pending deposit requests.</p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button onClick={() => setCodeFilter('')}
+            className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${codeFilter === '' ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+            All codes
+          </button>
+          {(methodsData?.data || []).map((m) => (
+            <button key={m.code} onClick={() => setCodeFilter(m.code)}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${codeFilter === m.code ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+              {m.name} <span className="opacity-70">({m.code})</span>
+            </button>
+          ))}
+        </div>
+        {!depositLoading && pendingFiltered.length === 0 && (
+          <p className="text-sm text-slate-400 py-4 text-center">No pending deposit requests{codeFilter ? ` for ${codeFilter}` : ''}.</p>
         )}
-        {!depositLoading && deposits.filter((d) => d.status === 'pending').slice(0, 5).map((d) => (
+        {!depositLoading && pendingFiltered.slice(0, 5).map((d) => (
           <div key={d._id} className="flex items-center justify-between py-3 border-b last:border-0">
             <div>
               <p className="text-sm font-semibold">{d.userId?.fullName || 'Unknown'}</p>
               <p className="text-xs text-slate-400">{d.methodCode} · TxID: {d.transactionId}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold">৳{(d.amount / 100).toFixed(2)}</p>
+              <p className="text-sm font-bold">৳{Number(d.amount).toFixed(2)}</p>
               <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold">pending</span>
             </div>
           </div>

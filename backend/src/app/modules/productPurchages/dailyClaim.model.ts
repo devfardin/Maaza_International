@@ -4,7 +4,7 @@ export type TDailyClaim = {
     purchaseId: Types.ObjectId;
     userId: Types.ObjectId;
     claimDate: string;          // 'YYYY-MM-DD' — one claim per purchase per calendar day
-    incomeAmount: number;       // integer in poisha credited to buyer
+    incomeAmount: number;       // BDT credited to buyer (2 decimals)
     claimedAt: Date;
 };
 
@@ -27,7 +27,7 @@ const dailyClaimSchema = new Schema<TDailyClaim>(
         incomeAmount: {
             type: Number,
             required: true,
-            min: 1
+            min: 0.01
         },
         claimedAt: {
             type: Date,

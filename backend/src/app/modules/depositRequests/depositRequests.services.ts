@@ -2,16 +2,18 @@ import status from "http-status";
 import mongoose from "mongoose";
 import AppError from "../../errors/AppError";
 import config from "../../config";
-import { BDT, MIN_DEPOSIT, WELCOME_BONUS } from "../../config/constants";
+import { MIN_DEPOSIT, WELCOME_BONUS } from "../../config/constants";
+import { moneyIncrement, roundMoney, moneyText } from "../../utils/money";
 import { sendEmail } from "../../utils/sendEmail";
 import { UserModel } from "../users/user.model";
 import { WalletModel } from "../wallets/wallet.model";
 import { TransactionServices } from "../transactions/transaction.services";
 import { NotificationServices } from "../notifications/notification.services";
+import { RealtimeServices } from "../realtime/realtime.services";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { DepositRequestModel } from "./depositRequests.model";
 
-const formatBDT = (poisha: number) => `৳${(poisha / BDT).toFixed(2)}`;
+const formatBDT = (amount: number) => moneyText(amount);
 
 type TCreatePayload = {
     amount: number; // BDT from the client
@@ -35,8 +37,8 @@ const createDepositRequest = async (userId: string, payload: TCreatePayload) => 
         throw new AppError(status.BAD_REQUEST, "Please provide a valid sender mobile number!");
     }
 
-    // money is stored in poisha everywhere
-    const amount = Math.round(payload.amount * BDT);
+    // money is stored in BDT (2 decimals)
+    const amount = roundMoney(payload.amount);
     if (amount < MIN_DEPOSIT) {
         throw new AppError(status.BAD_REQUEST, "Amount must be at least 200 BDT");
     }
@@ -97,9 +99,11 @@ const createDepositRequest = async (userId: string, payload: TCreatePayload) => 
 };
 
 // ─── Admin: Get all deposit requests ──────────────────────────────────────────
-const getAllDepositRequests = async () => {
+const getAllDepositRequests = async (filter: { methodCode?: string } = {}) => {
+    const query: Record<string, unknown> = {};
+    if (filter.methodCode) query.methodCode = filter.methodCode.toLowerCase();
     return DepositRequestModel
-        .find()
+        .find(query)
         .populate("userId", "fullName email phone")
         .populate("approvedBy", "fullName email")
         .sort({ createdAt: -1 });
@@ -145,7 +149,7 @@ const updateDepositRequestStatus = async (
             // 1. credit the deposit
             const wallet = await WalletModel.findOneAndUpdate(
                 { userId: updatedRequest.userId, walletType: "recharge" },
-                { $inc: { balance: updatedRequest.amount } },
+                moneyIncrement('balance', updatedRequest.amount),
                 { new: true, session }
             );
             if (!wallet) throw new AppError(status.NOT_FOUND, "User recharge wallet not found!");
@@ -173,7 +177,7 @@ const updateDepositRequestStatus = async (
             if (bonusUser) {
                 const bonusWallet = await WalletModel.findOneAndUpdate(
                     { userId: updatedRequest.userId, walletType: "balance" },
-                    { $inc: { balance: WELCOME_BONUS } },
+                    moneyIncrement('balance', WELCOME_BONUS),
                     { new: true, session }
                 );
                 if (!bonusWallet) throw new AppError(status.NOT_FOUND, "User recharge wallet not found!");
@@ -201,6 +205,10 @@ const updateDepositRequestStatus = async (
         await session.endSession();
     }
 
+    // Live update: the depositor's wallet / deposit list, and the admin request lists
+    RealtimeServices.notifyUser(updatedRequest.userId, ["DepositRequests", "Wallet", "Transactions", "User"]);
+    RealtimeServices.notifyAdmins(["DepositRequests", "Notifications", "Transactions"]);
+
     // Email is sent AFTER the commit and can never fail / roll back the approval
     if (payload.status === "rejected") {
         const user = await UserModel.findById(updatedRequest.userId);
@@ -224,9 +232,9 @@ const updateDepositRequestStatus = async (
     if (payload.status === "approved") {
         const user = await UserModel.findById(updatedRequest.userId);
         if (user?.email) {
-            const amountBDT = (updatedRequest.amount / BDT).toFixed(2);
+            const amountBDT = Number(updatedRequest.amount).toFixed(2);
             const bonusLine = welcomeBonusPaid
-                ? `<p>🎁 We also added your <strong>৳${(WELCOME_BONUS / BDT).toFixed(0)}</strong> welcome bonus to your withdrawable balance!</p>`
+                ? `<p>🎁 We also added your <strong>৳${WELCOME_BONUS.toFixed(0)}</strong> welcome bonus to your withdrawable balance!</p>`
                 : "";
             sendEmail({
                 to: user.email,

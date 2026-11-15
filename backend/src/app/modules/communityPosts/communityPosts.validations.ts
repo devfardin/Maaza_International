@@ -7,14 +7,11 @@ const mediaSchema = z.object({
 
 const createCommunityPostValidation = z.object({
     body: z.object({
-        userId: z.string(),
+        userId: z.string().optional(), // ignored: the author is always the logged-in user
         title: z.string().min(2, "Title must be at least 2 characters"),
         description: z.string().min(5, "Description must be at least 5 characters"),
-        media: z.array(mediaSchema).min(1, "At least one media item is required"),
-        status: z.enum(["pending", "approved", "rejected"]).default("pending"),
-        likes: z.array(z.string()).default([]),
-        approvedBy: z.string().optional(),
-        isDeleted: z.boolean().default(false),
+        media: z.array(mediaSchema).max(1, "One image per post").default([]),
+        status: z.enum(["pending", "approved", "rejected"]).optional(), // ignored on create: always pending
     }),
 });
 

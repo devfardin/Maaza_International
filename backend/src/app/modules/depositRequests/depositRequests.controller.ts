@@ -18,7 +18,8 @@ const createDepositRequest = catchAsync(async (req, res) => {
 
 // get all deposit requests (admin only)
 const getAllDepositRequests = catchAsync(async (req, res) => {
-    const result = await DepositRequestServices.getAllDepositRequests();
+    const methodCode = typeof req.query.methodCode === "string" ? req.query.methodCode : undefined;
+    const result = await DepositRequestServices.getAllDepositRequests({ methodCode });
     sendResponse(res, {
         success: true,
         statusCode: status.OK,
@@ -47,7 +48,7 @@ const updateDepositRequestStatus = catchAsync(async (req, res) => {
     await AdminActivityServices.record(
         req.user!,
         `deposit_${req.body.status}`,
-        `${req.body.status === "approved" ? "Approved" : "Rejected"} deposit of ${(result.amount / 100).toFixed(2)} BDT (TrxID ${result.transactionId})`,
+        `${req.body.status === "approved" ? "Approved" : "Rejected"} deposit of ${Number(result.amount).toFixed(2)} BDT (TrxID ${result.transactionId})`,
         { type: "deposit_request", id }
     );
     sendResponse(res, {

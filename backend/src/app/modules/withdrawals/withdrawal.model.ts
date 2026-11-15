@@ -4,8 +4,12 @@ export type TWithdrawalStatus = 'pending' | 'approved' | 'rejected';
 
 export type TWithdrawal = {
     userId: Types.ObjectId;
-    // poisha, integer
+    // BDT — the amount taken from the balance (2 decimals)
     amount: number;
+    // BDT — processing + tax fee (WITHDRAWAL_FEE_PERCENT of amount)
+    fee: number;
+    // BDT — what the user actually receives (amount - fee)
+    netAmount: number;
     currency: 'BDT';
     // payout destination snapshot — copied so later edits to the saved account don't change history
     method: 'bkash' | 'nogod';
@@ -22,7 +26,9 @@ export type TWithdrawal = {
 const withdrawalSchema = new Schema<TWithdrawal>(
     {
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-        amount: { type: Number, required: true, min: [10000, 'Minimum withdrawal is 100 BDT'] },
+        amount: { type: Number, required: true, min: [120, 'Minimum withdrawal is 120 BDT'] },
+        fee: { type: Number, required: true, min: 0, default: 0 },
+        netAmount: { type: Number, required: true, min: 0, default: 0 },
         currency: { type: String, enum: ['BDT'], default: 'BDT' },
         method: { type: String, enum: ['bkash', 'nogod'], required: true },
         accountNumber: { type: String, required: true, trim: true },

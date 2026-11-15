@@ -7,9 +7,12 @@ import { TClientInfo } from '../../utils/clientInfo';
 import { ActivityLogServices } from '../activityLogs/activityLog.services';
 import { ReferralServices } from '../referrals/referral.services';
 import { WalletServices } from '../wallets/wallet.services';
+import { WalletModel } from '../wallets/wallet.model';
+import { ProductPurchaseModel } from '../productPurchages/productPurchases.model';
 import { Tuser, TUserRole } from './user.interface';
 import { UserModel } from './user.model';
 import { generateUniqueReferralCode } from './user.utils';
+import { sendImageToCloudinary } from '../../utils/sendImageToCloudinary';
 
 type TRegisterPayload = Pick<Tuser, 'fullName' | 'email' | 'phone' | 'passwordHash'> & {
     referredBy?: string; // referral CODE
@@ -112,8 +115,39 @@ const getMe = async (userId: string) => {
         .populate('referredBy', 'fullName phone referralCode');
 };
 
+// Every user with how many products they bought and their two wallet balances (BDT)
 const getAllUsers = async () => {
-    return UserModel.find({ isDeleted: false }).select('-passwordHash').sort({ createdAt: -1 });
+    const users = await UserModel.find({ isDeleted: false }).select('-passwordHash').sort({ createdAt: -1 }).lean();
+    const ids = users.map((u) => u._id);
+
+    const [purchaseCounts, wallets] = await Promise.all([
+        // cancelled purchases are not counted as products the user owns
+        ProductPurchaseModel.aggregate([
+            { $match: { userId: { $in: ids }, status: { $ne: 'cancelled' } } },
+            { $group: { _id: '$userId', count: { $sum: 1 } } },
+        ]),
+        WalletModel.find({ userId: { $in: ids } }).select('userId walletType balance').lean(),
+    ]);
+
+    const productCounts = new Map<string, number>(purchaseCounts.map((p) => [String(p._id), p.count]));
+    const balances = new Map<string, { balanceWallet: number; rechargeWallet: number }>();
+    for (const w of wallets) {
+        const key = String(w.userId);
+        const entry = balances.get(key) ?? { balanceWallet: 0, rechargeWallet: 0 };
+        if (w.walletType === 'balance') entry.balanceWallet = w.balance;
+        else entry.rechargeWallet = w.balance;
+        balances.set(key, entry);
+    }
+
+    return users.map((u) => {
+        const key = String(u._id);
+        return {
+            ...u,
+            productCount: productCounts.get(key) ?? 0,
+            balanceWallet: balances.get(key)?.balanceWallet ?? 0,
+            rechargeWallet: balances.get(key)?.rechargeWallet ?? 0,
+        };
+    });
 };
 
 const getSingleUser = async (id: string) => {
@@ -197,6 +231,16 @@ const updateMyProfile = async (
     return getMe(userId);
 };
 
+// Uploads the profile photo to Cloudinary and stores its URL on the user
+const uploadMyAvatar = async (userId: string, filePath: string) => {
+    const user = await UserModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) throw new AppError(status.NOT_FOUND, 'User not found');
+
+    const { secure_url } = await sendImageToCloudinary(`avatar_${user._id.toString()}_${Date.now()}`, filePath);
+    await UserModel.updateOne({ _id: user._id }, { avatar: secure_url });
+    return getMe(userId);
+};
+
 const changeUserStatus = async (actor: { userId: string; role: string }, id: string, newStatus: string) => {
     const target = await UserModel.findById(id);
     if (!target || target.isDeleted) {
@@ -215,6 +259,7 @@ export const UserServices = {
     getSingleUser,
     updateUser,
     updateMyProfile,
+    uploadMyAvatar,
     deleteUser,
     changeUserStatus,
 };

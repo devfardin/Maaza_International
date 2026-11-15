@@ -1,11 +1,11 @@
 'use client';
-// Create / edit a product. All money fields are typed in BDT and converted to
-// poisha (×100) for the API. Image upload is only shown when creating.
+// Create / edit a product. All money fields are typed in BDT and sent to the API as BDT
+// (rounded to 2 decimals). Image upload is only shown when creating.
 
 import { useState } from 'react';
+import { roundMoney } from '@/lib/money';
 
-const toPoisha = (bdt) => Math.round(Number(bdt || 0) * 100);
-const toBdt = (poisha) => (poisha === undefined || poisha === null ? '' : String(poisha / 100));
+const toBdt = (amount) => (amount === undefined || amount === null ? '' : String(amount));
 
 const field = 'w-full rounded-xl border bg-slate-50 px-3.5 py-2.5 text-sm outline-none focus:border-blue-500';
 
@@ -31,13 +31,16 @@ export default function ProductForm({ mode = 'create', product, categories = [],
     quantity:        product?.quantity ?? '',
     dailyIncome:     toBdt(product?.rewardPlan?.dailyIncome),
     validityDays:    product?.rewardPlan?.validityDays ?? '',
-    startAfter:      product?.rewardPlan?.startAfterPurchaseDays ?? 0,
+    // product type: "day" = claim every N days, "hour" = claim every N hours
+    claimUnit:       product?.rewardPlan?.claimUnit ?? 'day',
+    claimDays:       product?.rewardPlan?.claimIntervalDays ?? 1,
+    claimHours:      product?.rewardPlan?.claimIntervalHours ?? 1,
     invitationBonus: toBdt(product?.bonuses?.invitationBonus ?? 0),
     upgradeBonus:    toBdt(product?.bonuses?.upgradeBonus ?? 0),
     purchaseLimit:   product?.purchaseRules?.purchaseLimit ?? 1,
     levels:          product?.purchaseRules?.allowedMembershipLevels ?? [1, 2, 3, 4, 5, 6, 7, 8],
-    rateB:           commission('B') ? commission('B').rate * 100 : 10,
-    rateC:           commission('C') ? commission('C').rate * 100 : 5,
+    rateA:           commission('A') ? commission('A').rate * 100 : 10,
+    rateB:           commission('B') ? commission('B').rate * 100 : 5,
     isFeatured:      product?.isFeatured ?? false,
     status:          product?.status ?? 'active',
   });
@@ -49,7 +52,7 @@ export default function ProductForm({ mode = 'create', product, categories = [],
     setF((p) => ({ ...p, levels: p.levels.includes(n) ? p.levels.filter((x) => x !== n) : [...p.levels, n].sort() }));
 
   // total revenue is derived: daily income × validity days
-  const totalRevenue = Number(f.dailyIncome || 0) * Number(f.validityDays || 0);
+  const totalRevenue = roundMoney(Number(f.dailyIncome || 0) * Number(f.validityDays || 0));
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -62,21 +65,25 @@ export default function ProductForm({ mode = 'create', product, categories = [],
       name: f.name.trim(),
       category: f.category,
       description: f.description.trim(),
-      price: toPoisha(f.price),
+      price: roundMoney(f.price),
       points: Number(f.points || 0),
       quantity: Number(f.quantity),
       rewardPlan: {
-        dailyIncome: toPoisha(f.dailyIncome),
+        dailyIncome: roundMoney(f.dailyIncome),
         validityDays: Number(f.validityDays),
-        totalEstimatedRevenue: toPoisha(totalRevenue),
+        totalEstimatedRevenue: totalRevenue,
         frequency: 'daily',
-        startAfterPurchaseDays: Number(f.startAfter || 0),
+        // Daily product: claim every N days. Hourly product: claim every N hours.
+        claimUnit: f.claimUnit,
+        claimIntervalDays: Math.max(1, Math.round(Number(f.claimDays) || 1)),
+        claimIntervalHours: Math.max(1, Math.round(Number(f.claimHours) || 1)),
       },
-      bonuses: { invitationBonus: toPoisha(f.invitationBonus), upgradeBonus: toPoisha(f.upgradeBonus) },
+      bonuses: { invitationBonus: roundMoney(f.invitationBonus), upgradeBonus: roundMoney(f.upgradeBonus) },
       purchaseRules: { purchaseLimit: Number(f.purchaseLimit), allowedMembershipLevels: f.levels },
+      // Team commission: this product's own A and B rate, paid on every claim (daily or hourly)
       teamCommissions: [
+        { level: 'A', rate: Number(f.rateA) / 100, basis: 'daily-income' },
         { level: 'B', rate: Number(f.rateB) / 100, basis: 'daily-income' },
-        { level: 'C', rate: Number(f.rateC) / 100, basis: 'daily-income' },
       ],
       isFeatured: f.isFeatured,
       status: f.status,
@@ -116,7 +123,17 @@ export default function ProductForm({ mode = 'create', product, categories = [],
         <Field label="Daily earning (৳)"><input required type="number" min="0" step="0.01" value={f.dailyIncome} onChange={set('dailyIncome')} className={field} /></Field>
         <Field label="Validity period (days)"><input required type="number" min="1" step="1" value={f.validityDays} onChange={set('validityDays')} className={field} /></Field>
         <Field label="Total revenue (auto)"><input readOnly value={`৳${totalRevenue.toFixed(2)}`} className={`${field} text-slate-500`} /></Field>
-        <Field label="First claim after (days)"><input type="number" min="0" step="1" value={f.startAfter} onChange={set('startAfter')} className={field} /></Field>
+        <Field label="Product type" hint="Hourly products pay every few hours; daily products every few days">
+          <select value={f.claimUnit} onChange={set('claimUnit')} className={field}>
+            <option value="day">Daily product</option>
+            <option value="hour">Hourly product</option>
+          </select>
+        </Field>
+        {f.claimUnit === 'hour' ? (
+          <Field label="Claim every (hours)" hint="The user can claim once every N hours"><input required type="number" min="1" max="720" step="1" value={f.claimHours} onChange={set('claimHours')} className={field} /></Field>
+        ) : (
+          <Field label="Claim every (days)" hint="The user can claim once every N days"><input required type="number" min="1" max="30" step="1" value={f.claimDays} onChange={set('claimDays')} className={field} /></Field>
+        )}
         <Field label="Purchase limit / user"><input required type="number" min="1" step="1" value={f.purchaseLimit} onChange={set('purchaseLimit')} className={field} /></Field>
         <Field label="Status">
           <select value={f.status} onChange={set('status')} className={field}>
@@ -130,10 +147,10 @@ export default function ProductForm({ mode = 'create', product, categories = [],
       <section className="rounded-2xl border p-4 space-y-4">
         <p className="text-xs font-extrabold text-slate-500">REWARDS &amp; TEAM COMMISSION</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Field label="Invitation bonus (৳)" hint="Paid to the buyer's inviter"><input type="number" min="0" step="0.01" value={f.invitationBonus} onChange={set('invitationBonus')} className={field} /></Field>
-          <Field label="Upgrade bonus (৳)" hint="Paid when a membership upgrade happens"><input type="number" min="0" step="0.01" value={f.upgradeBonus} onChange={set('upgradeBonus')} className={field} /></Field>
-          <Field label="Level B commission %" hint="Of buyer's daily earning"><input type="number" min="0" max="100" step="0.1" value={f.rateB} onChange={set('rateB')} className={field} /></Field>
-          <Field label="Level C commission %" hint="Of buyer's daily earning"><input type="number" min="0" max="100" step="0.1" value={f.rateC} onChange={set('rateC')} className={field} /></Field>
+          <Field label="Invitation bonus (৳)" hint="Paid once: on the invitee's first purchase"><input type="number" min="0" step="0.01" value={f.invitationBonus} onChange={set('invitationBonus')} className={field} /></Field>
+          <Field label="Upgrade bonus (৳)" hint="Paid on every purchase after the buyer's first"><input type="number" min="0" step="0.01" value={f.upgradeBonus} onChange={set('upgradeBonus')} className={field} /></Field>
+          <Field label="Level A commission %" hint="Buyer's inviter, per profit claim"><input type="number" min="0" max="100" step="0.1" value={f.rateA} onChange={set('rateA')} className={field} /></Field>
+          <Field label="Level B commission %" hint="Inviter's inviter, per profit claim"><input type="number" min="0" max="100" step="0.1" value={f.rateB} onChange={set('rateB')} className={field} /></Field>
         </div>
       </section>
 

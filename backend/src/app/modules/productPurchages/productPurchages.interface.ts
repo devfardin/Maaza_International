@@ -7,7 +7,7 @@ export type TPurchaseStatus =
   | "completed"
   | "cancelled";
 
-export type TTeamLevel = "B" | "C" | "D";
+export type TTeamLevel = "A" | "B";
 
 export type TReferralSnapshot = {
   level: TTeamLevel;
