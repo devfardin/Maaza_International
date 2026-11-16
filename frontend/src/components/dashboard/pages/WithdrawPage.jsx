@@ -15,7 +15,7 @@ import { floorMoney, roundMoney } from '@/lib/money';
 import { formatBDT, formatDateTime } from '@/components/shared/money';
 
 const MIN_WITHDRAWAL = 120;
-const FEE_PERCENT = 8;
+const FEE_PERCENT = 9.5;
 
 const NOTICES = [
   'You must be a valid member to withdraw: make a deposit and buy at least one product.',

@@ -31,7 +31,7 @@ export const MIN_DEPOSIT = 200;
 
 // Withdrawals: minimum request, and the processing + tax fee taken from each withdrawal (percent of the amount)
 export const MIN_WITHDRAWAL = 120;
-export const WITHDRAWAL_FEE_PERCENT = 8;
+export const WITHDRAWAL_FEE_PERCENT = 9.5;
 
 // Community: members at this VIP level (or higher) can create posts
 export const COMMUNITY_POST_MIN_VIP = 3;
