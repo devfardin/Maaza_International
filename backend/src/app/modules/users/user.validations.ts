@@ -1,4 +1,5 @@
 import z from "zod";
+import { DISTRICT_NAMES } from "../../config/districts";
 
 const phoneRegex = /^\+?[0-9]{11}$/;
 
@@ -51,6 +52,7 @@ const updateMyProfileValidation = z.object({
         email: z.string().trim().toLowerCase().email("Please provide a valid email address").optional(),
         phone: z.string().trim().regex(phoneRegex, "Please provide a valid phone number (11 digits)").optional(),
         avatar: z.string().url("Avatar must be a valid URL").optional().or(z.literal("")),
+        district: z.enum(DISTRICT_NAMES, { message: "Please choose a valid district" }).optional(),
     }).strict(),
 });
 

@@ -200,12 +200,12 @@ const deleteUser = async (actor: { userId: string; role: string }, id: string) =
 
 const updateMyProfile = async (
     userId: string,
-    payload: { fullName?: string; email?: string; phone?: string; avatar?: string }
+    payload: { fullName?: string; email?: string; phone?: string; avatar?: string; district?: string }
 ) => {
     const user = await UserModel.findOne({ _id: userId, isDeleted: false });
     if (!user) throw new AppError(status.NOT_FOUND, 'User not found');
 
-    const update: Partial<Pick<Tuser, 'fullName' | 'email' | 'phone' | 'avatar'>> = {};
+    const update: Partial<Pick<Tuser, 'fullName' | 'email' | 'phone' | 'avatar' | 'district'>> = {};
 
     if (payload.fullName !== undefined) update.fullName = payload.fullName;
 
@@ -222,6 +222,8 @@ const updateMyProfile = async (
     }
 
     if (payload.avatar !== undefined) update.avatar = payload.avatar;
+
+    if (payload.district !== undefined) update.district = payload.district;
 
     if (Object.keys(update).length === 0) {
         return getMe(userId);

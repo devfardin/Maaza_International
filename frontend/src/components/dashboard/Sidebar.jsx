@@ -11,6 +11,7 @@ const workspaceNav = [
   { page: 'products',  icon: '▦', key: 'nav.products' },
   { page: 'purchased', icon: '▣', key: 'nav.myProducts' },
   { page: 'tasks',     icon: '✧', key: 'nav.tasks' },
+  { page: 'salary',    icon: '৳', key: 'nav.salary' },
   { page: 'community', icon: '◎', key: 'nav.community' },
   { page: 'news',      icon: '▤', key: 'nav.news' },
 ];

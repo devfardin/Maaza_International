@@ -31,6 +31,7 @@ const updateVipLevels = async (levels: TVipLevel[]) => {
                     qualifiedReferrals: l.level === 1 ? 0 : l.qualifiedReferrals,
                     minSpent: l.level === 1 ? 0 : l.minSpent,
                     dailyCheckinBonus: l.dailyCheckinBonus,
+                    weeklySalary: l.weeklySalary,
                 } },
                 upsert: true,
             },

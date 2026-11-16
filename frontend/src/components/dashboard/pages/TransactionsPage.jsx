@@ -9,7 +9,7 @@ import { formatBDT, formatDateTime } from '@/components/shared/money';
 import PageLoader from '@/components/shared/PageLoader';
 import { useI18n } from '@/lib/i18n';
 
-const CREDIT_TYPES = ['deposit', 'daily_checkin', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus'];
+const CREDIT_TYPES = ['deposit', 'daily_checkin', 'salary', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus'];
 
 const FILTERS = [
   { value: 'all', label: 'All' },

@@ -89,7 +89,13 @@ const userSchema = new Schema<Tuser, User>(
         },
         passwordChangedAt: {
             type: Date
-        }
+        },
+        // member's home district (one of the 64 districts of Bangladesh, see config/districts.ts)
+        district: {
+            type: String,
+            default: '',
+            trim: true,
+        },
 
     },
     {

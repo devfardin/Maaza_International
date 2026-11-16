@@ -15,6 +15,7 @@ export interface Tuser  {
     isDeleted: boolean;
     welcomeBonusClaimed?: boolean;
     passwordChangedAt?: Date;
+    district?: string;
 }
 
 export type TuserDocument = Tuser & { _id: Types.ObjectId };

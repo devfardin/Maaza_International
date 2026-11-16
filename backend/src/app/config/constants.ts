@@ -38,3 +38,18 @@ export const COMMUNITY_POST_MIN_VIP = 3;
 
 // Default product claim cadence: the user can claim every 2 days.
 export const DEFAULT_CLAIM_INTERVAL_DAYS = 2;
+
+// ── Weekly salary ─────────────────────────────────────────────────────────────
+// Seeded into the VIP ladder (weeklySalary per VIP level, BDT). Changed from the super admin dashboard.
+export const DEFAULT_WEEKLY_SALARIES: Readonly<Record<number, number>> = {
+  4: 3000,
+  5: 6000,
+  6: 13000,
+  7: 26000,
+  8: 52000,
+};
+
+// Claim window: every Monday, from 10:00 to 22:00 in Bangladesh time (Asia/Dhaka, UTC+6, no DST).
+export const SALARY_TIMEZONE_OFFSET_HOURS = 6;
+export const SALARY_CLAIM_START_HOUR = 10;
+export const SALARY_CLAIM_END_HOUR = 22;

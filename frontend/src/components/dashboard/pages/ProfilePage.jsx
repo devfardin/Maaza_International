@@ -5,6 +5,7 @@ import {
   useChangePasswordMutation,
   useGetMeQuery,
   useUpdateMyProfileMutation,
+  useGetDistrictsQuery,
   useUploadMyAvatarMutation,
 } from '@/redux/features/apiSlice';
 import { setUser } from '@/redux/features/authSlice';
@@ -31,7 +32,8 @@ export default function ProfilePage({ showPage }) {
   const [updateProfile, { isLoading: saving }] = useUpdateMyProfileMutation();
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '' });
+  const { data: districtsData } = useGetDistrictsQuery();
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '', district: '' });
 
   const [oldPw, setOldPw]   = useState('');
   const [newPw, setNewPw]   = useState('');
@@ -40,14 +42,14 @@ export default function ProfilePage({ showPage }) {
   // Saved values shown while not editing; the draft form is used while editing
   const shown = editing
     ? form
-    : { fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '' };
+    : { fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '', district: user?.district || '' };
 
   const initials = user?.fullName
     ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : '??';
 
   function startEdit() {
-    setForm({ fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '' });
+    setForm({ fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '', district: user?.district || '' });
     setEditing(true);
   }
 
@@ -70,6 +72,7 @@ export default function ProfilePage({ showPage }) {
     if (fullName !== user.fullName) body.fullName = fullName;
     if (email !== user.email) body.email = email;
     if (phone !== user.phone) body.phone = phone;
+    if (form.district && form.district !== (user.district || '')) body.district = form.district;
 
     if (Object.keys(body).length === 0) {
       setEditing(false);
@@ -188,6 +191,25 @@ export default function ProfilePage({ showPage }) {
               <Field label="Phone number" htmlFor="pf-phone">
                 <input id="pf-phone" type="tel" inputMode="tel" className={inputCls} disabled={!editing} value={shown.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </Field>
+
+              <Field label="Home district" htmlFor="pf-district">
+                <select id="pf-district" className={inputCls} disabled={!editing} value={shown.district}
+                  onChange={(e) => setForm({ ...form, district: e.target.value })}>
+                  <option value="">Not set</option>
+                  {Object.entries(
+                    (districtsData?.data || []).reduce((groups, d) => {
+                      (groups[d.division] ||= []).push(d.name);
+                      return groups;
+                    }, {})
+                  ).map(([division, names]) => (
+                    <optgroup key={division} label={division}>
+                      {names.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </Field>
 
               {/* Locked fields */}

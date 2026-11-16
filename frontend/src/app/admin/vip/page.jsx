@@ -1,5 +1,5 @@
 'use client';
-// VIP levels & daily check-in bonus. Admins and super admins can edit the table.
+// VIP levels, daily check-in bonus and weekly salary. Admins and super admins can view the table; only super admins edit it.
 // VIP n is stored as membershipLevel n+1, so the "qualified referrals" column is what a
 // member needs to reach that VIP level. Money is typed in BDT and sent as BDT.
 import { useState } from 'react';
@@ -21,6 +21,7 @@ function rowsFromServer(levels) {
       qualifiedReferrals: found.qualifiedReferrals ?? 0,
       minSpentBdt: String(found.minSpent ?? 0),
       dailyCheckinBonusBdt: String(found.dailyCheckinBonus ?? 0),
+      weeklySalaryBdt: String(found.weeklySalary ?? 0),
     };
   });
 }
@@ -49,6 +50,7 @@ export default function VipLevelsAdminPage() {
       qualifiedReferrals: Math.max(0, Math.round(Number(r.qualifiedReferrals) || 0)),
       minSpent: roundMoney(r.minSpentBdt),
       dailyCheckinBonus: roundMoney(r.dailyCheckinBonusBdt),
+      weeklySalary: roundMoney(r.weeklySalaryBdt),
     }));
     try {
       await updateVip({ levels }).unwrap();
@@ -62,7 +64,7 @@ export default function VipLevelsAdminPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-extrabold">VIP levels &amp; daily check-in</h1>
+        <h1 className="text-2xl font-extrabold">VIP levels, check-in &amp; weekly salary</h1>
         {!canEdit && (
           <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-600">
             View only — the VIP levels and check-in bonuses can be changed by a super admin.
@@ -71,6 +73,7 @@ export default function VipLevelsAdminPage() {
         <p className="text-sm text-slate-500 mt-1">
           Members reach a VIP level when they have enough qualified referrals (invitees who deposited and bought a product).
           Each day a VIP member can check in once and receive the bonus for their level, paid to the withdrawable balance.
+          Weekly salary is paid every Monday in the 10:00 AM – 10:00 PM claim window (Bangladesh time). Set it to 0 for levels with no salary.
         </p>
       </div>
 
@@ -78,13 +81,14 @@ export default function VipLevelsAdminPage() {
         <PageLoader label="Loading VIP levels…" />
       ) : (
         <form onSubmit={handleSave} className="bg-white border rounded-2xl overflow-x-auto">
-          <table className="w-full text-sm min-w-[560px]">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="border-b bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                 <th className="text-left px-5 py-3">VIP level</th>
                 <th className="text-left px-5 py-3">Qualified referrals</th>
                 <th className="text-left px-5 py-3">Min. spend (৳)</th>
                 <th className="text-left px-5 py-3">Daily check-in bonus (৳)</th>
+                <th className="text-left px-5 py-3">Weekly salary (৳)</th>
               </tr>
             </thead>
             <tbody>
@@ -102,6 +106,10 @@ export default function VipLevelsAdminPage() {
                   <td className="px-5 py-3">
                     <input readOnly={!canEdit} type="number" min="0" step="0.01" value={r.dailyCheckinBonusBdt}
                       onChange={(e) => update(r.level, 'dailyCheckinBonusBdt', e.target.value)} className={`${field} max-w-[160px]`} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <input readOnly={!canEdit} type="number" min="0" step="0.01" value={r.weeklySalaryBdt}
+                      onChange={(e) => update(r.level, 'weeklySalaryBdt', e.target.value)} className={`${field} max-w-[160px]`} />
                   </td>
                 </tr>
               ))}

@@ -12,7 +12,8 @@ export type TTransactionType =
     | "new_user_bonus"   // one-time bonus on new user registration
     | "invitation_bonus" // inviter's bonus when an invited member makes their first purchase
     | "upgrade_bonus"    // buyer's bonus on a purchase after their first one
-    | "wallet_exchange"; // admin moved money between a member's balance and recharge wallets
+    | "wallet_exchange" // admin moved money between a member's balance and recharge wallets
+    | "salary";         // weekly VIP salary claimed in the Monday claim window (balance wallet)
 
 // which wallet was affected by this transaction
 export type TWalletAffected = "recharge" | "balance";

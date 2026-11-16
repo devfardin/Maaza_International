@@ -35,7 +35,7 @@ export const ALL_TAG_TYPES = [
   'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
   'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
   'Withdrawals', 'Notifications', 'AdminActivity', 'VipLevels', 'DailyCheckin',
-  'News', 'AdminNews',
+  'News', 'AdminNews', 'Salary', 'Locations',
 ];
 
 export const apiSlice = createApi({
@@ -448,6 +448,35 @@ export const apiSlice = createApi({
       invalidatesTags: ['DailyCheckin', 'Wallet', 'Transactions'],
     }),
 
+    // ── WEEKLY SALARY ─────────────────────────────────────────────────────────
+    // GET /salary/status  (user) → { window: { state: 'open'|'upcoming', weekKey, opensAt, closesAt, claimHours },
+    //   vipLevel, weeklySalary (BDT), eligible, claimedThisWeek, claimedAmount, canClaim, missedLastWindow,
+    //   lastClaim, schedule: [{ vipLevel, weeklySalary, qualifiedReferrals, minSpent }], referral }
+    getSalaryStatus: builder.query({
+      query: () => '/salary/status',
+      providesTags: ['Salary'],
+    }),
+
+    // POST /salary/claim  (user) → { amount (BDT), vipLevel, weekKey, balanceAfter }
+    claimSalary: builder.mutation({
+      query: () => ({ url: '/salary/claim', method: 'POST' }),
+      invalidatesTags: ['Salary', 'Wallet', 'Transactions'],
+    }),
+
+    // ── MEMBER LOCATIONS ──────────────────────────────────────────────────────
+    // GET /locations/districts  (any logged-in user) → [{ name, division }]
+    getDistricts: builder.query({
+      query: () => '/locations/districts',
+      providesTags: ['Locations'],
+    }),
+
+    // GET /locations/summary  (admin + super_admin)
+    // → { totalMembers, withLocation, withoutLocation, districts: [{ name, division, lat, lng, count }], divisions: [{ name, count }] }
+    getLocationSummary: builder.query({
+      query: () => '/locations/summary',
+      providesTags: ['Locations'],
+    }),
+
     // ── TASKS ─────────────────────────────────────────────────────────────────
     // GET /tasks  (public)
     getTasks: builder.query({
@@ -763,6 +792,11 @@ export const {
   useUpdateVipLevelsMutation,
   useGetDailyCheckinStatusQuery,
   useDailyCheckinMutation,
+  // Weekly salary & member locations
+  useGetSalaryStatusQuery,
+  useClaimSalaryMutation,
+  useGetDistrictsQuery,
+  useGetLocationSummaryQuery,
   // Payment accounts
   useCreatePaymentAccountMutation,
   useGetMyPaymentAccountsQuery,

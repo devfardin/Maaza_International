@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import app from './app';
 import config from './app/config';
 import { Server } from 'http';
+import { startSalaryScheduler } from './app/modules/salary/salary.scheduler';
 let server: Server;
 async function main() {
   try {
@@ -9,6 +10,7 @@ async function main() {
     server = app.listen(config.port, () => {
       console.log(`Example app listening on port ${config.port}`);
     });
+    startSalaryScheduler();
   } catch (error) {
     console.log(error);
   }

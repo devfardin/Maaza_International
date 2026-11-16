@@ -21,6 +21,8 @@ import { DailyCheckinRoutes } from '../modules/dailyCheckins/dailyCheckin.route'
 import { RealtimeRoutes } from '../modules/realtime/realtime.route';
 import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.route';
 import { NewsRoutes } from '../modules/news/news.route';
+import { SalaryRoutes } from '../modules/salary/salary.route';
+import { LocationRoutes } from '../modules/locations/location.route';
 
 const router = Router();
 
@@ -51,6 +53,8 @@ const moduleRoutes = [
   { path: '/realtime', route: RealtimeRoutes },                 // Live refresh (Server-Sent Events)
   { path: '/admin-dashboard', route: AdminDashboardRoutes },    // Admin dashboard headline stats
   { path: '/news', route: NewsRoutes },                         // News & updates posts (HTML + CSS)
+  { path: '/salary', route: SalaryRoutes },                     // Weekly VIP salary: Monday claim window
+  { path: '/locations', route: LocationRoutes },                // Member districts (profile) and admin location map
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
