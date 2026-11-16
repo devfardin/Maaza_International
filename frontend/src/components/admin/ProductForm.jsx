@@ -1,9 +1,10 @@
 'use client';
 // Create / edit a product. All money fields are typed in BDT and sent to the API as BDT
-// (rounded to 2 decimals). Image upload is only shown when creating.
+// (rounded to 2 decimals). The image comes from the Media Library (or a new upload).
 
 import { useState } from 'react';
 import { roundMoney } from '@/lib/money';
+import MediaField from '@/components/shared/MediaField';
 
 const toBdt = (amount) => (amount === undefined || amount === null ? '' : String(amount));
 
@@ -44,7 +45,7 @@ export default function ProductForm({ mode = 'create', product, categories = [],
     isFeatured:      product?.isFeatured ?? false,
     status:          product?.status ?? 'active',
   });
-  const [file, setFile] = useState(null);
+  const [image, setImage] = useState(product?.image ?? '');
   const [localError, setLocalError] = useState('');
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
@@ -57,7 +58,7 @@ export default function ProductForm({ mode = 'create', product, categories = [],
   function handleSubmit(e) {
     e.preventDefault();
     setLocalError('');
-    if (mode === 'create' && !file) return setLocalError('Please choose a product image.');
+    if (!image) return setLocalError('Please choose a product image.');
     if (!f.levels.length) return setLocalError('Select at least one membership level.');
     if (!f.category) return setLocalError('Please choose a category.');
 
@@ -87,8 +88,9 @@ export default function ProductForm({ mode = 'create', product, categories = [],
       ],
       isFeatured: f.isFeatured,
       status: f.status,
+      image,
     };
-    onSubmit({ data, file });
+    onSubmit({ data, file: null });
   }
 
   return (
@@ -106,14 +108,9 @@ export default function ProductForm({ mode = 'create', product, categories = [],
             <textarea required minLength={10} rows={3} value={f.description} onChange={set('description')} className={field} />
           </Field>
         </div>
-        {mode === 'create' && (
-          <div className="sm:col-span-2">
-            <Field label="Image" hint="JPEG, PNG, WEBP or GIF · max 5 MB">
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-blue-700" />
-            </Field>
-          </div>
-        )}
+        <div className="sm:col-span-2">
+          <MediaField label="Image" hint="Pick from the Media Library, or upload a new image" value={image} onChange={setImage} />
+        </div>
       </section>
 
       <section className="grid grid-cols-2 sm:grid-cols-3 gap-4">

@@ -2,20 +2,17 @@ import status from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import AppError from "../../errors/AppError";
-import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { resolveImage } from "../../utils/resolveImage";
 import { PaymentMethodsServices } from "./paymentMethods.services";
 import { AdminActivityServices } from "../adminActivity/adminActivity.services";
 
-const uploadImage = async (file: { path: string } | undefined, name: string) => {
-    if (!file) return undefined;
-    const imageName = `payment_${name.replace(/[^a-z0-9]+/gi, "_")}_${Date.now()}`;
-    const { secure_url } = await sendImageToCloudinary(imageName, file.path);
-    return secure_url as string;
-};
+// new file → uploaded; otherwise the Media Library image URL is used
+const resolvePaymentImage = (file: { path: string } | undefined, name: string, url?: string) =>
+    resolveImage(file, `payment_${name.replace(/[^a-z0-9]+/gi, "_")}_${Date.now()}`, url);
 
 const createPaymentMethod = catchAsync(async (req, res) => {
     // if (!req.file) throw new AppError(status.BAD_REQUEST, "Payment method image is required");
-    const image = await uploadImage(req.file, req.body.name);
+    const image = await resolvePaymentImage(req.file, req.body.name, req.body.image);
     const result = await PaymentMethodsServices.createPaymentMethod(req.body, image!);
     await AdminActivityServices.record(req.user!, "payment_method_created", `Created payment method ${result.name}`, { type: "payment_method", id: result._id });
     sendResponse(res, {
@@ -47,8 +44,10 @@ const getAllPaymentMethods = catchAsync(async (req, res) => {
 });
 
 const updatePaymentMethod = catchAsync(async (req, res) => {
-    const image = await uploadImage(req.file, req.body.name ?? "payment");
-    const result = await PaymentMethodsServices.updatePaymentMethod(req.params.id, req.body, image);
+    const image = await resolvePaymentImage(req.file, req.body.name ?? "payment", req.body.image);
+    // the image is passed separately, so the raw body value is not written
+    const { image: _imageUrl, ...payload } = req.body;
+    const result = await PaymentMethodsServices.updatePaymentMethod(req.params.id, payload, image);
     await AdminActivityServices.record(req.user!, "payment_method_updated", `Updated payment method ${result.name}`, { type: "payment_method", id: result._id });
     sendResponse(res, {
         success: true,

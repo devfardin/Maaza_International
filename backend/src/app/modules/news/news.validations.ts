@@ -11,6 +11,8 @@ const newsBody = z.object({
     htmlContent: z.string().max(200_000, 'HTML content is too large').default(''),
     cssContent: z.string().max(50_000, 'CSS content is too large').default(''),
     status: z.enum(['draft', 'published'], { message: 'Status must be draft or published' }).default('draft'),
+    // optional: a Media Library image URL (used instead of uploading a file)
+    coverImage: z.string().optional(),
 });
 
 const createNewsValidation = z.object({ body: newsBody });

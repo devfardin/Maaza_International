@@ -1,8 +1,9 @@
 'use client';
 // Admin tasks: create a task (image, reward, instructions, dates) and see the current list.
-import { useRef, useState } from 'react';
-import { useGetTasksQuery, useCreateTaskMutation, useUploadTaskImageMutation } from '@/redux/features/apiSlice';
+import { useState } from 'react';
+import { useGetTasksQuery, useCreateTaskMutation } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
+import MediaField from '@/components/shared/MediaField';
 
 const EMPTY = {
   title: '', description: '', instructions: '', specialNote: '',
@@ -13,26 +14,23 @@ const field = 'w-full rounded-xl border bg-slate-50 px-3.5 py-2.5 text-sm outlin
 export default function AdminTasksPage() {
   const { data, isLoading } = useGetTasksQuery();
   const [createTask, { isLoading: creating }] = useCreateTaskMutation();
-  const [uploadImage, { isLoading: uploading }] = useUploadTaskImageMutation();
   const [form, setForm] = useState(EMPTY);
-  const [file, setFile] = useState(null);
-  const fileRef = useRef(null);
+  const [image, setImage] = useState('');
 
   const tasks = data?.data || [];
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!file) return notify.error('Please choose a task image.');
+    if (!image) return notify.error('Please choose a task image.');
     if (new Date(form.endsAt) <= new Date(form.startsAt)) return notify.error('The end date must be after the start date.');
     try {
-      const up = await uploadImage(file).unwrap();
       await createTask({
         title: form.title.trim(),
         description: form.description.trim(),
         instructions: form.instructions.trim(),
         specialNote: form.specialNote.trim(),
-        image: up.data.url,
+        image,
         rewardAmount: Number(form.rewardAmount), // BDT
         rewardType: form.rewardType,
         startsAt: new Date(form.startsAt).toISOString(),
@@ -40,14 +38,13 @@ export default function AdminTasksPage() {
       }).unwrap();
       notify.success('Task created.');
       setForm(EMPTY);
-      setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
+      setImage('');
     } catch (err) {
       notify.error(getErrorMessage(err, 'Could not create the task.'));
     }
   }
 
-  const busy = creating || uploading;
+  const busy = creating;
 
   return (
     <div className="space-y-6">
@@ -76,13 +73,12 @@ export default function AdminTasksPage() {
           <input required type="datetime-local" value={form.startsAt} onChange={set('startsAt')} className={field} /></label>
         <label><span className="block text-xs font-bold text-slate-600 mb-1">Ends at</span>
           <input required type="datetime-local" value={form.endsAt} onChange={set('endsAt')} className={field} /></label>
-        <label className="sm:col-span-2"><span className="block text-xs font-bold text-slate-600 mb-1">Image</span>
-          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" required
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-blue-700" /></label>
+        <div className="sm:col-span-2">
+          <MediaField label="Image" hint="Pick from the Media Library, or upload a new image" value={image} onChange={setImage} />
+        </div>
         <div className="sm:col-span-2">
           <button disabled={busy} className="w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-bold disabled:opacity-60">
-            {uploading ? 'Uploading image…' : creating ? 'Creating…' : 'Create task'}
+            {creating ? 'Creating…' : 'Create task'}
           </button>
         </div>
       </form>

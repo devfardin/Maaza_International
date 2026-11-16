@@ -344,7 +344,7 @@ export const apiSlice = createApi({
     createPaymentMethod: builder.mutation({
       query: ({ file, data }) => {
         const form = new FormData();
-        form.append('file', file);
+        if (file) form.append('file', file);
         form.append('data', JSON.stringify(data));
         return { url: '/payment-methods/create-payment-method', method: 'POST', body: form };
       },
@@ -680,7 +680,7 @@ export const apiSlice = createApi({
     createProduct: builder.mutation({
       query: ({ file, data }) => {
         const form = new FormData();
-        form.append('file', file);
+        if (file) form.append('file', file);
         form.append('data', JSON.stringify(data));
         return { url: '/products/create-product', method: 'POST', body: form };
       },

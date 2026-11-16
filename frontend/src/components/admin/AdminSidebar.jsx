@@ -19,6 +19,7 @@ export const adminNav = [
   { href: '/admin/tasks',        icon: '✅', label: 'Tasks' },
   { href: '/admin/community',    icon: '🗣️', label: 'Community' },
   { href: '/admin/news',         icon: '📰', label: 'News & updates' },
+  { href: '/admin/media',        icon: '🖼️', label: 'Media library' },
   { href: '/admin/transactions', icon: '💰', label: 'Transactions' },
   { href: '/admin/activity',     icon: '🛡️', label: 'Login activity' },
   { href: '/admin/admin-activity', icon: '🧭', label: 'Admin activity', superOnly: true },

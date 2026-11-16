@@ -1,7 +1,8 @@
 'use client';
-// Create / edit a deposit payment method (super_admin). Image is uploaded as a file.
+// Create / edit a deposit payment method (super_admin). The image comes from the Media Library (or a new upload).
 import { useState } from 'react';
 import RichTextEditor from '@/components/shared/RichTextEditor';
+import MediaField from '@/components/shared/MediaField';
 
 const field = 'w-full rounded-xl border bg-slate-50 px-3.5 py-2.5 text-sm outline-none focus:border-blue-500';
 const ACCOUNT_TYPES = ['Merchant', 'Personal', 'Agent'];
@@ -17,29 +18,23 @@ export default function PaymentMethodForm({ method, onSubmit, onCancel, submitti
     instructions:  method?.instructions ?? '',
     isActive:      method?.isActive ?? true,
   });
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(method?.image ?? '');
+  const [image, setImage] = useState(method?.image ?? '');
   const [error, setError] = useState('');
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 
-  function pickFile(e) {
-    const chosen = e.target.files?.[0] || null;
-    setFile(chosen);
-    setPreview(chosen ? URL.createObjectURL(chosen) : (method?.image ?? ''));
-  }
-
   function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    // if (!isEdit && !file) return setError('Please choose an image for this payment method.');
+    if (!image) return setError('Please choose an image for this payment method.');
     if (!f.name.trim()) return setError('Name is required.');
     if (!f.accountNumber.trim()) return setError('Account number is required.');
     if (!f.instructions || f.instructions === '<p></p>') return setError('Instructions are required.');
 
     onSubmit({
-      file,
+      file: null,
       data: {
+        image,
         name: f.name.trim(),
         // blank code → the backend builds it from the name on create
         ...(f.code.trim() ? { code: f.code.trim() } : {}),
@@ -86,19 +81,7 @@ export default function PaymentMethodForm({ method, onSubmit, onCancel, submitti
         </label>
       </div>
 
-      <div>
-        <span className="block text-xs font-bold text-slate-600 mb-1">Image</span>
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-xl border bg-slate-100 grid place-items-center overflow-hidden shrink-0">
-            {preview
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={preview} alt="" className="w-full h-full object-contain" />
-              : <span className="text-[11px] text-slate-400">No image</span>}
-          </div>
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={pickFile}
-            className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-blue-700" />
-        </div>
-      </div>
+      <MediaField label="Image" hint="Pick from the Media Library, or upload a new image" value={image} onChange={setImage} />
 
       <div>
         <span className="block text-xs font-bold text-slate-600 mb-1">Description</span>

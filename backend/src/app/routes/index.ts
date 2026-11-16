@@ -23,6 +23,7 @@ import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.r
 import { NewsRoutes } from '../modules/news/news.route';
 import { SalaryRoutes } from '../modules/salary/salary.route';
 import { LocationRoutes } from '../modules/locations/location.route';
+import { MediaRoutes } from '../modules/media/media.route';
 
 const router = Router();
 
@@ -55,6 +56,7 @@ const moduleRoutes = [
   { path: '/news', route: NewsRoutes },                         // News & updates posts (HTML + CSS)
   { path: '/salary', route: SalaryRoutes },                     // Weekly VIP salary: Monday claim window
   { path: '/locations', route: LocationRoutes },                // Member districts (profile) and admin location map
+  { path: '/media', route: MediaRoutes },                       // Media Library: upload, browse, permanent delete (super admin)
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

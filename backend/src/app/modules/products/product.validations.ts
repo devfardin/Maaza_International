@@ -47,6 +47,8 @@ const productBody = z.object({
     isFeatured: z.boolean().default(false),
     sortOrder: z.number().int("Sort order must be a whole number").default(0),
     status: z.enum(["active", "inactive", "outofstock"], { message: "Status must be active, inactive, or outofstock" }).default("active"),
+    // optional: a Media Library image URL (used instead of uploading a file)
+    image: z.string().optional(),
 });
 
 const createProductValidation = z.object({ body: productBody });

@@ -1,6 +1,6 @@
 import status from 'http-status';
 import AppError from '../../errors/AppError';
-import { sendImageToCloudinary } from '../../utils/sendImageToCloudinary';
+import { resolveImage } from '../../utils/resolveImage';
 import { NewsModel } from './news.model';
 import { TNewsPost } from './news.interface';
 
@@ -29,9 +29,7 @@ const parsePublishedAt = (value?: string): Date | undefined => {
 };
 
 const createNews = async (file: Express.Multer.File | undefined, payload: Partial<TNewsPost> & { publishedAt?: string }, actor: TActor) => {
-    const coverImage = file
-        ? (await sendImageToCloudinary(`news_${Date.now()}`, file.path)).secure_url
-        : '';
+    const coverImage = (await resolveImage(file, `news_${Date.now()}`, payload.coverImage)) ?? '';
     const isPublished = payload.status === 'published';
     const chosenDate = parsePublishedAt(payload.publishedAt);
 
@@ -75,12 +73,16 @@ const updateNews = async (id: string, file: Express.Multer.File | undefined, pay
     const current = await NewsModel.findOne({ _id: id, isDeleted: false });
     if (!current) throw new AppError(status.NOT_FOUND, 'News post not found');
 
-    const { publishedAt, ...rest } = payload;
+    // the cover image is resolved below, never taken straight from the body
+    const { publishedAt, coverImage: _coverUrl, ...rest } = payload;
     const update: Record<string, unknown> = { ...rest, updatedBy: actor.userId };
     if (payload.htmlContent !== undefined) update.htmlContent = cleanHtml(payload.htmlContent);
     if (payload.cssContent !== undefined) update.cssContent = cleanCss(payload.cssContent);
     if (payload.longDescription !== undefined) update.longDescription = cleanHtml(payload.longDescription);
-    if (file) update.coverImage = (await sendImageToCloudinary(`news_${Date.now()}`, file.path)).secure_url;
+    const coverImage = await resolveImage(file, `news_${Date.now()}`, _coverUrl);
+    if (coverImage) update.coverImage = coverImage;
+    // the admin removed the image in the form
+    else if (_coverUrl === '') update.coverImage = '';
 
     const chosenDate = parsePublishedAt(publishedAt);
     if (chosenDate) update.publishedAt = chosenDate;

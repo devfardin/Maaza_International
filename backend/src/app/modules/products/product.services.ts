@@ -1,6 +1,6 @@
 import status from "http-status";
 import AppError from "../../errors/AppError";
-import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
+import { resolveImage } from "../../utils/resolveImage";
 import { CategoryModel } from "../categories/category.model";
 import { TProduct } from "./product.interface";
 import { ProductModel } from "./product.model";
@@ -8,7 +8,7 @@ import { ProductModel } from "./product.model";
 type TActor = { userId: string; role: string };
 
 const createProduct = async (file: Express.Multer.File | undefined, payload: TProduct, actor: TActor) => {
-    if (!file) {
+    if (!file && !payload.image) {
         throw new AppError(status.BAD_REQUEST, "Product image is required");
     }
 
@@ -23,13 +23,14 @@ const createProduct = async (file: Express.Multer.File | undefined, payload: TPr
     }
 
     const imageName = `${payload.name.split(" ").join("_")}_${Date.now()}`;
-    const { secure_url } = await sendImageToCloudinary(imageName, file.path);
+    const image = await resolveImage(file, imageName, payload.image);
+    if (!image) throw new AppError(status.BAD_REQUEST, "Product image is required");
 
     // Super admins publish straight away; admin uploads wait for a super admin's approval
     const isSuper = actor.role === "super_admin";
     const result = await ProductModel.create({
         ...payload,
-        image: secure_url,
+        image,
         status: payload.quantity === 0 ? "outofstock" : payload.status,
         approvalStatus: isSuper ? "approved" : "pending",
         createdBy: actor.userId,
@@ -65,6 +66,9 @@ const updateProduct = async (id: string, payload: Partial<TProduct>, actor: TAct
     if (!current) throw new AppError(status.NOT_FOUND, "Product not found");
 
     const update: Partial<TProduct> = { ...payload };
+    // the image only changes when a Media Library image is chosen; an empty value is ignored
+    delete update.image;
+    if (payload.image) update.image = (await resolveImage(undefined, "", payload.image)) as string;
     // approval is never set from the request body
     delete update.approvalStatus;
     delete update.approvedBy;

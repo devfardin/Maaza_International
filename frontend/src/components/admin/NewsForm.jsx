@@ -3,8 +3,9 @@
 //   • Text editor post — title, notice image, notice type, published date, short + long description
 //   • HTML + CSS design — title, notice type, published date, and your own HTML and CSS
 //     (only the design is shown on the post page)
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import NewsContent from '@/components/shared/NewsContent';
+import MediaField from '@/components/shared/MediaField';
 import RichTextEditor from '@/components/shared/RichTextEditor';
 import { NOTICE_TYPES, postFormat, toDateInput } from '@/lib/news';
 
@@ -55,15 +56,11 @@ export default function NewsForm({ mode = 'create', post, onSubmit, onCancel, su
     htmlContent: post?.htmlContent ?? '',
     cssContent: post?.cssContent ?? '',
   });
-  const [file, setFile] = useState(null);
+  const [image, setImage] = useState(post?.coverImage ?? '');
   const [previewKey, setPreviewKey] = useState('phone');
   const [localError, setLocalError] = useState('');
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
-
-  // preview of a newly chosen cover image
-  const coverPreview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-  useEffect(() => () => coverPreview && URL.revokeObjectURL(coverPreview), [coverPreview]);
 
   const width = WIDTHS.find((w) => w.key === previewKey)?.px ?? null;
 
@@ -87,12 +84,12 @@ export default function NewsForm({ mode = 'create', post, onSubmit, onCancel, su
         longDescription: format === 'text' ? f.longDescription : '',
         htmlContent: format === 'html' ? f.htmlContent : '',
         cssContent: format === 'html' ? f.cssContent : '',
+        // '' when the image was removed, otherwise the Media Library URL
+        coverImage: image,
       },
-      file,
+      file: null,
     });
   }
-
-  const currentCover = coverPreview || post?.coverImage;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -140,13 +137,7 @@ export default function NewsForm({ mode = 'create', post, onSubmit, onCancel, su
           </select>
         </label>
         <div className="block">
-          <span className={label}>Notice image {mode === 'edit' && post?.coverImage ? '(empty = keep current)' : ''}</span>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
-            {currentCover && (
-              <img src={currentCover} alt="" className="h-20 w-28 shrink-0 rounded-xl border bg-slate-50 object-contain" />
-            )}
-          </div>
+          <MediaField label="Notice image" hint="Pick from the Media Library, or upload a new image" value={image} onChange={setImage} />
         </div>
         <label className="block sm:col-span-2">
           <span className={label}>Short description (shown on the card)</span>

@@ -88,9 +88,9 @@ export default function PaymentMethodsAdminPage() {
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {methods.map((m) => (
             <article key={m._id} className="bg-white border rounded-2xl overflow-hidden flex flex-col">
-              <div className="h-36 bg-slate-100 grid place-items-center relative">
+              <div className="bg-slate-100 grid place-items-center relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {m.image ? <img src={m.image} alt={m.name} className="w-full h-full object-contain p-3" loading="lazy" /> : <span className="text-xs text-slate-400">No image</span>}
+                {m.image ? <img src={m.image} alt={m.name} className=" object-contain p-3" loading="lazy" /> : <span className="text-xs text-slate-400">No image</span>}
                 <span className={`absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full ${m.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                   {m.isActive ? 'Active' : 'Hidden'}
                 </span>

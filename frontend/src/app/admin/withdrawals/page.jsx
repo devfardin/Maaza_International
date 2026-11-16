@@ -10,8 +10,9 @@ import PageLoader from '@/components/shared/PageLoader';
 import { formatBDT, formatDateTime } from '@/components/shared/money';
 import { floorMoney, roundMoney } from '@/lib/money';
 
-// Fee and net payout for a withdrawal (BDT). Falls back to the 8% rule for older records.
-const feeOf = (w) => w.fee ?? floorMoney((w.amount * 8) / 100);
+const withdrowFee = 9.5;
+// Fee and net payout for a withdrawal (BDT). Falls back to the 9.5% rule for older records.
+const feeOf = (w) => w.fee ?? floorMoney((w.amount * 9.5) / 100);
 const netOf = (w) => w.netAmount ?? roundMoney(w.amount - feeOf(w));
 
 // Amount requested, the fee taken, and the net the admin must actually pay out
@@ -19,7 +20,7 @@ function PayoutBreakdown({ w, compact = false }) {
   return (
     <div className={compact ? 'space-y-0.5' : 'space-y-1'}>
       <p className={compact ? 'text-sm font-bold' : 'font-bold'}>{formatBDT(w.amount)} <span className="text-[11px] font-semibold text-slate-400">requested</span></p>
-      <p className="text-xs text-rose-600">− {formatBDT(feeOf(w))} fee (8%)</p>
+      <p className="text-xs text-rose-600">− {formatBDT(feeOf(w))} fee ({withdrowFee}%)</p>
       <p className="text-sm font-extrabold text-emerald-700">Pay {formatBDT(netOf(w))}</p>
     </div>
   );
@@ -71,7 +72,7 @@ export default function AdminWithdrawalsPage() {
           <b className="block text-xl mt-1">{counts.pending}</b>
         </div>
         <div className="bg-white border rounded-2xl p-4 min-w-0 col-span-1 lg:col-span-2">
-          <small className="text-xs text-slate-500">Pending payout (after 8% fee)</small>
+          <small className="text-xs text-slate-500">Pending payout (after 9.5% fee)</small>
           <b className="block text-xl mt-1 truncate">{formatBDT(pendingTotal)}</b>
         </div>
       </div>
@@ -191,7 +192,7 @@ export default function AdminWithdrawalsPage() {
         showReference
         title={decision?.action === 'approved' ? 'Mark withdrawal as paid?' : 'Reject withdrawal?'}
         description={decision?.action === 'approved'
-          ? `Confirm you have sent ${formatBDT(decision?.net ?? 0)} (the amount after the 8% fee) to the user’s bKash / Nagad. The user will be emailed.`
+          ? `Confirm you have sent ${formatBDT(decision?.net ?? 0)} (the amount after the 9.5% fee) to the user’s bKash / Nagad. The user will be emailed.`
           : 'The amount will be returned to the user’s balance and they will be emailed the reason.'}
         busy={updating}
         onCancel={() => setDecision(null)}

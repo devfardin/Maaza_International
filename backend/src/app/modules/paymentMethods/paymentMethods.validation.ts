@@ -12,6 +12,8 @@ const createPaymentMethodValidation = z.object({
         description: richText.optional().default(""),
         instructions: richText.optional().default(""),
         isActive: z.boolean().default(true),
+        // optional: a Media Library image URL (used instead of uploading a file)
+        image: z.string().optional(),
     }),
 });
 
@@ -24,6 +26,7 @@ const updatePaymentMethodValidation = z.object({
         description: richText.optional(),
         instructions: richText.optional(),
         isActive: z.boolean().optional(),
+        image: z.string().optional(),
     }),
 });
 
