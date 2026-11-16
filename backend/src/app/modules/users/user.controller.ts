@@ -66,7 +66,11 @@ const getMe = catchAsync(async (req, res) => {
 });
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUsers();
+  const all = await UserServices.getAllUsers();
+  // member wallet balances are visible to a super admin only
+  const result = req.user!.role === 'super_admin'
+    ? all
+    : all.map(({ balanceWallet, rechargeWallet, ...member }) => member);
   sendResponse(res, {
     success: true,
     statusCode: status.OK,

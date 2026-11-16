@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
     );
     return (
       <div className="flex flex-wrap gap-1.5">
-        {u.role === 'user' && (
+        {u.role === 'user' && isSuper && (
           <button key="exchange" onClick={() => setExchangeUserId(u._id)}
             className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Exchange wallets</button>
         )}
@@ -169,11 +169,12 @@ export default function AdminUsersPage() {
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[u.status]}`}>{u.status}</span>
             </div>
             {u.role === 'user' && (
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div className={`mt-3 grid ${isSuper ? 'grid-cols-3' : 'grid-cols-1'} gap-2 text-center`}>
                 <div className="rounded-xl bg-slate-50 p-2">
                   <p className="text-[10px] text-slate-500">Products</p>
                   <p className="text-sm font-extrabold">{u.productCount ?? 0}</p>
                 </div>
+                {isSuper && (<>
                 <div className="rounded-xl bg-slate-50 p-2">
                   <p className="text-[10px] text-slate-500">Balance</p>
                   <p className="text-xs font-extrabold">{walletCell(u, 'balanceWallet')}</p>
@@ -182,6 +183,7 @@ export default function AdminUsersPage() {
                   <p className="text-[10px] text-slate-500">Recharge</p>
                   <p className="text-xs font-extrabold">{walletCell(u, 'rechargeWallet')}</p>
                 </div>
+                </>)}
               </div>
             )}
             <div className="mt-3 pt-3 border-t space-y-2">
@@ -198,7 +200,9 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                {['User', 'Phone', 'Role', 'Level', 'Products', 'Balance wallet', 'Recharge wallet', 'Status', 'Actions'].map((h) => <th key={h} className="text-left px-5 py-3 whitespace-nowrap">{h}</th>)}
+                {['User', 'Phone', 'Role', 'Level', 'Products', 'Balance wallet', 'Recharge wallet', 'Status', 'Actions']
+                  .filter((h) => isSuper || !h.endsWith('wallet'))
+                  .map((h) => <th key={h} className="text-left px-5 py-3 whitespace-nowrap">{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -220,8 +224,8 @@ export default function AdminUsersPage() {
                   <td className="px-5 py-3"><span className={`text-xs font-bold capitalize px-2 py-1 rounded-full ${ROLE_COLORS[u.role]}`}>{u.role.replace('_', ' ')}</span></td>
                   <td className="px-5 py-3 font-semibold">Lv {u.membershipLevel}</td>
                   <td className="px-5 py-3 font-semibold">{u.role === 'user' ? u.productCount ?? 0 : <span className="text-slate-400">—</span>}</td>
-                  <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'balanceWallet')}</td>
-                  <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'rechargeWallet')}</td>
+                  {isSuper && <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'balanceWallet')}</td>}
+                  {isSuper && <td className="px-5 py-3 font-semibold whitespace-nowrap">{walletCell(u, 'rechargeWallet')}</td>}
                   <td className="px-5 py-3"><span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[u.status]}`}>{u.status}</span></td>
                   <td className="px-5 py-3 max-w-[280px]">{actionButtons(u)}</td>
                 </tr>

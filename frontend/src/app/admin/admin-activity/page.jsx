@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetAdminActivityQuery, useGetAdminActivitySummaryQuery } from '@/redux/features/apiSlice';
 import PageLoader from '@/components/shared/PageLoader';
-import { formatDateTime } from '@/components/shared/money';
+import { formatBDT, formatDateTime } from '@/components/shared/money';
 
 const ACTION_LABEL = {
   deposit_approved: 'Approved deposit',
@@ -106,6 +106,25 @@ export default function AdminActivityPage() {
                     <span className="font-semibold">{ACTION_LABEL[l.action] || l.action}</span>
                   </p>
                   <p className="text-xs text-slate-600 mt-0.5 break-words">{l.summary}</p>
+                  {l.request && (
+                    <div className="mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-slate-50 border px-3 py-1.5 text-xs">
+                      <span className={`font-bold ${l.request.kind === 'deposit' ? 'text-emerald-700' : 'text-violet-700'}`}>
+                        {l.request.kind === 'deposit' ? 'Deposit' : 'Withdrawal'}
+                      </span>
+                      <span className="text-slate-400">·</span>
+                      <span>
+                        Member <b>{l.request.memberName}</b>
+                        {l.request.memberPhone && <span className="text-slate-500"> ({l.request.memberPhone})</span>}
+                      </span>
+                      <span className="text-slate-400">·</span>
+                      <span className="font-extrabold">{formatBDT(l.request.amount)}</span>
+                      {l.request.kind === 'withdrawal' && l.request.netAmount !== undefined && (
+                        <span className="text-slate-500">(sent {formatBDT(l.request.netAmount)})</span>
+                      )}
+                      <span className="text-slate-400">·</span>
+                      <span className="capitalize text-slate-600">{l.request.status}</span>
+                    </div>
+                  )}
                 </div>
                 <time className="text-[11px] text-slate-400 whitespace-nowrap shrink-0">{formatDateTime(l.createdAt)}</time>
               </li>

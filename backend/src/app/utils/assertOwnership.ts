@@ -11,3 +11,12 @@ export const assertSelfOrAdmin = (req: Request, targetUserId: string) => {
         throw new AppError(status.FORBIDDEN, 'You can only access your own data');
     }
 };
+
+// Wallet balances are private: a member sees their own, only a super admin sees anyone's.
+export const assertSelfOrSuperAdmin = (req: Request, targetUserId: string) => {
+    const actor = req.user;
+    if (!actor) throw new AppError(status.UNAUTHORIZED, 'You are not authorized!');
+    if (actor.role !== 'super_admin' && actor.userId !== String(targetUserId)) {
+        throw new AppError(status.FORBIDDEN, 'You can only access your own wallets');
+    }
+};

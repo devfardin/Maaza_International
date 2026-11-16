@@ -9,9 +9,13 @@ import {
 import { useState } from 'react';
 import { formatBDT } from '@/components/shared/money';
 import Link from 'next/link';
+import HandledRequestsCard from '@/components/admin/HandledRequestsCard';
+import MemberWalletsTable from '@/components/admin/MemberWalletsTable';
 
 export default function AdminDashboardPage() {
   const user = useSelector((s) => s.auth.user);
+  // Member wallet balances are private to the super admin
+  const isSuper = user?.role === 'super_admin';
 
   const { data: usersData,    isLoading: usersLoading }    = useGetAllUsersQuery();
   const { data: depositData,  isLoading: depositLoading }  = useGetAllDepositRequestsQuery();
@@ -55,7 +59,8 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Member wallets: how much money members hold right now (all members added together) */}
+      {/* Member wallets (super admin only): how much money members hold right now */}
+      {isSuper && (
       <div className="grid sm:grid-cols-2 gap-4">
         {[
           { icon: '💰', label: 'Member balance wallets', value: money(s0?.balanceWalletTotal), sub: 'withdrawable, all members combined', color: 'bg-harvest-50 text-harvest-700' },
@@ -71,6 +76,12 @@ export default function AdminDashboardPage() {
           </div>
         ))}
       </div>
+      )}
+
+      {/* Requests this admin handled */}
+      <HandledRequestsCard />
+
+      {isSuper && <MemberWalletsTable />}
 
       {/* Quick links */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

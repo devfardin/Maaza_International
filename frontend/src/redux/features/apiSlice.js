@@ -628,7 +628,7 @@ export const apiSlice = createApi({
       invalidatesTags: ['User'],
     }),
 
-    // POST /wallets/:id/exchange  (admin / super_admin) — move money between a member's wallets
+    // POST /wallets/:id/exchange  (super_admin only) — move money between a member's wallets
     exchangeUserWallets: builder.mutation({
       query: ({ id, from, to, amount }) => ({
         url: `/wallets/${id}/exchange`,
@@ -705,6 +705,20 @@ export const apiSlice = createApi({
       invalidatesTags: ['Categories'],
     }),
 
+    // GET /admin-dashboard/member-wallets  (super_admin only)
+    // → { members: [{ _id, fullName, phone, status, balanceWallet, rechargeWallet }], totals: { balanceWallet, rechargeWallet } }
+    getMemberWallets: builder.query({
+      query: () => '/admin-dashboard/member-wallets',
+      providesTags: ['Wallet', 'User'],
+    }),
+
+    // GET /admin-dashboard/my-handled  (admin + super_admin)
+    // → { today: summary, allTime: summary }, summary = { deposits: { accepted, rejected }, withdrawals: { paid, rejected }, totalRequests }
+    getMyHandled: builder.query({
+      query: () => '/admin-dashboard/my-handled',
+      providesTags: ['DepositRequests', 'Withdrawals', 'Wallet'],
+    }),
+
     // GET /admin-dashboard/stats  (admin) → { totalUsers, totalDeposits, totalWithdrawals, pendingDeposits, pendingWithdrawals, ... } in BDT
     getAdminDashboardStats: builder.query({
       query: () => '/admin-dashboard/stats',
@@ -735,6 +749,8 @@ export const {
   useCreateTaskMutation,
   useUploadTaskImageMutation,
   useGetAdminDashboardStatsQuery,
+  useGetMemberWalletsQuery,
+  useGetMyHandledQuery,
   useDeleteCategoryMutation,
   useUploadPostImageMutation,
   useGetIncomeSummaryQuery,

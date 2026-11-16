@@ -4,13 +4,13 @@ import sendResponse from '../../utils/sendResponse';
 import { WalletServices } from './wallet.services';
 import AppError from '../../errors/AppError';
 import { TWalletType } from './wallet.interface';
-import { assertSelfOrAdmin } from '../../utils/assertOwnership';
+import { assertSelfOrSuperAdmin } from '../../utils/assertOwnership';
 import { moneyText } from '../../utils/money';
 import { AdminActivityServices } from '../adminActivity/adminActivity.services';
 
 const getMyWallets = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    assertSelfOrAdmin(req, userId);
+    assertSelfOrSuperAdmin(req, userId);
 const result = await WalletServices.getUserWallets(userId);
     sendResponse(res, {
         statusCode: status.OK,
@@ -22,7 +22,7 @@ const result = await WalletServices.getUserWallets(userId);
 
 const checkBalance = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    assertSelfOrAdmin(req, userId);
+    assertSelfOrSuperAdmin(req, userId);
 const { walletType } = req.params;
     if (walletType !== 'recharge' && walletType !== 'balance') {
         throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
@@ -40,7 +40,7 @@ const { walletType } = req.params;
 const getMyWalletByType = catchAsync(async (req, res) => {
 
     const { userId } = req.params;
-    assertSelfOrAdmin(req, userId);
+    assertSelfOrSuperAdmin(req, userId);
 const { walletType } = req.query;
     if (walletType !== 'recharge' && walletType !== 'balance') {
         throw new AppError(status.BAD_REQUEST, 'Invalid wallet type. Must be recharge or balance');
