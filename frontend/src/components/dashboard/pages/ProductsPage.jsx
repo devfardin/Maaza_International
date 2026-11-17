@@ -10,7 +10,7 @@ import ProductDetailModal from '@/components/dashboard/ProductDetailModal';
 import { claimScheduleLabel, isNewProduct } from '@/lib/product';
 
 const bdt = (amount, digits = 0) =>
-  `৳${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: digits })}`;
+  `৳${Number(amount || 0).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
 
 export default function ProductsPage({ showPage, showToast }) {
   // 'all' or a category _id
@@ -56,9 +56,9 @@ export default function ProductsPage({ showPage, showToast }) {
   }
 
   if (productsLoading) return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid sm:grid-cols-2 gap-4">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="h-64 bg-white border rounded-2xl animate-pulse" />
+        <div key={i} className="h-52 bg-white border rounded-2xl animate-pulse" />
       ))}
     </div>
   );
@@ -76,23 +76,22 @@ export default function ProductsPage({ showPage, showToast }) {
       {/* ── Header ── */}
       <div>
         <p className="text-xs tracking-widest font-extrabold text-harvest-700">PRODUCT CATALOGUE</p>
-        <h1 className="text-xl font-extrabold mt-1">Browse Products</h1>
+        <h1 className="text-2xl font-extrabold mt-1">Browse Products</h1>
       </div>
 
       {/* ── Category filter tabs ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-2 flex-wrap pb-1">
         {tabs.map((tab) => {
           const active = activeCategory === tab._id;
           return (
             <button
               key={tab._id}
               onClick={() => setActiveCategory(tab._id)}
-              className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition ${
-                active ? 'bg-harvest-700 text-white shadow-soft' : 'border bg-white text-slate-700 hover:border-harvest-300'
-              }`}
+              className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold whitespace-nowrap transition ${active ? 'bg-harvest-700 text-white shadow-soft' : 'border bg-white text-slate-700 hover:border-harvest-300'
+                }`}
             >
               {tab.name}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-xs ${active ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
                 {tab.count}
               </span>
             </button>
@@ -104,58 +103,103 @@ export default function ProductsPage({ showPage, showToast }) {
       {filtered.length === 0 ? (
         <p className="text-center text-slate-400 py-12">No products available in this category.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
           {filtered.map((product) => (
-            <article key={product._id} className="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-              {/* Image */}
-              <div className="relative h-56 bg-gradient-to-br from-harvest-900 via-harvest-700 to-lime-400">
-                <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10" />
-                <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-lime-300/20" />
-                {/* The whole image is shown (object-contain): nothing is cropped on any side */}
-                <div className="absolute inset-4 flex items-center justify-center transition duration-500 group-hover:scale-[1.03]">
+            <article
+              key={product._id}
+              className="relative flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              {/* ── NEW badge ── */}
+              {isNewProduct(product) && (
+                <span className="absolute right-3 top-3 z-10 animate-bounce rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-fuchsia-500 px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-white shadow-lg">
+                  ✦ NEW
+                </span>
+              )}
+
+              {/* ── Top: image left + info right ── */}
+              <div className="flex gap-4 p-2.5">
+
+                {/* Product image */}
+                <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-lime-500 p-2">
                   {product.image
-                    ? <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain drop-shadow-2xl" />
-                    : <span className="text-6xl">🌿</span>
+                    ? <img src={product.image} alt={product.name} className="h-full w-full rounded-lg object-contain drop-shadow-lg" />
+                    : <span className="text-5xl">🌿</span>
                   }
                 </div>
-                {isNewProduct(product) && (
-                  <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-amber-300 via-rose-300 to-fuchsia-400 px-2.5 py-1 text-[10px] font-extrabold tracking-wider text-white shadow-lg">
-                    ✦ NEW
-                  </span>
-                )}
-                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-extrabold text-harvest-800 shadow">
-                  {bdt(product.price)}
-                </span>
-              </div>
 
-              {/* Body */}
-              <div className="flex flex-1 flex-col p-5">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-harvest-600">{product.category?.name || 'Product'}</p>
-                <h3 className="mt-1 text-base font-extrabold leading-snug text-slate-900">{product.name}</h3>
-                <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">{product.description}</p>
+                {/* Info */}
+                <div className="flex flex-1 flex-col justify-between min-w-0">
+                  <div>
+                    {/* Product name */}
+                    <h3 className="text-base font-extrabold leading-snug text-slate-900 line-clamp-2">
+                      {product.name}
+                    </h3>
 
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl bg-harvest-50 p-2.5 text-center">
-                    <p className="text-[10px] font-bold text-harvest-700/70">Claim</p>
-                    <p className="mt-0.5 text-[11px] font-extrabold leading-tight text-slate-800">{claimScheduleLabel(product.rewardPlan)}</p>
+                    {/* Description */}
+                    <p className="mt-1 line-clamp-1 text-sm leading-5 text-slate-500">
+                      {product.description}
+                    </p>
                   </div>
-                  <div className="rounded-xl bg-lime-50 p-2.5 text-center">
-                    <p className="text-[10px] font-bold text-lime-800/70">Validity</p>
-                    <p className="mt-0.5 text-[11px] font-extrabold text-slate-800">{product.rewardPlan?.validityDays} days</p>
-                  </div>
-                  <div className="rounded-xl bg-amber-50 p-2.5 text-center">
-                    <p className="text-[10px] font-bold text-amber-800/70">Bonus</p>
-                    <p className="mt-0.5 text-[11px] font-extrabold text-slate-800">{bdt(product.bonuses?.invitationBonus)}</p>
+
+                  {/* Price + Points + Join button */}
+                  <div className="mt-1 flex items-end justify-between gap-2">
+                    <div>
+                      {/* Price */}
+                      <p className="text-base font-semibold text-slate-700">
+                        Price: <span className="text-xl font-extrabold text-harvest-700">{bdt(product.price)}</span>
+                      </p>
+                      {/* Conditionally show Points */}
+                      {product.points > 0 && (
+                        <p className="text-base font-semibold text-slate-700 mt-0.5">
+                          Points: <span className="text-base font-extrabold text-harvest-700">{product.points}</span>
+                        </p>
+                      )}
+                      {/* perchage limight */}
+                      <p className="text-xs font-normal text-slate-500 mt-0.5">
+                        Purchase limit: <span className="text-sm font-semibold text-harvest-700">{product?.purchaseRules?.purchaseLimit}</span>
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedProduct(product)}
+                      className="shrink-0 rounded-md bg-gradient-to-r from-harvest-700 to-harvest-500 px-4 py-2 text-base font-medium text-white shadow-soft transition duration-200 active:scale-95 animate-border-pulse"
+                      style={{
+                        outline: '2px solid transparent',
+                        boxShadow: '0 0 0 2px #a3e635',
+                        animation: 'borderPulse 1.5s ease-in-out infinite',
+                      }}
+                    >
+                      Buy Now
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setSelectedProduct(product)}
-                  className="mt-5 w-full rounded-2xl bg-gradient-to-r from-harvest-700 to-harvest-500 py-3 text-xs font-extrabold text-white shadow-soft transition group-hover:opacity-95"
-                >
-                  View details →
-                </button>
               </div>
+
+              {/* ── Product footer: stats strip ── */}
+              <div className="grid grid-cols-3 justify-between align-middle items-center divide-x divide-white/20 bg-gradient-to-r from-harvest-900 via-harvest-700 to-lime-600 py-3">
+                {/* Validity Period */}
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium tracking-wide text-white">Validity Period</p>
+                  <p className="mt-1 text-md font-medium text-white leading-tight text-center">
+                    {product.rewardPlan?.validityDays ?? '—'} Days
+                  </p>
+                </div>
+                {/* Every 1 Days Earn */}
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium tracking-wide text-white">Every 1 Day</p>
+                  <p className="mt-1 text-md font-medium text-white">
+                    {bdt(product.rewardPlan?.dailyIncome)}
+                  </p>
+                </div>
+                {/* Total Earnings */}
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium tracking-wide text-white">Total Earnings</p>
+                  <p className="mt-1 text-md font-medium text-white">
+                    {bdt(product.rewardPlan?.totalEstimatedRevenue)}
+                  </p>
+                </div>
+              </div>
+
             </article>
           ))}
         </div>
