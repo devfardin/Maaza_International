@@ -64,7 +64,7 @@ export default function PurchasedPage() {
 
       {/* Income summary */}
       <div className="grid grid-cols-2 sm:gap-4 gap-2.5">
-        <div className="rounded-2xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-4 sm:p-5 text-white shadow-soft">
+        <div className="rounded-xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-4 sm:p-5 text-white shadow-soft">
           <p className="text-xs font-bold tracking-wider text-white/70">INCOME TODAY</p>
           <p className="mt-2 text-3xl font-extrabold">{bdt(summary.todayIncome)}</p>
           <p className="mt-1 text-xs text-white/60">Claimed from all your products today</p>
@@ -77,7 +77,7 @@ export default function PurchasedPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 rounded-2xl bg-slate-100 p-1.5 w-full sm:w-fit">
+      <div className="flex gap-2 rounded-xl bg-slate-100 p-1.5 w-full sm:w-fit">
         {TABS.map((t) => {
           const count = t.key === 'active' ? activeList.length : expiredList.length;
           return (
@@ -109,7 +109,7 @@ export default function PurchasedPage() {
       )}
 
       {!isLoading && shown.length === 0 && (
-        <div className="bg-white border rounded-2xl p-10 text-center">
+        <div className="bg-white border rounded-xl p-10 text-center">
           <p className="text-slate-400 text-sm">
             {tab === 'active' ? 'You have no active products. Join a product to start earning.' : 'No expired products yet.'}
           </p>

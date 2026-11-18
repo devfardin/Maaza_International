@@ -131,7 +131,11 @@ export default function WithdrawPage({ showPage }) {
           </div>
 
           <div>
-            <p className="block text-sm font-bold mb-2">Payout account</p>
+            <div className="flex justify-between">
+               <p className="block text-sm font-bold mb-2">Payout account </p>
+              <button type="button" onClick={() => showPage?.('bank')} className="block text-xs text-harvest-500 font-medium"> Bank Details </button>
+            </div>
+           
             {accountsLoading ? (
               <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
             ) : accounts.length === 0 ? (

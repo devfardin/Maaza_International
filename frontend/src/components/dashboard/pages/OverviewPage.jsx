@@ -13,7 +13,7 @@ import { vipLevelOf, vipLabel } from '@/lib/vip';
 
 export default function OverviewPage({ showPage }) {
   // Get userId from Redux — needed for wallet and transaction queries
-  const user   = useSelector((state) => state.auth.user);
+  const user = useSelector((state) => state.auth.user);
   const userId = user?._id;
 
   // Fetch wallet balances — GET /wallets/:userId
@@ -31,7 +31,7 @@ export default function OverviewPage({ showPage }) {
 
   // Extract wallet balances (plain BDT)
   const rechargeBalance = walletData?.data?.rechargeWallet?.formattedBalance ?? '0.00';
-  const balanceAmount   = walletData?.data?.balanceWallet?.formattedBalance   ?? '0.00';
+  const balanceAmount = walletData?.data?.balanceWallet?.formattedBalance ?? '0.00';
 
   // Team commission earned so far — paid into the balance (withdraw) wallet
   const { data: referralData } = useGetMyReferralsQuery(undefined, { skip: !userId });
@@ -45,10 +45,11 @@ export default function OverviewPage({ showPage }) {
 
   // Quick action cards — each navigates to a dashboard sub-page
   const quickActions = [
-    { page: 'recharge',      icon: '＋', label: 'Recharge wallet',   sub: 'Add funds to your wallet',    cta: 'Recharge now →' },
-    { page: 'products',      icon: '▦', label: 'Browse products',    sub: 'Explore available products',  cta: 'View products →' },
-    { page: 'tasks',         icon: '✧', label: 'Task bonuses',       sub: 'Complete tasks, earn rewards', cta: 'View tasks →' },
-    { page: 'referrals',     icon: '♧', label: 'Referral center',    sub: 'Invite friends, earn bonuses', cta: 'Invite now →' },
+    { page: 'recharge', icon: '＋', label: 'Recharge wallet', sub: 'Add funds to your wallet', cta: 'Recharge now →' },
+    { page: 'purchased', icon: '▦', label: 'My products', sub: 'View purchased items', cta: 'My purchases →' },
+    { page: 'transactions', icon: '💸', label: 'Transactions', sub: 'Track your spending, income, and payment history in one place.', cta: 'Export Statement →' },
+    { page: 'tasks', icon: '✧', label: 'Task bonuses', sub: 'Complete tasks, earn rewards', cta: 'View tasks →' },
+
   ];
 
   return (
@@ -64,31 +65,31 @@ export default function OverviewPage({ showPage }) {
         </div>
         <button
           onClick={() => showPage('recharge')}
-          className="flex-1 sm:flex-none rounded-xl bg-harvest-700 text-white px-5 py-3 text-sm font-bold"
+          className="flex-1 sm:flex-none rounded-md bg-harvest-700 text-white px-5 py-3 text-sm font-bold"
         >
-          ＋ Recharge wallet
+          ＋ Recharge
         </button>
       </div>
 
       {/* ── Fast section: withdraw balance & recharge balance ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-5 sm:p-6 shadow-soft">
+      <div className="grid grid-cols-2 sm:gap-4 gap-2">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 text-white p-4 sm:p-6 shadow-soft">
           <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5" />
           <p className="relative text-xs font-bold tracking-wider text-white/70">WITHDRAW BALANCE</p>
           {walletLoading
             ? <div className="relative mt-2 h-9 w-32 bg-white/20 rounded-lg animate-pulse" />
-            : <p className="relative mt-2 text-3xl font-extrabold">৳{balanceAmount}</p>
+            : <p className="relative mt-2 text-[25px] font-extrabold">৳{balanceAmount}</p>
           }
           <p className="relative mt-1 text-xs text-white/60">Earnings &amp; commissions you can withdraw</p>
           <button
             onClick={() => showPage('withdraw')}
-            className="relative mt-5 w-full rounded-xl bg-lime-300 py-3 text-sm font-extrabold text-harvest-900 hover:bg-lime-200"
+            className="relative mt-5 w-full rounded-md bg-lime-300 py-3 text-sm font-extrabold text-harvest-900 hover:bg-lime-200"
           >
             ↗ Withdraw
           </button>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl bg-white border p-5 sm:p-6 shadow-soft">
+        <div className="relative overflow-hidden rounded-xl bg-white border p-4 sm:p-6 shadow-soft">
           <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-harvest-50" />
           <p className="relative text-xs font-bold tracking-wider text-slate-500">RECHARGE BALANCE</p>
           {walletLoading
@@ -98,7 +99,7 @@ export default function OverviewPage({ showPage }) {
           <p className="relative mt-1 text-xs text-slate-500">Available for product purchases</p>
           <button
             onClick={() => showPage('recharge')}
-            className="relative mt-5 w-full rounded-xl bg-harvest-700 py-3 text-sm font-extrabold text-white hover:bg-harvest-800"
+            className="relative mt-5 w-full rounded-md bg-harvest-700 py-3 text-sm font-extrabold text-white hover:bg-harvest-800"
           >
             ＋ Recharge
           </button>
@@ -106,7 +107,7 @@ export default function OverviewPage({ showPage }) {
       </div>
 
       {/* ── Team earnings (already added to the withdraw balance) ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-harvest-100 bg-gradient-to-br from-harvest-50 via-white to-lime-50 p-5 shadow-soft">
+      <div className="relative overflow-hidden rounded-xl border border-harvest-100 bg-gradient-to-br from-harvest-50 via-white to-lime-50 p-5 shadow-soft">
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-harvest-100/60" />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -119,7 +120,7 @@ export default function OverviewPage({ showPage }) {
           </div>
           <button
             onClick={() => showPage('referrals')}
-            className="rounded-xl border border-harvest-200 bg-white px-4 py-2.5 text-xs font-extrabold text-harvest-700 hover:bg-harvest-50"
+            className="rounded-md border border-harvest-500 bg-white px-4 py-2.5 text-xs font-extrabold text-harvest-700 hover:bg-harvest-50"
           >
             View team →
           </button>
@@ -131,8 +132,8 @@ export default function OverviewPage({ showPage }) {
       <DailyCheckinPopup />
 
       {/* ── VIP level badge ── */}
-      <div className="rounded-2xl bg-white border p-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-harvest-50 grid place-items-center text-sm font-extrabold text-harvest-700">
+      <div className="rounded-xl bg-white border p-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-md bg-harvest-50 grid place-items-center text-sm font-extrabold text-harvest-700">
           {vipLevelOf(user?.membershipLevel) || 'M'}
         </div>
         <div className="flex-1">
@@ -152,9 +153,9 @@ export default function OverviewPage({ showPage }) {
           <button
             key={page}
             onClick={() => showPage(page)}
-            className="bg-white border rounded-2xl p-4 text-left hover:border-harvest-300 hover:shadow-soft transition-all"
+            className="bg-white border rounded-xl p-4 text-left hover:border-harvest-300 hover:shadow-soft transition-all"
           >
-            <span className="w-11 h-11 rounded-2xl bg-harvest-700 text-white grid place-items-center text-xl mb-3">{icon}</span>
+            <span className="w-11 h-11 rounded-md bg-harvest-700 text-white grid place-items-center text-xl mb-3">{icon}</span>
             <b className="block text-sm">{label}</b>
             <p className="text-xs text-slate-500 mt-1">{sub}</p>
             <span className="block mt-3 text-harvest-700 text-xs font-extrabold">{cta}</span>
@@ -163,21 +164,21 @@ export default function OverviewPage({ showPage }) {
       </div>
 
       {/* ── Recent purchases ── */}
-      <div className="bg-white border rounded-2xl p-5">
+      <div className="bg-white border rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <b className="text-sm">Active products</b>
           <button onClick={() => showPage('purchased')} className="text-harvest-700 text-xs font-extrabold">View all →</button>
         </div>
         {purchasesLoading ? (
           <div className="space-y-3">
-            {[1,2].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+            {[1, 2].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
           </div>
         ) : recentPurchases.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-6">No active products yet. <button onClick={() => showPage('products')} className="text-harvest-700 font-bold">Browse products →</button></p>
         ) : (
           <div className="space-y-3">
             {recentPurchases.map((p) => (
-              <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+              <div key={p._id} className="flex items-center gap-3 p-3 rounded-md bg-slate-50">
                 <div className="w-10 h-10 rounded-xl bg-harvest-50 grid place-items-center text-xl">🌿</div>
                 <div className="flex-1 min-w-0">
                   <b className="text-xs block truncate">{p.productName}</b>
@@ -193,14 +194,14 @@ export default function OverviewPage({ showPage }) {
       </div>
 
       {/* ── Recent transactions ── */}
-      <div className="bg-white border rounded-2xl p-5">
+      <div className="bg-white border rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <b className="text-sm">Recent transactions</b>
           <button onClick={() => showPage('transactions')} className="text-harvest-700 text-xs font-extrabold">All transactions →</button>
         </div>
         {txLoading ? (
           <div className="space-y-3">
-            {[1,2,3].map(i => <div key={i} className="h-10 bg-slate-100 rounded-xl animate-pulse" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-slate-100 rounded-xl animate-pulse" />)}
           </div>
         ) : recentTx.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-6">No transactions yet.</p>

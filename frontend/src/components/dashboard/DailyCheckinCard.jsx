@@ -27,7 +27,7 @@ export default function DailyCheckinCard() {
   const done = !!status?.checkedInToday;
 
   return (
-    <div className="rounded-2xl bg-white border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="rounded-xl bg-white border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
       <div className="flex-1 min-w-0">
         <p className="text-xs font-extrabold tracking-widest text-harvest-700">DAILY CHECK-IN</p>
         <p className="font-extrabold mt-1">{vipLabel(vipLevel)} · today&apos;s bonus {fmt(status?.bonusAmount)}</p>
@@ -38,7 +38,7 @@ export default function DailyCheckinCard() {
       <button
         onClick={handleCheckin}
         disabled={done || saving || !status}
-        className="sm:w-40 rounded-xl bg-harvest-700 text-white py-3 text-sm font-extrabold disabled:opacity-50 disabled:cursor-not-allowed"
+        className="sm:w-40 rounded-md  bg-harvest-700 text-white py-3 text-sm font-extrabold disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {saving ? 'Checking in…' : done ? '✓ Checked in' : 'Check in'}
       </button>

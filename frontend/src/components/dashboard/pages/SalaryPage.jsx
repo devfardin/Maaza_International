@@ -15,13 +15,13 @@ const fmt = (amount) => `৳ ${Number(amount || 0).toLocaleString(undefined, { m
 const whenText = (iso) =>
   iso
     ? new Date(iso).toLocaleString('en-GB', {
-        timeZone: 'Asia/Dhaka',
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-      }) + ' (BD time)'
+      timeZone: 'Asia/Dhaka',
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+    }) + ' (BD time)'
     : '—';
 
 export default function SalaryPage() {
@@ -93,7 +93,7 @@ export default function SalaryPage() {
       </div>
 
       {/* Status + countdown */}
-      <div className={`rounded-2xl border p-5 sm:p-6 ${tone}`}>
+      <div className={`rounded-xl border p-5 sm:p-6 ${tone}`}>
         <div className="flex flex-col lg:flex-row lg:items-center gap-5">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-500">{vipLabel(s.vipLevel)}</p>
@@ -123,7 +123,7 @@ export default function SalaryPage() {
 
       {/* Referral path for members who are not eligible */}
       {!s.eligible && s.referral && (
-        <div className="rounded-2xl bg-white border p-5 sm:p-6 space-y-4">
+        <div className="rounded-xl bg-white border p-5 sm:p-6 space-y-4">
           <div>
             <h2 className="font-extrabold text-lg">How to get a weekly salary</h2>
             {s.referral.target ? (
@@ -139,7 +139,7 @@ export default function SalaryPage() {
 
           {s.referral.target && (
             <div className="grid sm:grid-cols-2 gap-3">
-              <div className="rounded-xl bg-slate-50 p-4">
+              <div className="rounded-md bg-slate-50 p-4">
                 <p className="text-xs font-bold text-slate-500">Valid referrals</p>
                 <p className="font-extrabold mt-1">
                   {s.referral.validReferrals} / {s.referral.target.qualifiedReferrals}
@@ -151,7 +151,7 @@ export default function SalaryPage() {
                 </p>
               </div>
               {s.referral.target.minSpent > 0 && (
-                <div className="rounded-xl bg-slate-50 p-4">
+                <div className="rounded-md bg-slate-50 p-4">
                   <p className="text-xs font-bold text-slate-500">Your purchases</p>
                   <p className="font-extrabold mt-1">
                     {fmt(s.referral.totalSpent)} / {fmt(s.referral.target.minSpent)}
@@ -165,12 +165,12 @@ export default function SalaryPage() {
           )}
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1 min-w-0 rounded-xl border px-4 py-3">
+            <div className="flex-1 min-w-0 rounded-md border px-4 py-3">
               <p className="text-xs font-bold text-slate-500">Your referral code</p>
               <p className="font-extrabold tracking-wide">{s.referral.referralCode || '—'}</p>
             </div>
             {s.referral.referralCode && <CopyButton value={s.referral.referralCode} label="Copy code" />}
-            <Link href="/dashboard/referrals" className="rounded-xl border px-4 py-3 text-sm font-bold text-center hover:bg-slate-50">
+            <Link href="/dashboard/referrals" className="rounded-md border px-4 py-3 text-sm font-bold text-center hover:bg-slate-50">
               Referral center →
             </Link>
           </div>
@@ -178,7 +178,7 @@ export default function SalaryPage() {
       )}
 
       {/* Schedule — visible to everyone */}
-      <div className="bg-white border rounded-2xl overflow-x-auto">
+      <div className="bg-white border rounded-xl overflow-x-auto">
         <div className="p-5 sm:p-6 pb-3">
           <h2 className="font-extrabold text-lg">Weekly salary by VIP level</h2>
           <p className="text-xs text-slate-500 mt-1">Paid each Monday to members at these levels.</p>
@@ -186,11 +186,11 @@ export default function SalaryPage() {
         {s.schedule.length === 0 ? (
           <p className="px-5 sm:px-6 pb-6 text-sm text-slate-500">No weekly salary is set up yet.</p>
         ) : (
-          <table className="w-full text-sm min-w-[480px]">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-y bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                <th className="text-left px-5 py-3">VIP level</th>
-                <th className="text-left px-5 py-3">Weekly salary</th>
+                <th className="text-left px-5 py-3 border-r">VIP level</th>
+                <th className="text-left px-5 py-3 border-r">Weekly salary</th>
                 <th className="text-left px-5 py-3">Valid referrals needed</th>
               </tr>
             </thead>
@@ -199,11 +199,11 @@ export default function SalaryPage() {
                 const mine = row.vipLevel === s.vipLevel;
                 return (
                   <tr key={row.vipLevel} className={`border-b last:border-0 ${mine ? 'bg-harvest-50 font-bold' : ''}`}>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 border-r">
                       {vipLabel(row.vipLevel)}
                       {mine && <span className="ml-2 text-[10px] tracking-wide text-harvest-700">YOU</span>}
                     </td>
-                    <td className="px-5 py-3">{fmt(row.weeklySalary)}</td>
+                    <td className="px-5 py-3 border-r">{fmt(row.weeklySalary)}</td>
                     <td className="px-5 py-3">{row.qualifiedReferrals}</td>
                   </tr>
                 );
