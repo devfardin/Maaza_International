@@ -62,7 +62,7 @@ export default function DailyCheckinPopup() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-6 text-white">
           <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
@@ -87,13 +87,13 @@ export default function DailyCheckinPopup() {
             <span>Membership level</span>
             <span className="text-right">Reward per day</span>
           </div>
-          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
             {levels.map((row) => {
               const isCurrent = row.vip === currentVip;
               return (
                 <div
                   key={row.vip}
-                  className={`grid grid-cols-[1fr_auto] items-center gap-2 rounded-2xl border px-4 py-3 ${
+                  className={`grid grid-cols-[1fr_auto] items-center gap-2 rounded-md border px-4 py-3 ${
                     isCurrent ? 'border-harvest-500 bg-harvest-50' : 'border-slate-100 bg-slate-50'
                   }`}
                 >
@@ -101,7 +101,7 @@ export default function DailyCheckinPopup() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-extrabold text-slate-800">{row.label}</span>
                       {isCurrent && (
-                        <span className="rounded-full bg-harvest-700 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                        <span className="rounded-full bg-harvest-700 px-2 py-0.5 text-[10px] font-bold text-white">
                           Current
                         </span>
                       )}
@@ -122,7 +122,7 @@ export default function DailyCheckinPopup() {
             type="button"
             onClick={handleCheckin}
             disabled={saving}
-            className="mt-5 w-full rounded-2xl bg-lime-300 py-3.5 text-sm font-extrabold text-harvest-900 shadow-soft transition hover:bg-lime-200 disabled:opacity-60"
+            className="mt-5 w-full rounded-md bg-lime-300 py-3.5 text-sm font-extrabold text-harvest-900 shadow-soft transition hover:bg-lime-200 disabled:opacity-60"
           >
             {saving ? 'Checking in…' : 'Daily checking'}
           </button>

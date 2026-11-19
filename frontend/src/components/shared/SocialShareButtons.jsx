@@ -133,7 +133,7 @@ export default function SocialShareButtons({ link, text = 'Join me on Maaza Inte
           key={channel.key}
           type="button"
           onClick={handlers[channel.key]}
-          className={`${channel.className} text-white rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-bold shadow-soft hover:opacity-90 transition`}
+          className={`${channel.className} text-white rounded-md px-4 py-3 flex items-center justify-center gap-2 text-sm font-bold shadow-soft hover:opacity-90 transition`}
         >
           <ShareIcon name={channel.icon} />
           {channel.label}

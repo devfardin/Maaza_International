@@ -67,7 +67,7 @@ export default function ReferralsPage({ showToast }) {
       </div>
 
       {/* Referral link card */}
-      <div className="bg-white border rounded-2xl p-5">
+      <div className="bg-white border rounded-xl p-5">
         <p className="text-xs font-extrabold text-slate-500 mb-3">YOUR REFERRAL LINK</p>
         {isLoading ? (
           <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
@@ -77,9 +77,9 @@ export default function ReferralsPage({ showToast }) {
               <input
                 readOnly
                 value={referralLink || 'Loading…'}
-                className="flex-1 rounded-xl border bg-slate-50 px-4 py-3 text-xs text-slate-700 outline-none"
+                className="flex-1 rounded-md border bg-slate-50 px-4 py-3 text-xs text-slate-700 outline-none"
               />
-              <button onClick={copyLink} className="rounded-xl bg-harvest-700 text-white px-4 text-xs font-bold whitespace-nowrap">
+              <button onClick={copyLink} className="rounded-md bg-harvest-700 text-white px-4 text-xs font-bold whitespace-nowrap">
                 Copy link
               </button>
             </div>
@@ -87,9 +87,9 @@ export default function ReferralsPage({ showToast }) {
               <input
                 readOnly
                 value={referralCode || '—'}
-                className="flex-1 rounded-xl border bg-slate-50 px-4 py-3 text-sm font-bold outline-none"
+                className="flex-1 rounded-md border bg-slate-50 px-4 py-3 text-sm font-bold outline-none"
               />
-              <button onClick={copyCode} className="border rounded-xl px-4 text-xs font-bold">
+              <button onClick={copyCode} className="border rounded-md px-4 text-xs font-bold">
                 Copy code
               </button>
             </div>
@@ -98,7 +98,7 @@ export default function ReferralsPage({ showToast }) {
       </div>
 
       {/* Share on social media */}
-      <div className="bg-white border rounded-2xl p-5">
+      <div className="bg-white border rounded-xl p-5">
         <p className="text-xs font-extrabold text-slate-500 mb-1">SHARE ON SOCIAL MEDIA</p>
         <p className="text-xs text-slate-400 mb-4">Send your referral link to friends in one tap.</p>
         <SocialShareButtons
@@ -108,25 +108,25 @@ export default function ReferralsPage({ showToast }) {
       </div>
 
       {/* Referral stats */}
-      <div className="bg-white border rounded-2xl p-5">
+      <div className="bg-white border rounded-xl p-5">
         <p className="text-xs font-extrabold text-slate-500 mb-4">REFERRAL STATS</p>
         {referralLoading ? (
           <div className="h-16 bg-slate-100 rounded-xl animate-pulse" />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-            <div className="rounded-xl bg-slate-50 p-4 text-center">
+            <div className="rounded-md bg-slate-50 p-4 text-center">
               <p className="text-2xl font-extrabold text-slate-800">{stats.total}</p>
               <p className="text-xs text-slate-500 mt-1">Registered</p>
             </div>
-            <div className="rounded-xl bg-emerald-50 p-4 text-center">
+            <div className="rounded-md bg-emerald-50 p-4 text-center">
               <p className="text-2xl font-extrabold text-emerald-700">{stats.valid}</p>
               <p className="text-xs text-emerald-600 mt-1">Valid</p>
             </div>
-            <div className="rounded-xl bg-amber-50 p-4 text-center">
+            <div className="rounded-md bg-amber-50 p-4 text-center">
               <p className="text-2xl font-extrabold text-amber-600">{stats.invalid}</p>
               <p className="text-xs text-amber-600 mt-1">Invalid</p>
             </div>
-            <div className="rounded-xl bg-violet-50 p-4 text-center">
+            <div className="rounded-md bg-violet-50 p-4 text-center">
               <p className="text-xl sm:text-2xl font-extrabold text-violet-700">{bdt(stats.totalCommission)}</p>
               <p className="text-xs text-violet-600 mt-1">Commission earned</p>
             </div>
