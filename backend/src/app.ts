@@ -1,8 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import router from './app/routes';
 import config from './app/config';
+import { connectDB } from './app/config/database';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import securityHeaders from './app/middlewares/securityHeaders';
@@ -30,6 +31,17 @@ app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/forget-password', authLimiter);
 app.use('/api/v1/auth/reset-password', authLimiter);
 app.use('/api/v1/users/create-user', rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: 'Too many registrations from this IP.' }));
+
+// Make sure the database is connected before any API request is handled.
+// This is needed on Vercel, where server.ts is not run and nothing else connects.
+app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use('/api/v1', realtimeMutations);
 app.use('/api/v1', router);
