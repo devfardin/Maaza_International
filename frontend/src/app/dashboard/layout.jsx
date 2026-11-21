@@ -19,6 +19,7 @@ import Header                              from '@/components/dashboard/Header';
 import MobileNav                           from '@/components/dashboard/MobileNav';
 import Modal                               from '@/components/dashboard/Modal';
 
+
 // ── Inner layout — must be inside DashboardProvider ───────────────────────────
 function DashboardInner({ children }) {
   const pathname = usePathname();
@@ -108,8 +109,13 @@ function DashboardInner({ children }) {
           user={user}
           onLogout={handleLogout}
         />
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-9 py-5 sm:py-7 pb-28 lg:pb-10">
-          {children}
+          {/* use image for section bg
+           */}
+        <div className="relative bg-[url('/bg-dashboard.png')] bg-cover bg-center bg-no-repeat bg-fixed">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-9 py-5 sm:py-7 pb-28 lg:pb-10">
+            {children}
+          </div>
         </div>
       </main>
 

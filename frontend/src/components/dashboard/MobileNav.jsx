@@ -8,7 +8,7 @@ const mobileNavItems = [
   { page: 'products',  icon: '▦', key: 'All Products' },
   { page: 'recharge',  icon: '＋', key: 'Recharge' },
   { page: 'news',  icon: '↗', key: 'News' },
-  { page: 'profile',   icon: '◉', key: 'nav.profile' },
+  { page: 'me',   icon: '◉', key: 'Me' },
 ];
 
 export default function MobileNav({ activePage, showPage }) {
