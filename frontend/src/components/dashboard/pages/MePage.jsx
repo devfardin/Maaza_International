@@ -31,29 +31,36 @@ const BORDER_ANIM_STYLE = `
 
 export default function MePage({ showPage }) {
   const dispatch = useDispatch();
-  const router   = useRouter();
+  const router = useRouter();
 
   // ── Auth / user ────────────────────────────────────────────────────────────
-  const user   = useSelector((s) => s.auth.user);
+  const user = useSelector((s) => s.auth.user);
   const userId = user?._id;
 
   // ── Data fetches ───────────────────────────────────────────────────────────
-  const { data: walletData,   isLoading: walletLoading }   = useGetMyWalletsQuery(userId, { skip: !userId });
-  const { data: referralData }                              = useGetMyReferralsQuery(undefined, { skip: !userId });
-  const { data: incomeData }                                = useGetIncomeSummaryQuery(undefined, { skip: !userId });
-  const { data: txData }                                    = useGetUserTransactionsQuery(userId, { skip: !userId });
-  const { data: checkinData }                               = useGetDailyCheckinStatusQuery(undefined, { skip: !userId });
+  const { data: walletData, isLoading: walletLoading } = useGetMyWalletsQuery(userId, { skip: !userId });
+  const { data: referralData } = useGetMyReferralsQuery(undefined, { skip: !userId });
+  const { data: incomeData } = useGetIncomeSummaryQuery(undefined, { skip: !userId });
+  const { data: txData } = useGetUserTransactionsQuery(userId, { skip: !userId });
+  const { data: checkinData } = useGetDailyCheckinStatusQuery(undefined, { skip: !userId });
 
   // ── Derived values ─────────────────────────────────────────────────────────
-  const rechargeBalance = walletData?.data?.rechargeWallet?.formattedBalance  ?? '0.00';
-  const withdrawBalance = walletData?.data?.balanceWallet?.formattedBalance   ?? '0.00';
-  const teamEarnings    = (referralData?.data?.totalCommission ?? 0).toFixed(2);
-  const totalEarned     = (incomeData?.data?.totalEarned       ?? 0).toFixed(2);
-  const todayIncome     = (incomeData?.data?.todayIncome       ?? 0).toFixed(2);
-  const checkinBonus    = (checkinData?.bonusAmount            ?? 0).toFixed(2);
+  const rechargeBalance = walletData?.data?.rechargeWallet?.formattedBalance ?? '0.00';
+  const withdrawBalance = walletData?.data?.balanceWallet?.formattedBalance ?? '0.00';
+  const teamEarnings = (referralData?.data?.totalCommission ?? 0).toFixed(2);
+  const totalEarned = (incomeData?.data?.totalEarned ?? 0).toFixed(2);
+  const todayIncome = (incomeData?.data?.todayIncome ?? 0).toFixed(2);
+  
+  const checkinBonus = (checkinData?.data?.todayAmount ?? 0).toFixed(2);
 
   // Total withdrawn = sum of approved withdrawal transactions
-  const allTx        = txData?.data ?? [];
+  const allTx = txData?.data ?? [];
+
+  // Total accumulated check-in bonus = sum of all daily_checkin credit transactions
+  const totalCheckinBonus = allTx
+    .filter((t) => t.type === 'daily_checkin' && t.flow === 'credit')
+    .reduce((s, t) => s + Number(t.amount), 0)
+    .toFixed(2);
   const totalWithdrawn = allTx
     .filter((t) => t.type === 'withdrawal' && t.flow === 'debit')
     .reduce((s, t) => s + Number(t.amount), 0)
@@ -73,24 +80,24 @@ export default function MePage({ showPage }) {
   // Using inline `style` for gradients — Tailwind v4 purges class strings that
   // are dynamically composed at runtime and never appear as full literals.
   const stats = [
-    { label: 'Recharge Wallet',     value: `৳${rechargeBalance}`, icon: '💳', grad: 'linear-gradient(135deg,#176b43,#22c55e)' },
-    { label: 'Withdraw Wallet',     value: `৳${withdrawBalance}`, icon: '💰', grad: 'linear-gradient(135deg,#059669,#34d399)' },
-    { label: 'Total Earnings',      value: `৳${totalEarned}`,     icon: '📈', grad: 'linear-gradient(135deg,#65a30d,#a3e635)' },
-    { label: 'Total Withdrawn',     value: `৳${totalWithdrawn}`,  icon: '↗',  grad: 'linear-gradient(135deg,#0284c7,#38bdf8)' },
-    { label: 'Team Earnings',       value: `৳${teamEarnings}`,    icon: '👥', grad: 'linear-gradient(135deg,#7c3aed,#a78bfa)' },
-    { label: "Yesterday's Earning", value: `৳${todayIncome}`,     icon: '🌙', grad: 'linear-gradient(135deg,#d97706,#fbbf24)' },
-    { label: 'Check-in Bonus',      value: `৳${checkinBonus}`,    icon: '✅', grad: 'linear-gradient(135deg,#e11d48,#fb7185)' },
-    { label: 'Total Points',        value: referralData?.data?.total ?? 0, icon: '⭐', grad: 'linear-gradient(135deg,#ea580c,#facc15)' },
+    { label: 'Recharge Wallet', value: `৳${rechargeBalance}`, icon: '💳', grad: 'linear-gradient(135deg,#176b43,#22c55e)' },
+    { label: 'Withdraw Wallet', value: `৳${withdrawBalance}`, icon: '💰', grad: 'linear-gradient(135deg,#059669,#34d399)' },
+    { label: 'Total Earnings', value: `৳${totalEarned}`, icon: '📈', grad: 'linear-gradient(135deg,#65a30d,#a3e635)' },
+    { label: 'Total Withdrawn', value: `৳${totalWithdrawn}`, icon: '↗', grad: 'linear-gradient(135deg,#0284c7,#38bdf8)' },
+    { label: 'Today Earning', value: `৳${todayIncome}`, icon: '👥', grad: 'linear-gradient(135deg,#7c3aed,#a78bfa)' },
+    { label: 'Team Earnings', value: `৳${teamEarnings}`, icon: '👥', grad: 'linear-gradient(135deg,#7c3aed,#a78bfa)' },
+    { label: 'Total Check-in', value: `৳${totalCheckinBonus}`, icon: '✅', grad: 'linear-gradient(135deg,#e11d48,#fb7185)' },
+    { label: 'Total Points', value: referralData?.data?.total ?? 0, icon: '⭐', grad: 'linear-gradient(135deg,#ea580c,#facc15)' },
   ];
 
   // ── Service shortcuts (3-column grid) ─────────────────────────────────────
   const services = [
-    { page: 'purchased',    icon: '📦', label: 'My Products' },
-    { page: 'transactions',         icon: '🏦', label: 'Funding Details' },
-    { page: 'tasks',        icon: '🎁', label: 'Redeem Bonus' },
-    { page: 'bank',         icon: '💳', label: 'Bank Account' },
-    { page: 'tasks',        icon: '📅', label: 'Daily Check-in' },
-    { page: 'referrals',    icon: '🤝', label: 'Contract' },
+    { page: 'purchased', icon: '📦', label: 'My Products' },
+    { page: 'transactions', icon: '🏦', label: 'Funding Details' },
+    { page: 'tasks', icon: '🎁', label: 'Redeem Bonus' },
+    { page: 'bank', icon: '💳', label: 'Bank Account' },
+    { page: 'tasks', icon: '📅', label: 'Daily Check-in' },
+    { page: 'referrals', icon: '🤝', label: 'Contract' },
   ];
 
   return (
@@ -104,7 +111,7 @@ export default function MePage({ showPage }) {
         {/* Clickable card with a background image; navigates to referrals page */}
         <button
           onClick={() => showPage('referrals')}
-          className="border-anim relative w-full overflow-hidden rounded-2xl text-left focus:outline-none"
+          className="border-anim relative w-full overflow-hidden rounded-xl text-left focus:outline-none"
           aria-label="Go to Team Management"
         >
           {/* Background image — falls back to gradient if image missing */}
@@ -120,14 +127,14 @@ export default function MePage({ showPage }) {
           <span className="absolute -bottom-8 left-10 h-28 w-28 rounded-full bg-white/5" />
 
           {/* Content */}
-          <div className="relative px-5 py-7 sm:px-8 sm:py-9 text-center">
-           
+          <div className="relative px-5 py-7 sm:px-10 sm:py-12 text-center">
+
             <h2 className="mt-2 text-2xl font-extrabold text-white sm:text-3xl">
               Team Management
             </h2>
-            <p className="mt-1.5 max-w-xs text-sm text-white/90">
+            {/* <p className="mt-1.5 max-w-xs text-sm text-white/90">
               Grow your network, track referrals, and earn team commissions together.
-            </p>
+            </p> */}
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-lime-300 px-4 py-2 text-xs font-extrabold text-harvest-900">
               View Team →
             </span>
@@ -136,7 +143,7 @@ export default function MePage({ showPage }) {
 
         {/* ── SECTION 2 · Wallet Quick Actions ────────────────────────────── */}
         {/* Animated-border card with Recharge + Withdraw buttons side by side */}
-        <div className="border-anim rounded-2xl bg-white p-4">
+        <div className="border-anim rounded-xl bg-white p-4">
           <p className="mb-3 text-[11px] font-extrabold tracking-widest text-harvest-700">
             WALLET ACTIONS
           </p>
@@ -145,10 +152,10 @@ export default function MePage({ showPage }) {
             {/* Recharge button */}
             <button
               onClick={() => showPage('recharge')}
-              className="flex items-center gap-3 rounded-xl border-2 border-harvest-100 bg-harvest-50 px-4 py-3.5 transition hover:border-harvest-400 hover:bg-harvest-100 active:scale-95"
+              className="flex items-center gap-3 rounded-md border-2 border-harvest-100 bg-harvest-50 px-4 py-3.5 transition hover:border-harvest-400 hover:bg-harvest-100 active:scale-95"
             >
               {/* Left: icon */}
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-harvest-700 text-xl text-white shadow">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-harvest-700 text-xl text-white shadow">
                 ＋
               </span>
               {/* Right: label */}
@@ -161,10 +168,10 @@ export default function MePage({ showPage }) {
             {/* Withdraw button */}
             <button
               onClick={() => showPage('withdraw')}
-              className="flex items-center gap-3 rounded-xl border-2 border-emerald-100 bg-emerald-50 px-4 py-3.5 transition hover:border-emerald-400 hover:bg-emerald-100 active:scale-95"
+              className="flex items-center gap-3 rounded-md border-2 border-emerald-100 bg-emerald-50 px-4 py-3.5 transition hover:border-emerald-400 hover:bg-emerald-100 active:scale-95"
             >
               {/* Left: icon */}
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-xl text-white shadow">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-emerald-600 text-xl text-white shadow">
                 ↗
               </span>
               {/* Right: label */}
@@ -183,20 +190,24 @@ export default function MePage({ showPage }) {
           {stats.map(({ label, value, icon, grad }) => (
             <div
               key={label}
-              className="relative overflow-hidden rounded-xl p-4 shadow"
+              className="relative overflow-hidden rounded-md p-4"
               style={{ background: grad }}
             >
               {/* Decorative circle */}
               <span className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-white/10" />
               {/* Icon */}
-              <span className="relative text-2xl">{icon}</span>
+              <div className="flex align-middle gap-2 items-center">
+                {/* <span className="relative text-2xl">{icon}</span> */}
+                {/* Label */}
+                <p className="relative mt-0.5 text-base font-medium text-white/80">{label}</p>
+              </div>
               {/* Value */}
               {walletLoading
                 ? <div className="relative mt-2 h-6 w-20 animate-pulse rounded-lg bg-white/30" />
                 : <p className="relative mt-1.5 text-lg font-extrabold text-white">{value}</p>
               }
-              {/* Label */}
-              <p className="relative mt-0.5 text-[11px] font-semibold text-white/80">{label}</p>
+
+
             </div>
           ))}
         </div>
@@ -210,11 +221,10 @@ export default function MePage({ showPage }) {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-3 text-sm font-extrabold capitalize transition ${
-                  tab === t
+                className={`flex-1 py-3 text-sm font-extrabold capitalize transition ${tab === t
                     ? 'border-b-2 border-harvest-700 text-harvest-700'
                     : 'text-slate-400 hover:text-slate-600'
-                }`}
+                  }`}
               >
                 {t === 'services' ? 'Services' : 'More'}
               </button>

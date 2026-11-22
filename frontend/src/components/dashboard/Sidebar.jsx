@@ -5,9 +5,12 @@
 import { useI18n } from '@/lib/i18n';
 import { notify } from '@/lib/toast';
 import { vipLabel, vipLevelOf } from '@/lib/vip';
+import Logo from '../shared/Logo';
 
 const workspaceNav = [
   { page: 'overview',  icon: '⌂', key: 'nav.overview' },
+  { page: 'home',  icon: '⌂', key: 'nav.home' },
+  { page: 'me',  icon: '◉', key: 'nav.me' },
   { page: 'products',  icon: '▦', key: 'nav.products' },
   { page: 'purchased', icon: '▣', key: 'nav.myProducts' },
   { page: 'tasks',     icon: '✧', key: 'nav.tasks' },
@@ -45,16 +48,10 @@ export default function Sidebar({ activePage, showPage, user, onLogout }) {
   );
 
   return (
-    <aside className="hidden lg:flex sticky top-0 h-screen bg-white border-r border-slate-200 p-5 flex-col gap-6 overflow-y-auto w-64 [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-slate-200 [&::-webkit-scrollbar-thumb]:bg-[#176b43] [&::-webkit-scrollbar-thumb]:rounded-full">
+    <aside className="hidden lg:flex sticky top-0 h-screen bg-white border-r border-slate-200 pt-0 pr-5 pb-5 pl-5 flex-col gap-6 overflow-y-auto w-64 [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-slate-200 [&::-webkit-scrollbar-thumb]:bg-[#176b43] [&::-webkit-scrollbar-thumb]:rounded-full">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-2 shrink-0">
-        <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-2xl grid place-items-center">✦</span>
-        <span>
-          <b className="block text-xl">Maaza International</b>
-          <small className="text-xs text-slate-500">{t('brand.tagline')}</small>
-        </span>
-      </div>
+     <Logo width={200} height={'auto'}/>
 
       <div>
         <p className="text-[10px] tracking-widest font-extrabold text-slate-400 px-3 mb-2">{t('section.workspace')}</p>

@@ -36,7 +36,7 @@ export default function TransactionsPage() {
 
   const txList = txData?.data || [];
   const recharge = walletData?.data?.rechargeWallet?.balance ?? 0;
-  const balance  = walletData?.data?.balanceWallet?.balance ?? 0;
+  const balance = walletData?.data?.balanceWallet?.balance ?? 0;
 
   const [dates, setDates] = useState({ from: '', to: '' });
   const visible = txList
@@ -49,19 +49,20 @@ export default function TransactionsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">{t('transactions.title')}</h1>
-        <p className="text-sm text-slate-500 mt-1">Review wallet activity and where every taka went.</p>
+        <h1 className="text-2xl font-semibold text-center text-white">
+          {t('transactions.title')}
+        </h1>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
         {[
           { label: 'Recharge wallet', value: formatBDT(recharge) },
-          { label: 'Balance wallet (withdrawable)', value: formatBDT(balance) },
-          { label: 'Total deposited', value: formatBDT(totalDeposited) },
+          { label: 'Balance wallet', value: formatBDT(balance) },
+          // { label: 'Total deposited', value: formatBDT(totalDeposited) },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white border rounded-2xl p-4 min-w-0">
-            <small className="text-xs text-slate-500">{label}</small>
-            <b className="block text-base sm:text-xl mt-2 truncate">{value}</b>
+            <small className="text-sm text-slate-700">{label}</small>
+            <b className="block text-base sm:text-xl mt-0.5 truncate">{value}</b>
           </div>
         ))}
       </div>

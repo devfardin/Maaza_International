@@ -13,25 +13,30 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 export default function Header({ showPage, user, onLogout }) {
   const { t } = useI18n();
 
+
   // Search: pressing Enter navigates to matching page
   function handleSearch(e) {
     if (e.key !== 'Enter') return;
     const q = e.target.value.toLowerCase();
-    if (q.includes('product'))     showPage('products');
-    else if (q.includes('task'))   showPage('tasks');
+    if (q.includes('product')) showPage('products');
+    else if (q.includes('task')) showPage('tasks');
     else if (q.includes('wallet') || q.includes('transaction')) showPage('transactions');
-    else if (q.includes('news'))   showPage('news');
+    else if (q.includes('news')) showPage('news');
     else notify.info('Try products, tasks, wallet or news.');
   }
 
+
+  const initials = user?.fullName
+    ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '??';
+
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
-      <div className="h-[66px] lg:h-[78px] px-4 sm:px-6 xl:px-9 flex items-center gap-2 sm:gap-3">
+      <div className="h-[55px] lg:h-[60px] px-4 sm:px-6 xl:px-9 flex items-center gap-2 sm:gap-3">
 
         {/* Mobile logo */}
         <div className="flex items-center gap-2 lg:hidden min-w-0">
-          <span className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-xl grid place-items-center">✦</span>
-          <b className="text-base sm:text-lg truncate">Maaza International</b>
+          <img width={100} height={100} src="/Maaza_logo.svg" alt="" />
         </div>
 
         {/* Desktop search bar */}
@@ -54,9 +59,17 @@ export default function Header({ showPage, user, onLogout }) {
             onClick={() => showPage('profile')}
             className="flex items-center gap-2 sm:border-l sm:pl-3 min-w-0"
           >
-            <span className="w-9 h-9 shrink-0 rounded-xl bg-harvest-100 text-harvest-700 grid place-items-center text-xs font-extrabold">
+            <div>
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="h-11 w-11 rounded-full object-cover" />
+              ) : (
+                <span className="w-12 h-12 rounded-full bg-harvest-50 text-harvest-700 grid place-items-center text-xs font-extrabold">
               {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : '??'}
             </span>
+              )}
+            </div>
+
+            
             <span className="hidden md:block text-left min-w-0">
               <b className="block text-xs truncate max-w-[140px]">{user?.fullName || t('common.loading')}</b>
               <small className="text-[10px] text-slate-500">{vipLabel(vipLevelOf(user?.membershipLevel))}</small>

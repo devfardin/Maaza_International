@@ -75,8 +75,7 @@ export default function ProductsPage({ showPage, showToast }) {
 
       {/* ── Header ── */}
       <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">PRODUCT CATALOGUE</p>
-        <h1 className="text-2xl font-extrabold mt-1">Browse Products</h1>
+        <h1 className="text-2xl font-semibold text-center text-white">Browse Products</h1>
       </div>
 
       {/* ── Category filter tabs ── */}

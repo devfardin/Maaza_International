@@ -112,8 +112,8 @@ function DashboardInner({ children }) {
           {/* use image for section bg
            */}
         <div className="relative bg-[url('/bg-dashboard.png')] bg-cover bg-center bg-no-repeat bg-fixed">
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-9 py-5 sm:py-7 pb-28 lg:pb-10">
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 xl:px-8 py-4 sm:py-6 pb-28 lg:pb-10">
             {children}
           </div>
         </div>
