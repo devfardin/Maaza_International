@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
+import ReferralsCard from '../ReferralsCard';
 
 // ── Slider images (placeholder — replace with real paths) ────────────────────
 const SLIDES = [
@@ -18,13 +19,13 @@ const INFO_CARDS = [
     sub: 'Based on VIP level',
     grad: 'linear-gradient(135deg,#176b43,#22c55e)',
   },
-  {
-    icon: '💰',
-    label: 'Monthly Salary',
-    value: '৳2,000 – ৳20,000',
-    sub: 'Consistent monthly income',
-    grad: 'linear-gradient(135deg,#059669,#34d399)',
-  },
+  // {
+  //   icon: '💰',
+  //   label: 'Monthly Salary',
+  //   value: '৳2,000 – ৳20,000',
+  //   sub: 'Consistent monthly income',
+  //   grad: 'linear-gradient(135deg,#059669,#34d399)',
+  // },
   {
     icon: '📋',
     label: 'Rule',
@@ -321,9 +322,20 @@ export default function HomePase({ showPage }) {
         ))}
       </div>
 
+      {/* ── SECTION 2b · referal section and socile media handle */}
+      <div>
+        <h1 className="text-xl font-medium text-white mb-2.5">Invite &amp; Earn</h1>
+
+        {/* Referral link + social share */}
+        <ReferralsCard />
+      </div>
+
       {/* ── SECTION 3 · Promotional Banner ──────────────────────────────── */}
       <div className="overflow-hidden rounded-2xl">
-        <img src="/promosonal.png" alt="Promotional Banner" className="w-full object-cover" />
+        <h1 className="text-xl font-medium text-white mb-2.5">
+          Our Offers
+        </h1>
+        <img src="/promosonal.png" alt="Promotional Banner" className="w-full object-cover rounded-xl" />
       </div>
 
       {/* ── SECTION 3b · Business Introduction Video ─────────────────────── */}

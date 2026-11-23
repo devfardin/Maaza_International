@@ -2,7 +2,7 @@
 import { useSelector } from 'react-redux';
 import { useGetMeQuery, useGetMyReferralsQuery, useGetMyTeamQuery } from '@/redux/features/apiSlice';
 import { vipLabel, vipLevelOf } from '@/lib/vip';
-import SocialShareButtons from '@/components/shared/SocialShareButtons';
+import ReferralsCard from '@/components/dashboard/ReferralsCard';
 
 // Levels are seen from my position:
 //  A = my direct invitees (they signed up with my code; I earn commission from their claims)
@@ -23,89 +23,30 @@ const whatsappNumber = (phone = '') => {
 const bdt = (amount) => `৳${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 export default function ReferralsPage({ showToast }) {
-  const user   = useSelector((s) => s.auth.user);
+  const user = useSelector((s) => s.auth.user);
   const userId = user?._id;
 
-  const { data: meData, isLoading } = useGetMeQuery(undefined, { skip: !userId });
+  const { data: meData } = useGetMeQuery(undefined, { skip: !userId });
   const { data: referralData, isLoading: referralLoading } = useGetMyReferralsQuery(undefined, { skip: !userId });
   const { data: teamData, isLoading: teamLoading } = useGetMyTeamQuery(undefined, { skip: !userId });
   const team = teamData?.data ?? [];
 
   const profile = meData?.data || user;
 
-  const referralCode    = profile?.referralCode || '';
   const membershipLevel = profile?.membershipLevel ?? 1;
-  const stats           = referralData?.data || { total: 0, valid: 0, invalid: 0, totalCommission: 0, referrals: [] };
-  const membership      = stats.membership;
-
-  const referralLink = referralCode && typeof window !== 'undefined'
-    ? `${window.location.origin}/registration?refId=${referralCode}`
-    : '';
-
-  function copyLink() {
-    if (!referralLink) return showToast('Referral link not available.', 'error');
-    navigator.clipboard?.writeText(referralLink)
-      .then(() => showToast('Referral link copied.'))
-      .catch(() => showToast('Could not copy. Please copy manually.', 'error'));
-  }
-
-  function copyCode() {
-    if (!referralCode) return;
-    navigator.clipboard?.writeText(referralCode)
-      .then(() => showToast('Referral code copied.'))
-      .catch(() => {});
-  }
+  const stats = referralData?.data || { total: 0, valid: 0, invalid: 0, totalCommission: 0, referrals: [] };
+  const membership = stats.membership;
 
   return (
     <div className="space-y-5">
+
+      {/* ── Header ── */}
       <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">REFERRAL CENTER</p>
-        <h1 className="text-xl font-extrabold mt-1">Invite &amp; Earn</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Share your referral link. Earn bonuses when your referred members purchase products.
-        </p>
+        <h1 className="text-2xl font-semibold text-center text-white">
+          REFERRAL CENTER
+        </h1>
       </div>
 
-      {/* Referral link card */}
-      <div className="bg-white border rounded-xl p-5">
-        <p className="text-xs font-extrabold text-slate-500 mb-3">YOUR REFERRAL LINK</p>
-        {isLoading ? (
-          <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
-        ) : (
-          <>
-            <div className="flex gap-2">
-              <input
-                readOnly
-                value={referralLink || 'Loading…'}
-                className="flex-1 rounded-md border bg-slate-50 px-4 py-3 text-xs text-slate-700 outline-none"
-              />
-              <button onClick={copyLink} className="rounded-md bg-harvest-700 text-white px-4 text-xs font-bold whitespace-nowrap">
-                Copy link
-              </button>
-            </div>
-            <div className="flex gap-2 mt-3">
-              <input
-                readOnly
-                value={referralCode || '—'}
-                className="flex-1 rounded-md border bg-slate-50 px-4 py-3 text-sm font-bold outline-none"
-              />
-              <button onClick={copyCode} className="border rounded-md px-4 text-xs font-bold">
-                Copy code
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Share on social media */}
-      <div className="bg-white border rounded-xl p-5">
-        <p className="text-xs font-extrabold text-slate-500 mb-1">SHARE ON SOCIAL MEDIA</p>
-        <p className="text-xs text-slate-400 mb-4">Send your referral link to friends in one tap.</p>
-        <SocialShareButtons
-          link={referralLink}
-          text="Join me on Maaza International with my referral link."
-        />
-      </div>
 
       {/* Referral stats */}
       <div className="bg-white border rounded-xl p-5">
