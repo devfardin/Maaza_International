@@ -28,14 +28,17 @@ export default function ReferralsCard() {
     if (!referralCode) return;
     navigator.clipboard?.writeText(referralCode)
       .then(() => notify.success('Referral code copied.'))
-      .catch(() => {});
+      .catch(() => { });
   }
 
   return (
     <div className="space-y-4">
       {/* YOUR REFERRAL LINK */}
       <div className="bg-white border rounded-xl p-5">
-        <p className="text-xs font-extrabold text-slate-500 mb-3">YOUR REFERRAL LINK</p>
+        <h3 className="font-bold text-sm text-slate-600">Refer a Friend & Earn Commissions!</h3>
+        <p className="text-slate-500 text-sm mt-1 mb-4">
+          Share your referral link and earn 10% commission on every purchase made by your referrals.
+        </p>
         {isLoading ? (
           <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
         ) : (
@@ -72,8 +75,8 @@ export default function ReferralsCard() {
 
       {/* SHARE ON SOCIAL MEDIA */}
       <div className="bg-white border rounded-xl p-5">
-        <p className="text-xs font-extrabold text-slate-500 mb-1">SHARE ON SOCIAL MEDIA</p>
-        <p className="text-xs text-slate-400 mb-4">Send your referral link to friends in one tap.</p>
+        <p className="text-xs font-extrabold text-slate-600 mb-1">SHARE ON SOCIAL MEDIA</p>
+        <p className="text-xs text-slate-500 mb-4">Send your referral link to friends in one tap.</p>
         <SocialShareButtons
           link={referralLink}
           text="Join me on Maaza International with my referral link."

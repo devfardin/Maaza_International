@@ -84,12 +84,8 @@ export default function SalaryPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-extrabold tracking-widest text-harvest-700">WEEKLY SALARY</p>
-        <h1 className="text-2xl font-extrabold mt-1">Your weekly salary</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Salary is paid every Monday from {win.claimHours} (Bangladesh time). Claim it inside the window. If you do not claim it,
-          that week&apos;s salary is not paid and you wait for the next Monday.
-        </p>
+        <h1 className="text-2xl font-semibold text-center text-white">Weekly Salary</h1>
+        
       </div>
 
       {/* Status + countdown */}

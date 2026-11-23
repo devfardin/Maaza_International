@@ -58,8 +58,8 @@ export default function PurchasedPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold">My products</h1>
-        <p className="text-sm text-slate-500 mt-1">Track your products, claim your income and see how much you have earned.</p>
+        <h1 className="text-2xl font-semibold text-center text-white">
+          My products</h1>
       </div>
 
       {/* Income summary */}

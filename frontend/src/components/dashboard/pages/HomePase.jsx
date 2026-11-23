@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
 import ReferralsCard from '../ReferralsCard';
+import ReferralInfoSection from '../ReferralInfoSection';
 
 // ── Slider images (placeholder — replace with real paths) ────────────────────
 const SLIDES = [
@@ -117,7 +118,7 @@ function VideoSection() {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden rounded-2xl bg-black aspect-video select-none"
+      className="relative overflow-hidden rounded-xl bg-black aspect-video select-none"
       onMouseMove={resetHide}
       onTouchStart={resetHide}
     >
@@ -302,27 +303,11 @@ export default function HomePase({ showPage }) {
           </p>
         </div>
       </div>
+      {/* ── SECTION 2 · Referral Info ────────────────────────────────────── */}
+      <ReferralInfoSection />
 
-      {/* ── SECTION 2 · Info Cards ───────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
-        {INFO_CARDS.map(({ icon, label, value, sub, grad }) => (
-          <div
-            key={label}
-            className="relative overflow-hidden rounded-xl p-4"
-            style={{ background: grad }}
-          >
-            <span className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-white/10" />
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">{icon}</span>
-              <p className="text-xs font-extrabold tracking-wide text-white/80">{label}</p>
-            </div>
-            <p className="text-base font-extrabold text-white leading-tight">{value}</p>
-            <p className="text-[11px] text-white/70 mt-0.5">{sub}</p>
-          </div>
-        ))}
-      </div>
 
-      {/* ── SECTION 2b · referal section and socile media handle */}
+      {/* ── SECTION 3 · referal section and socile media handle */}
       <div>
         <h1 className="text-xl font-medium text-white mb-2.5">Invite &amp; Earn</h1>
 
@@ -330,7 +315,7 @@ export default function HomePase({ showPage }) {
         <ReferralsCard />
       </div>
 
-      {/* ── SECTION 3 · Promotional Banner ──────────────────────────────── */}
+      {/* ── SECTION 4 · Promotional Banner ──────────────────────────────── */}
       <div className="overflow-hidden rounded-2xl">
         <h1 className="text-xl font-semibold text-white mb-2.5">
           Our Offers
@@ -338,10 +323,10 @@ export default function HomePase({ showPage }) {
         <img src="/promosonal.png" alt="Promotional Banner" className="w-full object-cover rounded-xl" />
       </div>
 
-      {/* ── SECTION 3b · Business Introduction Video ─────────────────────── */}
+      {/* ── SECTION 4 · Business Introduction Video ─────────────────────── */}
       <VideoSection />
 
-      {/* ── SECTION 4 · Task Bonus ───────────────────────────────────────── */}
+      {/* ── SECTION 5 · Task Bonus ───────────────────────────────────────── */}
       <div>
         <div className="mb-3">
           <h2 className="text-xl font-extrabold text-white">Task Bonus</h2>
