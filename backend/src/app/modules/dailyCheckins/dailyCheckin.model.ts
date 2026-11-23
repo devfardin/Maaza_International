@@ -2,7 +2,7 @@ import { model, Schema, Types } from 'mongoose';
 
 export type TDailyCheckin = {
     userId: Types.ObjectId;
-    checkinDate: string;   // 'YYYY-MM-DD' (UTC) — one check-in per user per day
+    checkinDate: string;   // 'YYYY-MM-DD' (Bangladesh time, resets at 12 AM BD) — one check-in per user per day
     vipLevel: number;      // VIP level at the time of check-in (0 = none)
     amount: number;        // BDT credited to balance wallet
     createdAt?: Date;

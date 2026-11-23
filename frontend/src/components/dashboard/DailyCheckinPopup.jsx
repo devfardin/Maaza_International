@@ -15,7 +15,8 @@ import {
 } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
 
-const todayKey = () => new Date().toISOString().slice(0, 10); // UTC, same day the backend uses
+// Bangladesh day (UTC+6, resets at 12 AM BD) — same day the backend uses for check-in
+const todayKey = () => new Date(Date.now() + 6 * 3600000).toISOString().slice(0, 10);
 const bdt = (amount) => `৳ ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 export default function DailyCheckinPopup() {

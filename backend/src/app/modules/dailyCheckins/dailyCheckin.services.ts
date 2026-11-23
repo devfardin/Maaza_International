@@ -9,8 +9,10 @@ import { MembershipServices } from '../users/membership.services';
 import { VipLevelModel, ensureVipLevelDefaults } from '../vipLevels/vipLevel.model';
 import { ReferralServices } from '../referrals/referral.services';
 import { DailyCheckinModel } from './dailyCheckin.model';
+import { SALARY_TIMEZONE_OFFSET_HOURS } from '../../config/constants';
 
-const todayUTC = () => new Date().toISOString().slice(0, 10);
+// The check-in day resets at 12 AM Bangladesh time (UTC+6), not at UTC midnight.
+const todayBD = () => new Date(Date.now() + SALARY_TIMEZONE_OFFSET_HOURS * 3_600_000).toISOString().slice(0, 10);
 
 // Live VIP level (referrals + spend) and the bonus that goes with it.
 const getBonusForUser = async (userId: Types.ObjectId | string) => {
@@ -26,7 +28,7 @@ const getBonusForUser = async (userId: Types.ObjectId | string) => {
 
 const getStatus = async (userId: string) => {
     const { vipLevel, qualifiedReferrals, bonusAmount } = await getBonusForUser(userId);
-    const today = await DailyCheckinModel.findOne({ userId, checkinDate: todayUTC() });
+    const today = await DailyCheckinModel.findOne({ userId, checkinDate: todayBD() });
     const last = await DailyCheckinModel.findOne({ userId }).sort({ checkinDate: -1 });
     return {
         vipLevel,
@@ -46,7 +48,7 @@ const checkIn = async (userId: string) => {
     }
 
     const { vipLevel, bonusAmount } = await getBonusForUser(userId);
-    const checkinDate = todayUTC();
+    const checkinDate = todayBD();
 
     const session = await mongoose.startSession();
     try {

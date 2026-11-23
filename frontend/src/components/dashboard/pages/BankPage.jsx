@@ -12,8 +12,8 @@ import PageLoader from '@/components/shared/PageLoader';
 
 const NUMBER_RE = /^01[3-9]\d{8}$/;
 const METHODS = [
-  { value: 'bkash', label: 'bKash', tint: 'bg-pink-500', soft: 'bg-pink-50 text-pink-700' },
-  { value: 'nogod', label: 'Nagad', tint: 'bg-orange-500', soft: 'bg-orange-50 text-orange-700' },
+  { value: 'bkash', label: 'bKash', tint: 'bg-pink-500', soft: 'bg-pink-50 text-pink-700', logo: '/bKash-Logo.png' },
+  { value: 'nogod', label: 'Nagad', tint: 'bg-orange-500', soft: 'bg-orange-50 text-orange-700', logo: '/nogod-logo.png' },
 ];
 
 export default function BankPage() {
@@ -23,14 +23,11 @@ export default function BankPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">BANK DETAILS</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Payout accounts</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Save one bKash and one Nagad account. Keep the one you want to use <b>Active</b>; withdrawals go to active accounts only.
-        </p>
+
+        <h1 className="text-2xl font-semibold text-center text-white">Payout accounts</h1>
       </div>
 
-      <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
         <b>Please bind the correct receiving account.</b> The number must start with <b>01</b> and be <b>11 digits</b> long.
       </div>
 
@@ -100,9 +97,10 @@ function AccountSlot({ method, account }) {
     <div className="rounded-2xl border bg-white p-5 sm:p-6 shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className={`grid h-11 w-11 place-items-center rounded-xl text-sm font-extrabold text-white ${method.tint}`}>
+          {/* <span className={`grid h-11 w-11 place-items-center rounded-xl text-sm font-extrabold text-white ${method.tint}`}>
             {method.label.slice(0, 2).toUpperCase()}
-          </span>
+          </span> */}
+          <img className="h-9 w-9 rounded-md" src={method?.logo} alt={method?.label} />
           <div>
             <h2 className="font-extrabold text-lg">{method.label} account</h2>
             <p className="text-xs text-slate-500">{account ? 'Saved' : 'Not added yet'}</p>

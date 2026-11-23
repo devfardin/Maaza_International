@@ -161,60 +161,148 @@ function WeeklySalaryTab({ s, isLoading }) {
 
 // ── Role Tab ──────────────────────────────────────────────────────────────────
 function RoleTab({ s, isLoading }) {
+  const router = useRouter();
   if (isLoading || !s) {
     return (
       <div className="space-y-2 animate-pulse">
-        {[1, 2, 3, 4].map((i) => <div key={i} className="h-14 bg-white/10 rounded-xl" />)}
+        <div className="h-6 bg-white/10 rounded w-full" />
+        {[1, 2, 3, 4].map((i) => <div key={i} className="h-10 bg-white/10 rounded" />)}
       </div>
     );
   }
 
   const schedule = s.schedule ?? [];
+  const claimHours = s.window?.claimHours ?? '10:00 AM – 10:00 PM';
+
+  if (schedule.length === 0) {
+    return <p className="text-white/30 text-sm text-center py-6">No schedule available.</p>;
+  }
 
   return (
-    <div className="space-y-2">
-      <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest mb-3">
-        Weekly Salary by VIP Level
-      </p>
-      {schedule.length === 0 && (
-        <p className="text-white/30 text-sm text-center py-6">No schedule available.</p>
-      )}
-      {schedule.map((row) => {
-        const mine = row.vipLevel === s.vipLevel;
-        return (
-          <div
-            key={row.vipLevel}
-            className={`flex items-center justify-between rounded-xl px-4 py-3 ${mine ? 'border border-lime-400/30' : ''}`}
-            style={{ background: mine ? 'rgba(163,230,53,0.10)' : 'rgba(255,255,255,0.05)' }}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className="w-8 h-8 rounded-full grid place-items-center text-xs font-extrabold shrink-0"
-                style={{
-                  background: mine ? 'linear-gradient(135deg,#65a30d,#a3e635)' : 'rgba(255,255,255,0.08)',
-                  color: mine ? '#0f2e1a' : 'rgba(255,255,255,0.5)',
-                }}
-              >
-                {row.vipLevel}
-              </span>
-              <div>
-                <p className={`text-sm font-extrabold flex items-center gap-1.5 ${mine ? 'text-lime-400' : 'text-white/75'}`}>
-                  {vipLabel(row.vipLevel)}
+    <div className="flex flex-col gap-3">
+
+      {/* Schedule table */}
+      {/* <div className="rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <div className="grid grid-cols-3 px-3 py-2" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">VIP Level</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 text-center">Weekly Salary</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 text-right">Referrals</p>
+        </div>
+        {schedule.map((row) => {
+          const mine = row.vipLevel === s.vipLevel;
+          return (
+            <div
+              key={row.vipLevel}
+              className={`grid grid-cols-3 items-center px-3 py-2.5 border-t ${mine ? 'border-lime-400/20' : 'border-white/5'}`}
+              style={{ background: mine ? 'rgba(163,230,53,0.08)' : 'transparent' }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-6 h-6 rounded-full grid place-items-center text-[10px] font-extrabold shrink-0"
+                  style={{
+                    background: mine ? 'linear-gradient(135deg,#65a30d,#a3e635)' : 'rgba(255,255,255,0.08)',
+                    color: mine ? '#0f2e1a' : 'rgba(255,255,255,0.45)',
+                  }}
+                >
+                  {row.vipLevel}
+                </span>
+                <div className="min-w-0">
+                  <p className={`text-xs font-extrabold truncate ${mine ? 'text-lime-400' : 'text-white/70'}`}>
+                    {vipLabel(row.vipLevel)}
+                  </p>
                   {mine && (
-                    <span className="text-[10px] bg-lime-400/20 text-lime-400 px-1.5 py-0.5 rounded-full font-bold">
-                      YOU
-                    </span>
+                    <span className="text-[9px] bg-lime-400/20 text-lime-400 px-1 py-0.5 rounded-full font-bold">YOU</span>
                   )}
-                </p>
-                <p className="text-[11px] text-white/35">{row.qualifiedReferrals} referrals needed</p>
+                </div>
               </div>
+              <p className={`text-xs font-extrabold text-center ${mine ? 'text-lime-400' : 'text-white/60'}`}>
+                {fmt(row.weeklySalary)}
+              </p>
+              <p className={`text-xs font-bold text-right ${mine ? 'text-lime-300' : 'text-white/40'}`}>
+                👤 {row.qualifiedReferrals}
+              </p>
             </div>
-            <p className={`font-extrabold text-sm ${mine ? 'text-lime-400' : 'text-white/60'}`}>
-              {fmt(row.weeklySalary)}
-            </p>
+          );
+        })}
+      </div> */}
+
+      {/* How to earn */}
+      <div className="rounded-md p-3 flex flex-col gap-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <p className="text-sm font-bold  tracking-widest text-white/60">How to earn weekly salary</p>
+        {[
+          { n: '1', icon: '📦', title: 'Buy a product', desc: 'Purchase any product to activate your membership.' },
+          { n: '2', icon: '🔗', title: 'Share your referral code', desc: 'Each invitee counts once they deposit and buy a product.' },
+          { n: '3', icon: '🏆', title: 'Reach a VIP level', desc: 'Auto-upgraded when your valid referral target is met.' },
+          { n: '4', icon: '💵', title: 'Claim every Monday', desc: `Window: ${claimHours} (BD time). Must claim manually.` },
+        ].map(({ n, icon, title, desc }) => (
+          <div key={n} className="flex items-start gap-2.5">
+            <span
+              className="w-5 h-5 rounded-full grid place-items-center text-xs font-extrabold shrink-0 mt-0.5"
+              style={{ background: 'rgba(163,230,53,0.15)', color: '#a3e635' }}
+            >
+              {n}
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-white/80">{icon} {title}</p>
+              <p className="text-xs text-white/50 mt-0.5">{desc}</p>
+            </div>
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* How to claim */}
+      <div className="rounded-md p-3 flex flex-col gap-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <p className="text-sm font-bold  tracking-widest text-white/60">How to claim</p>
+
+        {/* 3 info pills */}
+        <div className="grid grid-cols-3 gap-1.5">
+          {[
+            { icon: '📅', label: 'When', value: 'Every Monday' },
+            { icon: '⏱️', label: 'Duration', value: '12 hours' },
+            { icon: '✅', label: 'How', value: 'One tap' },
+          ].map(({ icon, label, value }) => (
+            <div key={label} className="rounded-md px-2 py-2 text-center" style={{ background: 'rgba(255,255,255,0.07)' }}>
+              <p className="text-base">{icon}</p>
+              <p className="text-[10px] text-white/35 uppercase tracking-wide font-bold mt-0.5">{label}</p>
+              <p className="text-xs font-extrabold text-white/70 mt-0.5">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Warning */}
+        <div className="rounded-md px-3 py-2 flex gap-2 items-start" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+          <span className="text-sm shrink-0">⚠️</span>
+          <p className="text-sm text-yellow-300/70 leading-snug">
+            Unclaimed salary is <span className="font-extrabold text-yellow-300">permanently lost</span> after the window closes. It does not carry over.
+          </p>
+        </div>
+
+        {/* Steps */}
+        {[
+          'Open the salary page on Monday during the claim window.',
+          'Check the countdown — see how much time is left.',
+          'Tap the Claim button. Salary lands in your wallet instantly.',
+        ].map((text, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span
+              className="w-4 h-4 rounded-full grid place-items-center text-[10px] font-extrabold shrink-0 mt-0.5"
+              style={{ background: 'rgba(163,230,53,0.12)', color: '#a3e635' }}
+            >
+              {i + 1}
+            </span>
+            <p className="text-sm text-white/60 leading-snug">{text}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={() => router.push('/dashboard/salary')}
+        className="w-full rounded-md py-3 text-sm font-extrabold tracking-wide transition active:scale-95"
+        style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+      >
+        📄 View Full Salary Page →
+      </button>
     </div>
   );
 }

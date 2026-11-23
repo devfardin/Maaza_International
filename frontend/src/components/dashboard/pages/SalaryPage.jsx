@@ -209,6 +209,77 @@ export default function SalaryPage() {
         )}
       </div>
 
+      {/* ── How to earn weekly salary ── */}
+      <div className="bg-white border rounded-xl p-5 sm:p-6 space-y-4">
+        <div>
+          <h2 className="font-extrabold text-lg">How to earn a weekly salary</h2>
+          <p className="text-sm text-slate-500 mt-1">Follow these steps to unlock your weekly bonus every Monday.</p>
+        </div>
+        <ol className="space-y-3">
+          {[
+            { step: '1', icon: '📦', title: 'Buy a product', desc: 'Purchase any product to activate your membership and make your account eligible.' },
+            { step: '2', icon: '🔗', title: 'Share your referral code', desc: 'Invite friends using your unique referral code. Each friend must deposit and buy a product to count as a valid referral.' },
+            { step: '3', icon: '🏆', title: 'Reach a VIP level', desc: 'Once you have enough valid referrals, your account is automatically upgraded to the matching VIP level.' },
+            { step: '4', icon: '💵', title: 'Receive weekly salary', desc: `Every Monday from ${s.window?.claimHours ?? '10:00 AM – 10:00 PM'} (BD time) your salary becomes claimable. You must manually claim it before the window closes.` },
+          ].map(({ step, icon, title, desc }) => (
+            <li key={step} className="flex gap-4">
+              <span className="w-7 h-7 rounded-full bg-harvest-100 text-harvest-700 text-xs font-extrabold grid place-items-center shrink-0 mt-0.5">{step}</span>
+              <div>
+                <p className="font-extrabold text-sm">{icon} {title}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{desc}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* ── How to claim ── */}
+      <div className="bg-white border rounded-xl p-5 sm:p-6 space-y-4">
+        <div>
+          <h2 className="font-extrabold text-lg">How to claim your salary</h2>
+          <p className="text-sm text-slate-500 mt-1">The claim window opens once a week. Here is exactly what to do.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-3">
+          {[
+            { icon: '📅', label: 'When', value: 'Every Monday', sub: s.window?.claimHours ? `${s.window.claimHours} (BD time)` : '10:00 AM – 10:00 PM (BD time)' },
+            { icon: '⏱️', label: 'Window duration', value: '12 hours', sub: 'Unclaimed salary is lost after the window closes' },
+            { icon: '✅', label: 'One click', value: 'Tap "Claim" button', sub: 'Salary is added to your wallet balance instantly' },
+          ].map(({ icon, label, value, sub }) => (
+            <div key={label} className="rounded-md bg-slate-50 p-4">
+              <p className="text-lg">{icon}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mt-1">{label}</p>
+              <p className="font-extrabold text-sm mt-0.5">{value}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3">
+          <span className="text-lg shrink-0">⚠️</span>
+          <div>
+            <p className="text-sm font-extrabold text-amber-800">Don&apos;t miss the window</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              If you do not claim before the window closes (BD time), that week&apos;s salary is permanently lost. It does not carry over to the next week.
+            </p>
+          </div>
+        </div>
+
+        <ol className="space-y-2">
+          {[
+            'Open this page on Monday during the claim window.',
+            'Check the countdown timer — it shows exactly how much time is left.',
+            'Press the green Claim button. Your salary is added to your wallet instantly.',
+            'Verify the amount in your wallet or transaction history.',
+          ].map((text, i) => (
+            <li key={i} className="flex gap-3 text-sm text-slate-600">
+              <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold grid place-items-center shrink-0 mt-0.5">{i + 1}</span>
+              {text}
+            </li>
+          ))}
+        </ol>
+      </div>
+
       {s.lastClaim && (
         <p className="text-xs text-slate-500">
           Last salary: {fmt(s.lastClaim.amount)} (week of {s.lastClaim.weekKey}).
