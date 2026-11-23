@@ -33,13 +33,13 @@ const INFO_CARDS = [
     sub: 'Platform rules apply',
     grad: 'linear-gradient(135deg,#65a30d,#a3e635)',
   },
-  {
-    icon: '🤝',
-    label: 'Invitation',
-    value: 'Earn Referral Bonus',
-    sub: 'Invite friends & earn',
-    grad: 'linear-gradient(135deg,#7c3aed,#a78bfa)',
-  },
+  // {
+  //   icon: '🤝',
+  //   label: 'Invitation',
+  //   value: 'Earn Referral Bonus',
+  //   sub: 'Invite friends & earn',
+  //   grad: 'linear-gradient(135deg,#7c3aed,#a78bfa)',
+  // },
 ];
 
 // ── Task gradient pool ────────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ export default function HomePase({ showPage }) {
 
       {/* ── SECTION 3 · Promotional Banner ──────────────────────────────── */}
       <div className="overflow-hidden rounded-2xl">
-        <h1 className="text-xl font-medium text-white mb-2.5">
+        <h1 className="text-xl font-semibold text-white mb-2.5">
           Our Offers
         </h1>
         <img src="/promosonal.png" alt="Promotional Banner" className="w-full object-cover rounded-xl" />
