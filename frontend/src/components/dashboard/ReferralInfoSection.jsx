@@ -25,7 +25,7 @@ function WeeklySalaryTab({ s, isLoading }) {
   const segments = schedule.slice(0, 6);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-3">
       <style>{`
         @keyframes arrowBounce {
           0%, 100% { transform: translateY(0); }
@@ -46,7 +46,7 @@ function WeeklySalaryTab({ s, isLoading }) {
       </div>
 
       {/* Segmented progress block */}
-      <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.07)' }}>
+      <div className="rounded-md p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
 
         {/* People count row — above each segment */}
         <div className="flex gap-1 mb-1">
@@ -140,7 +140,7 @@ function WeeklySalaryTab({ s, isLoading }) {
       {/* Claim button */}
       <button
         onClick={() => router.push('/dashboard/salary')}
-        className="w-full rounded-xl py-3.5 text-sm font-extrabold tracking-wide transition active:scale-95"
+        className="w-full rounded-md py-3.5 text-sm font-extrabold tracking-wide transition active:scale-95"
         style={{
           background: isOpen ? 'linear-gradient(135deg,#65a30d,#a3e635)' : 'rgba(255,255,255,0.10)',
           color:      isOpen ? '#0f2e1a' : 'rgba(255,255,255,0.65)',
@@ -231,7 +231,7 @@ export default function ReferralInfoSection() {
   ];
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg,#0d2818,#1a4a2a)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: 'linear-gradient(160deg,#0d2818,#1a4a2a)' }}>
       {/* Tab bar */}
       <div className="flex border-b border-white/10">
         {TABS.map(({ id, label }) => (
@@ -249,7 +249,7 @@ export default function ReferralInfoSection() {
         ))}
       </div>
 
-      <div className="p-4">
+      <div className="p-3">
         {tab === 'salary' && <WeeklySalaryTab s={s} isLoading={isLoading} />}
         {tab === 'role'   && <RoleTab s={s} isLoading={isLoading} />}
       </div>
