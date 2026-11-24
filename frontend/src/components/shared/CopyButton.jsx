@@ -34,7 +34,7 @@ export default function CopyButton({ value, label = 'Copy', className = '' }) {
     <button
       type="button"
       onClick={copy}
-      className={`shrink-0 rounded-md border px-3 py-3 text-sm font-bold transition-colors ${copied ? 'bg-harvest-700 text-white border-harvest-700' : 'bg-white text-slate-700 hover:bg-slate-50'} ${className}`}
+      className={`shrink-0 rounded-md border px-2.5 py-2 text-sm font-bold transition-colors ${copied ? 'bg-harvest-700 text-white border-harvest-700' : 'bg-white text-slate-700 hover:bg-slate-50'} ${className}`}
     >
       {copied ? '✓ Copied' : `⧉ ${label}`}
     </button>

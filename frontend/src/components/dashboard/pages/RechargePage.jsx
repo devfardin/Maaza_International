@@ -19,7 +19,7 @@ import { roundMoney } from '@/lib/money';
 import PageLoader from '@/components/shared/PageLoader';
 import SafeHtml from '@/components/shared/SafeHtml';
 
-const AMOUNT_CHIPS = [500, 1000, 1300, 2000, 5000];
+const AMOUNT_CHIPS = [960, 6500, 15000, 25000, 35750, 50000];
 const MIN_DEPOSIT = 200;
 
 export default function RechargePage({ showPage }) {
@@ -76,56 +76,103 @@ export default function RechargePage({ showPage }) {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md py-10 text-center">
-        <div className="relative mx-auto grid h-24 w-24 place-items-center rounded-full bg-harvest-100">
-          <span className="absolute inset-0 animate-ping rounded-full bg-harvest-200/60" />
-          <span className="relative text-5xl">✅</span>
-        </div>
-        <p className="mt-6 text-xs font-extrabold tracking-widest text-harvest-700">REQUEST SUBMITTED</p>
-        <h2 className="mt-2 text-2xl font-extrabold text-slate-900">Deposit request sent!</h2>
-        <p className="mt-3 text-sm text-slate-500">
-          Your deposit of <b className="text-slate-800">{formatBDT(submitted.amount)}</b> is under review.
-          You will get an email when it is approved or rejected.
-        </p>
-
-        {submitted._id && (
-          <div className="mt-6 rounded-2xl border border-harvest-100 bg-white p-4 text-left shadow-soft">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Request ID</p>
-            <div className="mt-1.5 flex items-center gap-2">
-              <code className="flex-1 break-all text-xs font-semibold text-slate-700">{submitted._id}</code>
-              <CopyButton value={submitted._id} />
+      <div className="space-y-4">
+        {/* Hero banner */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-6 text-white shadow-soft sm:p-8">
+          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/10" />
+          <div className="absolute -bottom-14 right-16 h-32 w-32 rounded-full bg-lime-300/15" />
+          <div className="relative flex flex-col items-center gap-4 text-center">
+            <div className="relative grid h-20 w-20 place-items-center rounded-full bg-white/15 ring-4 ring-white/20">
+              <span className="absolute inset-0 animate-ping rounded-full bg-lime-300/30" />
+              <span className="relative text-4xl">✅</span>
+            </div>
+            <div>
+              <p className="text-xs font-extrabold tracking-widest text-lime-300">REQUEST SUBMITTED</p>
+              <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">Deposit request sent!</h1>
+              <p className="mt-2 max-w-sm text-sm text-white/75">
+                Your deposit of{' '}
+                <span className="font-extrabold text-lime-300">{formatBDT(submitted.amount)}</span>{' '}
+                is under review. You will get an email when it is approved or rejected.
+              </p>
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <button onClick={() => showPage('transactions')} className="rounded-xl border py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
-            View transactions
-          </button>
-          <button onClick={resetForm} className="rounded-xl bg-harvest-700 py-3 text-sm font-extrabold text-white hover:bg-harvest-800">
-            New request
-          </button>
+        {/* Details card */}
+        <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-soft sm:p-7">
+          <p className="text-xs font-extrabold tracking-widest text-harvest-700">DEPOSIT SUMMARY</p>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-harvest-50 border border-harvest-100 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-harvest-600">Amount</p>
+              <p className="mt-1 text-xl font-extrabold text-harvest-900">{formatBDT(submitted.amount)}</p>
+            </div>
+            <div className="rounded-md bg-slate-50 border p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</p>
+              <p className="mt-1 text-sm font-extrabold text-amber-600">⏳ Pending review</p>
+            </div>
+            <div className="rounded-md bg-slate-50 border p-4 col-span-2 sm:col-span-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Wallet</p>
+              <p className="mt-1 text-sm font-extrabold text-slate-800">Recharge wallet</p>
+            </div>
+          </div>
+
+          {submitted._id && (
+            <div className="mt-4 rounded-md border border-harvest-100 bg-harvest-50/50 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Request ID</p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <code className="min-w-0 flex-1 break-all text-xs font-semibold text-slate-700">{submitted._id}</code>
+                <CopyButton value={submitted._id} />
+              </div>
+            </div>
+          )}
+
+          {/* What happens next */}
+          <div className="mt-5 rounded-md border border-amber-100 bg-amber-50 p-4">
+            <p className="text-xs font-extrabold tracking-wider text-amber-700">WHAT HAPPENS NEXT</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-amber-900">
+              {[
+                'Our team will verify your payment within a few hours.',
+                'Once approved, the amount will be credited to your recharge wallet.',
+                'You will receive an email notification on approval or rejection.',
+              ].map((s) => (
+                <li key={s} className="flex gap-2"><span className="shrink-0">•</span><span>{s}</span></li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button
+              onClick={() => showPage('transactions')}
+              className="rounded-md border border-slate-200 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+            >
+              View transactions
+            </button>
+            <button
+              onClick={resetForm}
+              className="rounded-md bg-gradient-to-r from-harvest-700 to-harvest-500 py-3.5 text-sm font-extrabold text-white shadow-soft hover:opacity-95 transition"
+            >
+              ＋ New request
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-5 text-white shadow-soft sm:p-7">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-harvest-900 via-harvest-700 to-harvest-500 p-5 text-white shadow-soft sm:p-7">
         <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/10" />
         <div className="absolute -bottom-14 right-16 h-32 w-32 rounded-full bg-lime-300/15" />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className='flex flex-col gap-0.5'>
             <p className="text-xs font-extrabold tracking-widest text-lime-200">RECHARGE WALLET</p>
             <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{t('recharge.title')}</h1>
-            <p className="mt-2 max-w-md text-sm text-white/75">
-              Send money to one of our payment numbers, then confirm it here. Approved deposits are credited to your recharge wallet.
-            </p>
           </div>
-          <div className="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">Minimum</p>
+          <div className="rounded-xl bg-white/20 px-4 py-3 backdrop-blur">
+            <p className="text-[11px] font-bold  tracking-wider text-lime-200">Minimum</p>
             <p className="text-xl font-extrabold">৳{MIN_DEPOSIT}</p>
           </div>
         </div>
@@ -143,7 +190,7 @@ export default function RechargePage({ showPage }) {
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-soft sm:p-7">
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-slate-100 bg-white p-5 shadow-soft sm:p-7">
           {/* Amount */}
           <section>
             <p className="text-sm font-extrabold text-slate-800">1 · Amount (BDT)</p>
@@ -157,7 +204,7 @@ export default function RechargePage({ showPage }) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder={`Enter amount (min ৳${MIN_DEPOSIT})`}
-              className="mt-2 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-4 text-lg font-extrabold text-slate-900 outline-none transition focus:border-harvest-500 focus:bg-white"
+              className="mt-2 w-full rounded-md border border-harvest-500 bg-slate-50 px-4 py-3 text-lg font-semibold text-slate-900 outline-none transition focus:border-harvest-500 focus:bg-white"
             />
             <div className="mt-3 flex flex-wrap gap-2">
               {AMOUNT_CHIPS.map((amt) => (
@@ -165,9 +212,8 @@ export default function RechargePage({ showPage }) {
                   key={amt}
                   type="button"
                   onClick={() => setAmount(String(amt))}
-                  className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
-                    amount === String(amt) ? 'border-harvest-700 bg-harvest-700 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-harvest-300'
-                  }`}
+                  className={`rounded-md border px-3.5 py-2 text-sm font-semibold transition ${amount === String(amt) ? 'border-harvest-700 bg-harvest-700 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-harvest-300'
+                    }`}
                 >
                   ৳{amt.toLocaleString()}
                 </button>
@@ -183,7 +229,7 @@ export default function RechargePage({ showPage }) {
             ) : paymentMethods.length === 0 ? (
               <p className="mt-2 rounded-2xl border p-4 text-sm text-slate-400">No payment methods available right now.</p>
             ) : (
-              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="mt-2 grid gap-2.5 grid-cols-3">
                 {paymentMethods.map((m) => {
                   const selected = method === m.code;
                   return (
@@ -192,19 +238,16 @@ export default function RechargePage({ showPage }) {
                       type="button"
                       onClick={() => setMethod(m.code)}
                       aria-pressed={selected}
-                      className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-3 text-center transition ${
-                        selected ? 'border-harvest-600 bg-harvest-50 shadow-soft' : 'border-slate-100 bg-white hover:border-harvest-200'
-                      }`}
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2.5 text-center transition ${selected ? 'border-harvest-600 bg-harvest-50 shadow-soft' : 'border-slate-100 bg-white hover:border-harvest-200'
+                        }`}
                     >
                       <div className="grid h-14 w-full place-items-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {m.image
-                          ? <img src={m.image} alt="" className="max-h-14 max-w-full object-contain" loading="lazy" />
-                          : <span className="grid h-12 w-12 place-items-center rounded-xl bg-harvest-100 text-xs font-extrabold text-harvest-700">{m.name?.slice(0, 2).toUpperCase()}</span>}
+                          ? <img src={m.image} alt="" className="max-h-14 rounded-md max-w-full object-contain" loading="lazy" />
+                          : <span className="grid h-12 w-12 place-items-center rounded-md bg-harvest-100 text-xs font-extrabold text-harvest-700">{m.name?.slice(0, 2).toUpperCase()}</span>}
                       </div>
                       <p className="text-sm font-extrabold leading-tight text-slate-800">{m.name}</p>
-                      <p className="text-[11px] text-slate-500">{m.accountType}</p>
-                      <span className="rounded-lg bg-harvest-700 px-2.5 py-1 font-mono text-[11px] font-extrabold tracking-widest text-white">{m.code?.toUpperCase()}</span>
                     </button>
                   );
                 })}
@@ -213,7 +256,11 @@ export default function RechargePage({ showPage }) {
 
             {selectedMethod && (
               <div className="mt-4 space-y-3 rounded-2xl bg-gradient-to-br from-harvest-50 to-white p-4 ring-1 ring-harvest-100">
-                <p className="text-sm font-extrabold text-harvest-800">Send ৳{amount || '—'} to {selectedMethod.name}</p>
+                <p className="text-sm font-extrabold text-harvest-800">
+                  {selectedMethod.accountType === 'Personal' && `Send Money ৳${amount || '—'} to ${selectedMethod.name}`}
+                  {selectedMethod.accountType === 'Merchant' && `Payment ৳${amount || '—'} to ${selectedMethod.name}`}
+                  {selectedMethod.accountType === 'Agent' && `Cash Out ৳${amount || '—'} to ${selectedMethod.name}`}
+                </p>
                 <div className="rounded-xl border border-harvest-100 bg-white p-3">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Payment number</p>
                   <div className="mt-1 flex items-center gap-2">
@@ -263,7 +310,7 @@ export default function RechargePage({ showPage }) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-2xl bg-gradient-to-r from-harvest-700 to-harvest-500 py-4 text-sm font-extrabold text-white shadow-soft transition hover:opacity-95 disabled:opacity-60"
+            className="w-full rounded-md bg-gradient-to-r from-harvest-700 to-harvest-500 py-4 text-sm font-extrabold text-white shadow-soft transition hover:opacity-95 disabled:opacity-60"
           >
             {submitting ? 'Submitting…' : 'Submit deposit request →'}
           </button>
@@ -274,7 +321,7 @@ export default function RechargePage({ showPage }) {
           {requestsLoading && <PageLoader label="Loading your requests…" className="py-8" />}
 
           {!requestsLoading && pending.length > 0 && (
-            <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-soft">
+            <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-soft">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2.5 w-2.5">
@@ -291,7 +338,7 @@ export default function RechargePage({ showPage }) {
             </div>
           )}
 
-          <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-soft">
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-soft">
             <div className="flex items-center justify-between">
               <h2 className="font-extrabold text-slate-900">Request history</h2>
               <span className="rounded-full bg-harvest-50 px-2.5 py-1 text-xs font-bold text-harvest-700">{history.length} total</span>
@@ -305,10 +352,9 @@ export default function RechargePage({ showPage }) {
             ) : (
               <ol className="relative mt-4 space-y-3 border-l-2 border-harvest-100 pl-5">
                 {history.slice(0, 10).map((r) => (
-                  <li key={r._id} className="relative rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                    <span className={`absolute -left-[27px] top-5 h-3 w-3 rounded-full ring-4 ring-white ${
-                      r.status === 'approved' ? 'bg-harvest-600' : r.status === 'rejected' ? 'bg-rose-500' : 'bg-slate-300'
-                    }`} />
+                  <li key={r._id} className="relative rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                    <span className={`absolute -left-[27px] top-5 h-3 w-3 rounded-full ring-4 ring-white ${r.status === 'approved' ? 'bg-harvest-600' : r.status === 'rejected' ? 'bg-rose-500' : 'bg-slate-300'
+                      }`} />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-base font-extrabold text-slate-900">{formatBDT(r.amount)}</p>

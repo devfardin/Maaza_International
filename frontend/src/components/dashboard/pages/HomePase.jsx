@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
 import ReferralsCard from '../ReferralsCard';
 import ReferralInfoSection from '../ReferralInfoSection';
@@ -239,6 +240,7 @@ export default function HomePase({ showPage }) {
   const next = () => goTo((current + 1) % SLIDES.length);
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
+  const router = useRouter();
   const { data: tasksData, isLoading: tasksLoading } = useGetTasksQuery();
   const tasks = tasksData?.data ?? [];
 
@@ -330,20 +332,13 @@ export default function HomePase({ showPage }) {
       <div>
         <div className="mb-3">
           <h2 className="text-xl font-extrabold text-white">Task Bonus</h2>
-          <p className="text-sm text-white/70 mt-0.5">Complete tasks and claim your rewards.</p>
         </div>
 
         {/* Loading skeleton */}
         {tasksLoading && (
           <div className="grid sm:grid-cols-2 gap-4">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white border rounded-2xl overflow-hidden animate-pulse">
-                <div className="h-32 bg-slate-100" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-slate-100 rounded w-3/4" />
-                  <div className="h-3 bg-slate-100 rounded w-full" />
-                </div>
-              </div>
+              <div key={i} className="h-52 bg-white border rounded-2xl animate-pulse" />
             ))}
           </div>
         )}
@@ -354,23 +349,69 @@ export default function HomePase({ showPage }) {
 
         <div className="grid sm:grid-cols-2 gap-4">
           {tasks.map((task, idx) => (
-            <article key={task._id} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-              <div className={`h-32 bg-gradient-to-br ${GRADIENTS[idx % GRADIENTS.length]} grid place-items-center text-5xl`}>
-                {task.icon || '✧'}
-              </div>
-              <div className="p-4">
-                <div className="flex justify-between gap-2 items-start">
-                  <h3 className="font-extrabold text-slate-800 leading-snug">{task.title}</h3>
-                  <b className="text-harvest-700 whitespace-nowrap shrink-0">৳{task.rewardAmount}</b>
+            <article
+              key={task._id}
+              className="relative flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              {/* ── Top: icon left + info right ── */}
+              <div className="flex gap-4 p-2.5">
+
+                {/* Icon box */}
+                <div className={`flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${GRADIENTS[idx % GRADIENTS.length]} text-5xl`}>
+                  <img src={task?.image} alt={task.title} className="h-full w-full object-fill" />
                 </div>
-                <p className="text-sm text-slate-500 leading-5 mt-1.5 line-clamp-2">{task.description}</p>
-                <button
-                  onClick={() => showPage?.('tasks')}
-                  className="mt-3 w-full rounded-xl border border-harvest-200 py-2.5 text-sm font-bold text-harvest-700 transition hover:bg-harvest-50 active:scale-95"
-                >
-                  View task details →
-                </button>
+
+                {/* Info */}
+                <div className="flex flex-1 flex-col justify-between min-w-0">
+                  <div>
+                    <h3 className="text-base font-extrabold leading-snug text-slate-900 line-clamp-2">
+                      {task.title}
+                    </h3>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
+                      {task.description}
+                    </p>
+                  </div>
+
+                  {/* Reward + button */}
+                  <div className="mt-1 flex items-end justify-between gap-2">
+                    <div>
+                      <p className="text-base font-semibold text-slate-700">
+                        Reward: <span className="text-xl font-extrabold text-harvest-700">৳{task.rewardAmount}</span>
+                      </p>
+                      {task.taskType && (
+                        <p className="text-xs font-normal text-slate-500 mt-0.5">
+                          Type: <span className="text-sm font-semibold text-harvest-700 capitalize">{task.taskType}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => router.push(`/dashboard/tasks/${task._id}`)}
+                      className="shrink-0 rounded-md bg-gradient-to-r from-harvest-700 to-harvest-500 px-4 py-2 text-base font-medium text-white shadow-soft transition duration-200 active:scale-95"
+                      style={{ boxShadow: '0 0 0 2px #a3e635' }}
+                    >
+                      Do Task
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {/* ── Footer stats strip ── */}
+              <div className="grid grid-cols-3 divide-x divide-white/20 bg-gradient-to-r from-harvest-900 via-harvest-700 to-lime-600 py-3">
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium text-white">Reward</p>
+                  <p className="mt-1 text-md font-medium text-white">৳{task.rewardAmount}</p>
+                </div>
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium text-white">Type</p>
+                  <p className="mt-1 text-md font-medium text-white capitalize">{task.rewardType || '—'}</p>
+                </div>
+                <div className="flex flex-col items-center px-2">
+                  <p className="text-sm font-medium text-white">Status</p>
+                  <p className="mt-1 text-md font-medium text-white capitalize">{task.status || 'Active'}</p>
+                </div>
+              </div>
+
             </article>
           ))}
         </div>

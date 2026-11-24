@@ -88,7 +88,7 @@ function LoginForm() {
       const role = result.data?.role;
       setAuthCookies(result.data?.accessToken, role);
 
-      const defaultRedirect = isAdminRole(role) ? '/admin' : '/dashboard';
+      const defaultRedirect = isAdminRole(role) ? '/admin' : '/dashboard/home';
       const requested = safeRedirect(searchParams.get('redirect'), defaultRedirect);
       // never send a member into /admin (or an admin into /dashboard) via ?redirect=
       const redirect = isAdminRole(role) === requested.startsWith('/admin') || requested === '/' ? requested : defaultRedirect;

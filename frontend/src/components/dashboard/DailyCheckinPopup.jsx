@@ -19,7 +19,10 @@ import { notify, getErrorMessage } from '@/lib/toast';
 const todayKey = () => new Date(Date.now() + 6 * 3600000).toISOString().slice(0, 10);
 const bdt = (amount) => `৳ ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
-export default function DailyCheckinPopup() {
+// Auto mode (default): opens once per day while today's bonus is unclaimed.
+// Manual mode (`manual`): always opens when rendered (e.g. from the Services
+// "Daily Check-in" item); closing calls `onClose` and does not affect the daily auto-open.
+export default function DailyCheckinPopup({ manual = false, onClose }) {
   const userId = useSelector((s) => s.auth.user?._id);
   const { data: statusData } = useGetDailyCheckinStatusQuery(undefined, { skip: !userId });
   const { data: levelsData } = useGetVipLevelsQuery(undefined, { skip: !userId });
@@ -29,10 +32,12 @@ export default function DailyCheckinPopup() {
 
   const status = statusData?.data;
   const storageKey = userId ? `checkinPopup:${userId}:${todayKey()}` : null;
+  const claimedToday = !!status?.checkedInToday;
 
   // Open once per day, only while today's bonus is still unclaimed
   const seenToday = typeof window !== 'undefined' && storageKey && localStorage.getItem(storageKey) === 'seen';
-  const open = !!storageKey && !!status && !status.checkedInToday && !seenToday && closedKey !== storageKey;
+  const autoOpen = !!storageKey && !!status && !claimedToday && !seenToday && closedKey !== storageKey;
+  const open = manual ? !!userId : autoOpen;
 
   if (!open) return null;
 
@@ -47,6 +52,10 @@ export default function DailyCheckinPopup() {
   ];
 
   function close() {
+    if (manual) {
+      onClose?.();
+      return;
+    }
     if (storageKey) localStorage.setItem(storageKey, 'seen');
     setClosedKey(storageKey);
   }
@@ -78,7 +87,10 @@ export default function DailyCheckinPopup() {
           <p className="text-xs font-extrabold tracking-widest text-lime-200">DAILY CHECK-IN</p>
           <h2 className="mt-1 text-xl font-extrabold">Your reward is waiting</h2>
           <p className="mt-1 text-sm text-white/80">
-            You are <b className="text-white">VIP {currentVip}</b>. Check in today to collect your bonus.
+            You are <b className="text-white">VIP {currentVip}</b>.{' '}
+            {claimedToday
+              ? "You have already collected today's bonus. Come back tomorrow!"
+              : 'Check in today to collect your bonus.'}
           </p>
         </div>
 
@@ -122,10 +134,10 @@ export default function DailyCheckinPopup() {
           <button
             type="button"
             onClick={handleCheckin}
-            disabled={saving}
-            className="mt-5 w-full rounded-md bg-lime-300 py-3.5 text-sm font-extrabold text-harvest-900 shadow-soft transition hover:bg-lime-200 disabled:opacity-60"
+            disabled={saving || claimedToday}
+            className="mt-5 w-full rounded-md bg-lime-300 py-3.5 text-sm font-extrabold text-harvest-900 shadow-soft transition hover:bg-lime-200 disabled:opacity-60 disabled:hover:bg-lime-300"
           >
-            {saving ? 'Checking in…' : 'Daily checking'}
+            {saving ? 'Checking in…' : claimedToday ? 'Checked in today' : 'Daily checking'}
           </button>
         </div>
       </div>

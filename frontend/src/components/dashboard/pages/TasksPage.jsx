@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
 
 const GRADIENTS = [
@@ -9,6 +10,7 @@ const GRADIENTS = [
 ];
 
 export default function TasksPage({ openTask }) {
+  const router = useRouter();
   const { data: tasksData, isLoading } = useGetTasksQuery();
   const tasks = tasksData?.data || [];
 
@@ -53,7 +55,7 @@ export default function TasksPage({ openTask }) {
                 </div>
                 <p className="text-sm text-slate-500 leading-6 mt-2 line-clamp-3">{task.description}</p>
                 <button
-                  onClick={() => openTask(task)}
+                  onClick={() => router.push(`/dashboard/tasks/${task._id}`)}
                   className="mt-4 w-full border rounded-xl py-3 text-sm font-bold"
                 >
                   View task details →
