@@ -49,9 +49,9 @@ export default function MobileNav({ activePage, showPage }) {
   const { t } = useI18n();
 
   return (
-    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-3 pb-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pointer-events-none">
+    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1 pb-1 pb-[calc(0.15rem+env(safe-area-inset-bottom))] pointer-events-none">
       <nav
-        className="pointer-events-auto flex items-center justify-around rounded-2xl px-2 py-2"
+        className="pointer-events-auto flex items-center justify-around rounded-2xl px-1 py-1"
         style={{
           background: 'rgba(255,255,255,0.98)',
           boxShadow: '0 -2px 8px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.18), 0 2px 0px rgba(163,230,53,0.3) inset',
@@ -80,8 +80,8 @@ export default function MobileNav({ activePage, showPage }) {
                   <span style={{ color: active ? '#103f2c' : '#a3e635' }}>{icon}</span>
                 </button>
                 <span
-                  className="mt-1 text-[10px] font-bold"
-                  style={{ color: active ? '#176b43' : '#94a3b8' }}
+                  className="mt-1 text-xs font-bold"
+                  style={{ color: active ? '#176b43' : '#494a4a' }}
                 >
                   {t(key)}
                 </span>
@@ -99,14 +99,14 @@ export default function MobileNav({ activePage, showPage }) {
               {/* icon wrapper with active bg */}
               <span
                 className="flex items-center justify-center w-11 h-9 rounded-xl transition-all duration-200"
-                style={{
-                  background: active ? 'rgba(23,107,67,0.1)' : 'transparent',
-                }}
+                // style={{
+                //   background: active ? 'rgba(23,107,67,0.1)' : 'transparent',
+                // }}
               >
                 <span
                   className="transition-all duration-200"
                   style={{
-                    color: active ? '#176b43' : '#94a3b8',
+                    color: active ? '#176b43' : '#494a4a',
                     transform: active ? 'scale(1.1)' : 'scale(1)',
                     display: 'block',
                   }}
@@ -116,22 +116,13 @@ export default function MobileNav({ activePage, showPage }) {
               </span>
 
               <span
-                className="text-[10px] font-bold leading-none transition-all duration-200"
-                style={{ color: active ? '#176b43' : '#94a3b8' }}
+                className="text-xs font-bold leading-none transition-all duration-200"
+                style={{ color: active ? '#176b43' : '#494a4a' }}
               >
                 {t(key)}
               </span>
 
               {/* active dot */}
-              <span
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width: active ? 16 : 4,
-                  height: 3,
-                  background: active ? '#176b43' : 'transparent',
-                  borderRadius: 99,
-                }}
-              />
             </button>
           );
         })}
