@@ -13,6 +13,7 @@ import {
 } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
 import CountdownTimer from '@/components/shared/CountdownTimer';
+import PageTitle from '../PageTitle';
 
 const bdt = (amount, digits = 2) =>
   `৳${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: digits })}`;
@@ -57,10 +58,9 @@ export default function PurchasedPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-center text-white">
-          My products</h1>
-      </div>
+      
+      {/* ── Header ── */}
+      <PageTitle titleKey="products.title"/>
 
       {/* Income summary */}
       <div className="grid grid-cols-2 sm:gap-4 gap-2.5">

@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/lib/toast';
 import { useGetProductsQuery, useGetCategoriesQuery, usePurchaseProductMutation } from '@/redux/features/apiSlice';
 import ProductDetailModal from '@/components/dashboard/ProductDetailModal';
 import { claimScheduleLabel, isNewProduct } from '@/lib/product';
+import PageTitle from '../PageTitle';
 
 const bdt = (amount, digits = 0) =>
   `৳${Number(amount || 0).toLocaleString('en-US', { maximumFractionDigits: digits })}`;
@@ -74,9 +75,7 @@ export default function ProductsPage({ showPage, showToast }) {
     <div className="space-y-5">
 
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-2xl font-semibold text-center text-white">Browse Products</h1>
-      </div>
+      <PageTitle titleKey="products.browse"/>
 
       {/* ── Category filter tabs ── */}
       <div className="flex gap-2 flex-wrap pb-1">

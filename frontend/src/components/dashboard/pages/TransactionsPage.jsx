@@ -8,6 +8,7 @@ import { useGetUserTransactionsQuery, useGetMyWalletsQuery } from '@/redux/featu
 import { formatBDT, formatDateTime } from '@/components/shared/money';
 import PageLoader from '@/components/shared/PageLoader';
 import { useI18n } from '@/lib/i18n';
+import PageTitle from '../PageTitle';
 
 const CREDIT_TYPES = ['deposit', 'daily_checkin', 'salary', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus'];
 
@@ -47,12 +48,9 @@ export default function TransactionsPage() {
     .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-center text-white">
-          {t('transactions.title')}
-        </h1>
-      </div>
+    <div className='space-y-5'>
+      
+      <PageTitle titleKey="transactions.title"/>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
         {[

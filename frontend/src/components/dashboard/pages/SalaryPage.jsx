@@ -9,6 +9,7 @@ import CopyButton from '@/components/shared/CopyButton';
 import PageLoader from '@/components/shared/PageLoader';
 import { notify, getErrorMessage } from '@/lib/toast';
 import { vipLabel } from '@/lib/vip';
+import PageTitle from '../PageTitle';
 
 const fmt = (amount) => `৳ ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
@@ -83,10 +84,9 @@ export default function SalaryPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-center text-white">Weekly Salary</h1>
-        
-      </div>
+
+      {/* Header */}
+      <PageTitle titleKey="nav.salary"/>
 
       {/* Status + countdown */}
       <div className={`rounded-xl border p-5 sm:p-6 ${tone}`}>

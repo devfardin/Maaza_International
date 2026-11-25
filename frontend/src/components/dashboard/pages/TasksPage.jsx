@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
+import PageTitle from '../PageTitle';
 
 const GRADIENTS = [
   'from-violet-100 to-purple-200',
@@ -15,11 +16,9 @@ export default function TasksPage({ openTask }) {
   const tasks = tasksData?.data || [];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Task bonus</h1>
-        <p className="text-sm text-slate-500 mt-1">Explore tasks, rewards and claim instructions.</p>
-      </div>
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <PageTitle titleKey="nav.tasks"/>
 
       {/* Loading skeleton */}
       {isLoading && (
