@@ -43,7 +43,7 @@ const createCommunityPost = async (userId: string, role: string, payload: Partia
 };
 
 // Members see approved posts in the feed; their own posts in any state are on /mine
-const populateAuthor = (q: any) => q.populate("userId", "fullName avatar membershipLevel").populate("approvedBy", "fullName");
+const populateAuthor = (q: any) => q.populate("userId", "fullName avatar membershipLevel role").populate("approvedBy", "fullName");
 
 const getAllCommunityPosts = async () => {
     return populateAuthor(CommunityPostModel.find({ isDeleted: false, status: "approved" })).sort({ createdAt: -1 });

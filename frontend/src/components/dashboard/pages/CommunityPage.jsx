@@ -15,6 +15,7 @@ import {
 } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
 import { vipLevelOf, vipLabel, COMMUNITY_POST_MIN_VIP } from '@/lib/vip';
+import PageTitle from '../PageTitle';
 
 const initialsOf = (name) =>
   name ? name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'M';
@@ -111,14 +112,16 @@ export default function CommunityPage() {
       notify.error(getErrorMessage(err, 'Could not update your like.'));
     }
   }
+  console.log(user);
+
 
   const composer = (
     <div className="bg-white border rounded-2xl p-5">
       {canPost ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-harvest-100 text-harvest-700 grid place-items-center font-bold">
-              {initialsOf(user?.fullName)}
+            <div className="w-12 h-12 rounded-full bg-harvest-100 text-harvest-700 grid place-items-center font-bold">
+              {user?.avatar ? <img src={user?.avatar} className='rounded-full' /> : initialsOf(user?.fullName)}
             </div>
             <div>
               <b className="text-sm">{user?.fullName || 'Member'}</b>
@@ -186,11 +189,7 @@ export default function CommunityPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">COMMUNITY</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Community posts</h1>
-        <p className="text-sm text-slate-500 mt-1">See what every member is sharing.</p>
-      </div>
+      <PageTitle titleKey="Community posts" />
 
       {/* Super admin: posts from members waiting for approval */}
       {isSuper && (
@@ -208,7 +207,7 @@ export default function CommunityPage() {
                   <p className="text-xs font-bold text-slate-500">{p.userId?.fullName || 'Member'} · {new Date(p.createdAt).toLocaleString()}</p>
                   <p className="mt-1 font-extrabold">{p.title}</p>
                   <p className="mt-1 whitespace-pre-line text-sm text-slate-600">{p.description}</p>
-                  {p.media?.[0]?.url && <img src={p.media[0].url} alt="" className="mt-2 max-h-48 w-full rounded-lg object-cover" />}
+                  {p.media?.[0]?.url && <img src={p.media[0].url} alt="" className="mt-2 h-full w-full rounded-lg object-cover" />}
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button type="button" disabled={deciding} onClick={() => decide(p._id, 'approved')}
                       className="rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">Approve &amp; publish</button>
@@ -249,7 +248,7 @@ export default function CommunityPage() {
         )}
 
         {/* Feed — every member's posts */}
-        <div className="bg-white border rounded-2xl p-5">
+        <div className="bg-white border-b last:border-b-0 rounded-2xl p-5">
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold">All posts</h2>
             <span className="text-xs font-bold text-slate-400">{posts.length} total</span>
@@ -260,20 +259,36 @@ export default function CommunityPage() {
             <p className="py-6 text-center text-sm text-slate-400">No posts yet.</p>
           )}
 
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-2">
             {posts.map((post) => {
               const author = post.userId;
               const mine = String(author?._id || author) === String(userId);
               const liked = (post.likes || []).some((id) => String(id) === String(userId));
               return (
-                <article key={post._id} className="rounded-2xl border p-4">
+                <article key={post._id} className="border-b last:border-b-0 p-3">
                   <div className="flex gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-bold text-sky-700">
-                      {initialsOf(author?.fullName)}
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-bold text-sky-700">{
+                      author?.avatar ? <img src={author?.avatar} className='rounded-full' /> : initialsOf(author?.fullName)
+                    }
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <b className="text-sm">{author?.fullName || 'Member'}</b>
+                        <b className="text-sm">{author?.fullName}</b>
+                        {author?.role === 'user' || !author?.role ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-600">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+                              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                            </svg>
+                            Member
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-harvest-700 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+                              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z" />
+                            </svg>
+                            Admin
+                          </span>
+                        )}
                         {author?.membershipLevel > 1 && (
                           <span className="rounded-md bg-harvest-50 px-1.5 py-0.5 text-[10px] font-bold text-harvest-700">
                             {vipLabel(vipLevelOf(author.membershipLevel))}
@@ -294,10 +309,11 @@ export default function CommunityPage() {
                   {post.title && <h3 className="mt-3 font-extrabold">{post.title}</h3>}
                   <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-600">{post.description}</p>
                   {post.media?.[0]?.url && (
-                    <img src={post.media[0].url} alt={post.title || 'Post image'} className="mt-3 max-h-80 w-full rounded-xl object-cover" />
+                    <img src={post.media[0].url} alt={post.title || 'Post image'} className="mt-3 h-full w-full rounded-md object-cover" />
                   )}
 
-                  <div className="mt-3 flex items-center gap-4 text-xs">
+                  <div className="mt-3 flex justify-between items-center gap-4 text-sm">
+                    <span className="text-slate-600 text-sm">{new Date(post.createdAt).toLocaleString('en-BD', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                     <button
                       type="button"
                       onClick={() => handleLike(post._id)}

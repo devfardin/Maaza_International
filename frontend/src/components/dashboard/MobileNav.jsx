@@ -1,5 +1,4 @@
 'use client';
-
 import { useI18n } from '@/lib/i18n';
 
 const mobileNavItems = [
@@ -67,7 +66,7 @@ export default function MobileNav({ activePage, showPage }) {
               <div key={page} className="flex flex-col items-center -mt-8">
                 <button
                   onClick={() => showPage(page)}
-                  className="flex items-center justify-center w-14 h-14 rounded-2xl transition-all duration-200 active:scale-90"
+                  className="flex items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 active:scale-90"
                   style={{
                     background: active
                       ? 'linear-gradient(135deg, #a3e635 0%, #176b43 100%)'
@@ -98,11 +97,7 @@ export default function MobileNav({ activePage, showPage }) {
             >
               {/* icon wrapper with active bg */}
               <span
-                className="flex items-center justify-center w-11 h-9 rounded-xl transition-all duration-200"
-                // style={{
-                //   background: active ? 'rgba(23,107,67,0.1)' : 'transparent',
-                // }}
-              >
+                className="flex items-center justify-center w-11 h-9 rounded-xl transition-all duration-200">
                 <span
                   className="transition-all duration-200"
                   style={{
@@ -121,8 +116,6 @@ export default function MobileNav({ activePage, showPage }) {
               >
                 {t(key)}
               </span>
-
-              {/* active dot */}
             </button>
           );
         })}

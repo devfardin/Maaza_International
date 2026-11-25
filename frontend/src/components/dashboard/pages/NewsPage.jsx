@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { useGetNewsQuery } from '@/redux/features/apiSlice';
 import { NOTICE_STYLE, formatNewsDate } from '@/lib/news';
+import PageTitle from '../PageTitle';
 
 export default function NewsPage() {
   const { data, isLoading, isError } = useGetNewsQuery(undefined, { pollingInterval: 120000 });
@@ -11,12 +12,8 @@ export default function NewsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">NEWS &amp; UPDATES</p>
-        <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold">News &amp; announcements</h1>
-        <p className="mt-1 text-sm text-slate-500">Important notices, security tips and product updates.</p>
-      </div>
-
+      <PageTitle titleKey="NEWS &amp; UPDATES"/>
+      
       {isLoading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl border bg-white" />)}
