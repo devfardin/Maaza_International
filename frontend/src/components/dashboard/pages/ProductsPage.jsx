@@ -173,6 +173,11 @@ export default function ProductsPage({ showPage, showToast }) {
                   </div>
                 </div>
               </div>
+              <div className='bg-black py-1 px-3'>
+                <p className="text-base text-harvest-500 text-center font-medium">
+                  Stock Quantity: {product?.quantity}
+                </p>
+              </div>
 
               {/* ── Product footer: stats strip ── */}
               <div className="grid grid-cols-3 justify-between align-middle items-center divide-x divide-white/20 bg-gradient-to-r from-harvest-900 via-harvest-700 to-lime-600 py-3">

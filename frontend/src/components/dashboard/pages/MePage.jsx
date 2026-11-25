@@ -215,14 +215,12 @@ export default function MePage({ showPage }) {
                 ? <div className="relative mt-2 h-6 w-20 animate-pulse rounded-lg bg-white/30" />
                 : <p className="relative mt-1.5 text-lg font-extrabold text-white">{value}</p>
               }
-
-
             </div>
           ))}
         </div>
 
         {/* ── SECTION 4 · Tabbed Services ─────────────────────────────────── */}
-        <div className="rounded-xl bg-white overflow-hidden shadow-sm border border-slate-100">
+        <div className="border-anim rounded-xl bg-white overflow-hidden shadow-sm border border-slate-100">
 
           {/* Tab bar */}
           <div className="flex border-b border-slate-100">
@@ -271,7 +269,7 @@ export default function MePage({ showPage }) {
 
         {/* ── SECTION 5 · Account Links ────────────────────────────────────── */}
         {/* Profile, social channels, and logout */}
-        <div className="rounded-xl bg-white border border-slate-100 overflow-hidden shadow-sm">
+        <div className="border-anim rounded-xl bg-white border border-slate-100 overflow-hidden shadow-sm">
 
           {/* User profile header */}
           <button
