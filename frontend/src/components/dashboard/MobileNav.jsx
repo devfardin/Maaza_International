@@ -49,9 +49,9 @@ export default function MobileNav({ activePage, showPage }) {
   const { t } = useI18n();
 
   return (
-    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1 pb-1 pb-[calc(0.15rem+env(safe-area-inset-bottom))] pointer-events-none">
+    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-1.5 pb-1.5 pb-[calc(0.15rem+env(safe-area-inset-bottom))] pointer-events-none">
       <nav
-        className="pointer-events-auto flex items-center justify-around rounded-2xl px-1 py-1"
+        className="pointer-events-auto flex items-center justify-around rounded-xl px-1 py-1"
         style={{
           background: 'rgba(255,255,255,0.98)',
           boxShadow: '0 -2px 8px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.18), 0 2px 0px rgba(163,230,53,0.3) inset',
