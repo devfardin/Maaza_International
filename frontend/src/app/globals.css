@@ -24,7 +24,7 @@ button, input, select, textarea { font: inherit; }
   0%   { transform: translateX(0%); }
   100% { transform: translateX(-100%); }
 }
-.animate-marquee { display: inline-block; animation: marquee 50s linear infinite; }
+.animate-marquee { display: inline-block; animation: marquee 30s linear infinite; }
 
 /* Animated border pulse for Join Now button */
 @keyframes borderPulse {
