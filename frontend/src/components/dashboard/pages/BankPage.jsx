@@ -9,6 +9,7 @@ import {
 } from '@/redux/features/apiSlice';
 import { notify, getErrorMessage } from '@/lib/toast';
 import PageLoader from '@/components/shared/PageLoader';
+import PageTitle from '../PageTitle';
 
 const NUMBER_RE = /^01[3-9]\d{8}$/;
 const METHODS = [
@@ -22,10 +23,7 @@ export default function BankPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-
-        <h1 className="text-2xl font-semibold text-center text-white">Payout accounts</h1>
-      </div>
+     <PageTitle titleKey="Payout accounts"/>
 
       <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
         <b>Please bind the correct receiving account.</b> The number must start with <b>01</b> and be <b>11 digits</b> long.

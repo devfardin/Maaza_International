@@ -35,7 +35,7 @@ export const ALL_TAG_TYPES = [
   'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
   'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
   'Withdrawals', 'Notifications', 'AdminActivity', 'VipLevels', 'DailyCheckin',
-  'News', 'AdminNews', 'Salary', 'Locations',
+  'News', 'AdminNews', 'Salary', 'Locations', 'Popups',
 ];
 
 export const apiSlice = createApi({
@@ -111,7 +111,14 @@ export const apiSlice = createApi({
     // Body: { fullName?, email?, phone? }  — referralCode, membership and status are NOT editable
     updateMyProfile: builder.mutation({
       query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
-      invalidatesTags: ['User'],
+      // a home-district change also changes the admin member-location map
+      invalidatesTags: ['User', 'Locations'],
+    }),
+
+    // POST /locations/me  (member) — browser position { lat, lng } → nearest district, saved at login
+    saveMyLocation: builder.mutation({
+      query: ({ lat, lng }) => ({ url: '/locations/me', method: 'POST', body: { lat, lng } }),
+      invalidatesTags: ['User', 'Locations'],
     }),
 
     // ── NEWS & UPDATES ────────────────────────────────────────────────────────
@@ -159,6 +166,37 @@ export const apiSlice = createApi({
     deleteNews: builder.mutation({
       query: (id) => ({ url: `/news/${id}`, method: 'DELETE' }),
       invalidatesTags: ['AdminNews', 'News'],
+    }),
+
+    // ── POPUPS ────────────────────────────────────────────────────────────────
+    // GET /popups/active?page=home  (members) → active popups for one dashboard page
+    getActivePopups: builder.query({
+      query: (page) => `/popups/active?page=${encodeURIComponent(page)}`,
+      providesTags: ['Popups'],
+    }),
+
+    // GET /popups/admin/all  (super admin)
+    getAdminPopups: builder.query({
+      query: () => '/popups/admin/all',
+      providesTags: ['Popups'],
+    }),
+
+    // POST /popups/create-popup  (super admin) — JSON body
+    createPopup: builder.mutation({
+      query: (body) => ({ url: '/popups/create-popup', method: 'POST', body }),
+      invalidatesTags: ['Popups'],
+    }),
+
+    // PUT /popups/:id  (super admin) — JSON body
+    updatePopup: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/popups/${id}`, method: 'PUT', body }),
+      invalidatesTags: ['Popups'],
+    }),
+
+    // DELETE /popups/:id  (super admin) — soft delete
+    deletePopup: builder.mutation({
+      query: (id) => ({ url: `/popups/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Popups'],
     }),
 
     // ── CATEGORIES ────────────────────────────────────────────────────────────
@@ -742,6 +780,12 @@ export const {
   useCreateNewsMutation,
   useUpdateNewsMutation,
   useDeleteNewsMutation,
+  // Popups
+  useGetActivePopupsQuery,
+  useGetAdminPopupsQuery,
+  useCreatePopupMutation,
+  useUpdatePopupMutation,
+  useDeletePopupMutation,
   useGetMyCommunityPostsQuery,
   useGetPendingCommunityPostsQuery,
   useDecideCommunityPostMutation,
@@ -812,6 +856,7 @@ export const {
   useGetSalaryStatusQuery,
   useClaimSalaryMutation,
   useGetDistrictsQuery,
+  useSaveMyLocationMutation,
   useGetLocationSummaryQuery,
   // Payment accounts
   useCreatePaymentAccountMutation,

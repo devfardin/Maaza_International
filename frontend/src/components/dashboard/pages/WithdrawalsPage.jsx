@@ -6,6 +6,7 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import PageLoader from '@/components/shared/PageLoader';
 import CopyButton from '@/components/shared/CopyButton';
 import { useI18n } from '@/lib/i18n';
+import PageTitle from '../PageTitle';
 
 export default function WithdrawalsPage() {
   const { t } = useI18n();
@@ -13,11 +14,8 @@ export default function WithdrawalsPage() {
   const rows = data?.data ?? [];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">{t('nav.withdrawals')}</h1>
-        <p className="text-sm text-slate-500 mt-1">Every payout request you have made and what happened to it.</p>
-      </div>
+    <div className="space-y-5">
+      <PageTitle titleKey="Withdrawals" />
 
       {isLoading ? (
         <PageLoader label="Loading withdrawals…" />

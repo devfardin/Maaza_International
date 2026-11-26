@@ -14,7 +14,7 @@ import { NextResponse } from 'next/server';
 
 const authRoutes = ['/login', '/registration', '/forgot-password'];
 
-const homeFor = (role) => (role === 'admin' || role === 'super_admin' ? '/admin' : '/dashboard');
+const homeFor = (role) => (role === 'admin' || role === 'super_admin' ? '/admin' : '/dashboard/home');
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;

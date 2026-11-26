@@ -1,14 +1,6 @@
-'use client';
-import { useRouter } from 'next/navigation';
-import OverviewPage from '@/components/dashboard/pages/OverviewPage';
+// /dashboard has no page of its own: members land on the Home page.
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  const router = useRouter();
-
-  // showPage converts a page name to a URL and navigates
-  function showPage(page) {
-    router.push(page === 'overview' ? '/dashboard' : `/dashboard/${page}`);
-  }
-
-  return <OverviewPage showPage={showPage} />;
+  redirect('/dashboard/home');
 }

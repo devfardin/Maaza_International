@@ -18,6 +18,8 @@ import Sidebar                             from '@/components/dashboard/Sidebar'
 import Header                              from '@/components/dashboard/Header';
 import MobileNav                           from '@/components/dashboard/MobileNav';
 import Modal                               from '@/components/dashboard/Modal';
+import PagePopup                           from '@/components/dashboard/PagePopup';
+import AutoLocation                        from '@/components/dashboard/AutoLocation';
 
 
 // ── Inner layout — must be inside DashboardProvider ───────────────────────────
@@ -121,6 +123,12 @@ function DashboardInner({ children }) {
 
       {/* Mobile bottom navigation */}
       <MobileNav activePage={segment} showPage={showPage} />
+
+      {/* Automatic location: saved each time the member's dashboard opens (after login) */}
+      <AutoLocation />
+
+      {/* Super admin popups for the page the member is on */}
+      <PagePopup page={segment} />
 
       {/* Shared modal — opened via DashboardContext.openModal() */}
       <Modal open={modal.open} tag={modal.tag} title={modal.title} onClose={closeModal}>

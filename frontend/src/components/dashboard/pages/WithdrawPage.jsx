@@ -13,6 +13,7 @@ import { notify, getErrorMessage } from '@/lib/toast';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { floorMoney, roundMoney } from '@/lib/money';
 import { formatBDT, formatDateTime } from '@/components/shared/money';
+import PageTitle from '../PageTitle';
 
 const MIN_WITHDRAWAL = 120;
 const FEE_PERCENT = 9.5;
@@ -75,11 +76,7 @@ export default function WithdrawPage({ showPage }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-xs tracking-widest font-extrabold text-harvest-700">WITHDRAW</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Withdraw your balance</h1>
-        <p className="text-sm text-slate-500 mt-1">Send money from your balance wallet to your bKash or Nagad.</p>
-      </div>
+      <PageTitle titleKey="Withdraw" />
 
       {/* Important notices */}
       <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
@@ -132,10 +129,10 @@ export default function WithdrawPage({ showPage }) {
 
           <div>
             <div className="flex justify-between">
-               <p className="block text-sm font-bold mb-2">Payout account </p>
+              <p className="block text-sm font-bold mb-2">Payout account </p>
               <button type="button" onClick={() => showPage?.('bank')} className="block text-xs text-harvest-500 font-medium"> Bank Details </button>
             </div>
-           
+
             {accountsLoading ? (
               <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
             ) : accounts.length === 0 ? (

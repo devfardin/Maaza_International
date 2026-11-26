@@ -5,7 +5,6 @@ import {
   useChangePasswordMutation,
   useGetMeQuery,
   useUpdateMyProfileMutation,
-  useGetDistrictsQuery,
   useUploadMyAvatarMutation,
 } from '@/redux/features/apiSlice';
 import { setUser } from '@/redux/features/authSlice';
@@ -32,8 +31,7 @@ export default function ProfilePage({ showPage }) {
   const [updateProfile, { isLoading: saving }] = useUpdateMyProfileMutation();
 
   const [editing, setEditing] = useState(false);
-  const { data: districtsData } = useGetDistrictsQuery();
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '', district: '' });
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '' });
 
   const [oldPw, setOldPw]   = useState('');
   const [newPw, setNewPw]   = useState('');
@@ -42,14 +40,14 @@ export default function ProfilePage({ showPage }) {
   // Saved values shown while not editing; the draft form is used while editing
   const shown = editing
     ? form
-    : { fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '', district: user?.district || '' };
+    : { fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '' };
 
   const initials = user?.fullName
     ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : '??';
 
   function startEdit() {
-    setForm({ fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '', district: user?.district || '' });
+    setForm({ fullName: user?.fullName || '', email: user?.email || '', phone: user?.phone || '' });
     setEditing(true);
   }
 
@@ -72,7 +70,6 @@ export default function ProfilePage({ showPage }) {
     if (fullName !== user.fullName) body.fullName = fullName;
     if (email !== user.email) body.email = email;
     if (phone !== user.phone) body.phone = phone;
-    if (form.district && form.district !== (user.district || '')) body.district = form.district;
 
     if (Object.keys(body).length === 0) {
       setEditing(false);
@@ -193,23 +190,8 @@ export default function ProfilePage({ showPage }) {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </Field>
 
-              <Field label="Home district" htmlFor="pf-district">
-                <select id="pf-district" className={inputCls} disabled={!editing} value={shown.district}
-                  onChange={(e) => setForm({ ...form, district: e.target.value })}>
-                  <option value="">Not set</option>
-                  {Object.entries(
-                    (districtsData?.data || []).reduce((groups, d) => {
-                      (groups[d.division] ||= []).push(d.name);
-                      return groups;
-                    }, {})
-                  ).map(([division, names]) => (
-                    <optgroup key={division} label={division}>
-                      {names.map((name) => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+              <Field label="🔒 Home district (detected automatically)">
+                <div className="border rounded-xl px-3.5 py-3 text-sm bg-slate-50 text-slate-700">{user?.district || 'Not detected yet'}</div>
               </Field>
 
               {/* Locked fields */}

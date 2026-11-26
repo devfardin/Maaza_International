@@ -24,6 +24,7 @@ import { NewsRoutes } from '../modules/news/news.route';
 import { SalaryRoutes } from '../modules/salary/salary.route';
 import { LocationRoutes } from '../modules/locations/location.route';
 import { MediaRoutes } from '../modules/media/media.route';
+import { PopupRoutes } from '../modules/popups/popup.route';
 
 const router = Router();
 
@@ -57,6 +58,7 @@ const moduleRoutes = [
   { path: '/salary', route: SalaryRoutes },                     // Weekly VIP salary: Monday claim window
   { path: '/locations', route: LocationRoutes },                // Member districts (profile) and admin location map
   { path: '/media', route: MediaRoutes },                       // Media Library: upload, browse, permanent delete (super admin)
+  { path: '/popups', route: PopupRoutes },                      // Super admin: popups shown on member dashboard pages
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

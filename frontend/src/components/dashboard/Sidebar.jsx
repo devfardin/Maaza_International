@@ -8,7 +8,6 @@ import { vipLabel, vipLevelOf } from '@/lib/vip';
 import Logo from '../shared/Logo';
 
 const workspaceNav = [
-  { page: 'overview',  icon: '⌂', key: 'nav.overview' },
   { page: 'home',  icon: '⌂', key: 'nav.home' },
   { page: 'me',  icon: '◉', key: 'nav.me' },
   { page: 'products',  icon: '▦', key: 'nav.products' },

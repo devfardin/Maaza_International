@@ -23,6 +23,7 @@ export const adminNav = [
   { href: '/admin/transactions', icon: '💰', label: 'Transactions' },
   { href: '/admin/activity',     icon: '🛡️', label: 'Login activity' },
   { href: '/admin/admin-activity', icon: '🧭', label: 'Admin activity', superOnly: true },
+  { href: '/admin/popups', icon: '🪧', label: 'Popups', superOnly: true },
 ];
 
 const isActiveRoute = (pathname, href) =>
