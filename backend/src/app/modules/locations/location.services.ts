@@ -1,6 +1,7 @@
 import status from 'http-status';
 import AppError from '../../errors/AppError';
 import { BD_DISTRICTS } from '../../config/districts';
+import config from '../../config';
 import { UserModel } from '../users/user.model';
 
 // The district list used by the admin location map
@@ -18,11 +19,46 @@ const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// Called at login: the member's browser position is turned into the nearest district and saved
-const saveMemberLocation = async (userId: string, lat: number, lng: number) => {
-    if (!inBangladesh(lat, lng)) {
-        throw new AppError(status.BAD_REQUEST, 'Your location is outside Bangladesh');
+// Google spells some Bangladesh districts differently from our list
+const DISTRICT_ALIASES: Record<string, string> = {
+    chittagong: 'Chattogram',
+    comilla: 'Cumilla',
+    bogra: 'Bogura',
+    jessore: 'Jashore',
+    barisal: 'Barishal',
+    'chapai nawabganj': 'Chapai Nawabganj',
+    "cox's bazar": "Cox's Bazar",
+    'coxs bazar': "Cox's Bazar",
+    'maulvibazar': 'Moulvibazar',
+    'moulvi bazar': 'Moulvibazar',
+    nawabganj: 'Chapai Nawabganj',
+};
+const canonicalDistrict = (raw: string): string | undefined => {
+    const key = raw.replace(/\s+district$/i, '').trim().toLowerCase();
+    const alias = DISTRICT_ALIASES[key] ?? key;
+    return BD_DISTRICTS.find((d) => d.name.toLowerCase() === alias.toLowerCase())?.name;
+};
+
+// Exact district from Google reverse geocoding (administrative_area_level_2). Returns undefined on any failure.
+const districtFromGoogle = async (lat: number, lng: number): Promise<string | undefined> => {
+    const key = config.google_maps_api_key;
+    if (!key) return undefined;
+    try {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&result_type=administrative_area_level_2&key=${key}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        const body = (await res.json()) as { status: string; results: { address_components: { long_name: string; types: string[] }[] }[] };
+        if (body.status !== 'OK' || !body.results.length) return undefined;
+        for (const comp of body.results[0].address_components) {
+            if (comp.types.includes('administrative_area_level_2')) return canonicalDistrict(comp.long_name);
+        }
+    } catch {
+        // network or quota problem: fall back below
     }
+    return undefined;
+};
+
+// Nearest district centre (fallback when Google is not available)
+const nearestDistrict = (lat: number, lng: number) => {
     let nearest = BD_DISTRICTS[0];
     let best = Infinity;
     for (const d of BD_DISTRICTS) {
@@ -32,8 +68,20 @@ const saveMemberLocation = async (userId: string, lat: number, lng: number) => {
             nearest = d;
         }
     }
-    await UserModel.updateOne({ _id: userId, isDeleted: false }, { district: nearest.name });
-    return { district: nearest.name, division: nearest.division };
+    return nearest;
+};
+
+// Called at login: the member's browser position becomes their district and is saved
+const saveMemberLocation = async (userId: string, lat: number, lng: number) => {
+    if (!inBangladesh(lat, lng)) {
+        throw new AppError(status.BAD_REQUEST, 'Your location is outside Bangladesh');
+    }
+    const googleName = await districtFromGoogle(lat, lng);
+    const district = googleName
+        ? BD_DISTRICTS.find((d) => d.name === googleName)!
+        : nearestDistrict(lat, lng);
+    await UserModel.updateOne({ _id: userId, isDeleted: false }, { district: district.name });
+    return { district: district.name, division: district.division, source: googleName ? 'google' : 'nearest' };
 };
 
 // Members per district (and per division), with map coordinates. Admins only.

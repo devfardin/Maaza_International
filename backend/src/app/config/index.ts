@@ -22,4 +22,6 @@ export default {
   cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
   cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
+  // Server key for reverse geocoding (coordinates → district). Optional: without it the nearest district is used.
+  google_maps_api_key: process.env.GOOGLE_MAPS_API_KEY,
 };
