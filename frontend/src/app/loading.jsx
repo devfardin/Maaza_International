@@ -1,6 +1,5 @@
-// Shown automatically while a route segment loads (Next.js loading boundary)
-import PageLoader from '@/components/shared/PageLoader';
-
+// Route-level loading state. The InitialLoader already covers the screen while the app boots,
+// so this renders nothing and the user never sees two loaders stacked.
 export default function Loading() {
-  return <PageLoader />;
+  return null;
 }

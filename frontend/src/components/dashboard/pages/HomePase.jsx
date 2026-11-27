@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useGetTasksQuery } from '@/redux/features/apiSlice';
 import ReferralsCard from '../ReferralsCard';
 import ReferralInfoSection from '../ReferralInfoSection';
-import DailyCheckinPopup from '../DailyCheckinPopup';
 
 // ── Slider images (placeholder — replace with real paths) ────────────────────
 const SLIDES = [
@@ -215,9 +214,6 @@ export default function HomePase({ showPage }) {
 
   return (
     <div className="space-y-5 pb-4">
-      {/* Daily check-in popup (auto once a day) */}
-      <DailyCheckinPopup />
-
       {/* ── SECTION 1 · Image Slider ─────────────────────────────────────── */}
       <div className="relative w-full overflow-hidden rounded-2xl bg-slate-200 aspect-[16/7] select-none">
 

@@ -25,6 +25,8 @@ import { SalaryRoutes } from '../modules/salary/salary.route';
 import { LocationRoutes } from '../modules/locations/location.route';
 import { MediaRoutes } from '../modules/media/media.route';
 import { PopupRoutes } from '../modules/popups/popup.route';
+import { RedeemCodeRoutes } from '../modules/redeemCodes/redeemCode.route';
+import { DeletedItemsRoutes } from '../modules/deletedItems/deletedItems.route';
 
 const router = Router();
 
@@ -59,6 +61,8 @@ const moduleRoutes = [
   { path: '/locations', route: LocationRoutes },                // Member districts (profile) and admin location map
   { path: '/media', route: MediaRoutes },                       // Media Library: upload, browse, permanent delete (super admin)
   { path: '/popups', route: PopupRoutes },                      // Super admin: popups shown on member dashboard pages
+  { path: '/redeem-codes', route: RedeemCodeRoutes },           // Redeem bonus codes: admins create, members claim to balance wallet
+  { path: '/deleted-items', route: DeletedItemsRoutes },         // Super admin: soft-deleted records, permanent delete
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

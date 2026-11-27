@@ -112,8 +112,6 @@ export default function CommunityPage() {
       notify.error(getErrorMessage(err, 'Could not update your like.'));
     }
   }
-  console.log(user);
-
 
   const composer = (
     <div className="bg-white border rounded-2xl p-5">

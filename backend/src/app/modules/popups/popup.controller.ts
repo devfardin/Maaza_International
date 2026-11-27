@@ -7,8 +7,14 @@ import { PopupServices } from './popup.services';
 // Members: active popups for the page they are on (?page=home)
 const getActivePopups = catchAsync(async (req, res) => {
     const page = String(req.query.page ?? '');
-    const result = await PopupServices.getActivePopupsForPage(page);
+    const result = await PopupServices.getActivePopupsForPage(page, req.user!.userId);
     sendResponse(res, { statusCode: status.OK, success: true, message: 'Popups fetched successfully', data: result });
+});
+
+// Members: the popup was shown — counts toward its frequency / max views
+const markPopupSeen = catchAsync(async (req, res) => {
+    await PopupServices.markPopupSeen(req.params.id, req.user!.userId, req.body.page);
+    sendResponse(res, { statusCode: status.OK, success: true, message: 'Popup view recorded', data: null });
 });
 
 const getAllPopups = catchAsync(async (req, res) => {
@@ -34,4 +40,4 @@ const deletePopup = catchAsync(async (req, res) => {
     sendResponse(res, { statusCode: status.OK, success: true, message: 'Popup deleted successfully', data: null });
 });
 
-export const PopupControllers = { getActivePopups, getAllPopups, createPopup, updatePopup, deletePopup };
+export const PopupControllers = { getActivePopups, markPopupSeen, getAllPopups, createPopup, updatePopup, deletePopup };

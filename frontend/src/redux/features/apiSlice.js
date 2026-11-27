@@ -35,7 +35,7 @@ export const ALL_TAG_TYPES = [
   'Tasks', 'Purchases', 'DepositRequests', 'PaymentMethods',
   'PaymentAccounts', 'CommunityPosts', 'Referrals', 'Activity', 'AdminProducts',
   'Withdrawals', 'Notifications', 'AdminActivity', 'VipLevels', 'DailyCheckin',
-  'News', 'AdminNews', 'Salary', 'Locations', 'Popups',
+  'News', 'AdminNews', 'Salary', 'Locations', 'Popups', 'RedeemCodes', 'DeletedItems',
 ];
 
 export const apiSlice = createApi({
@@ -197,6 +197,66 @@ export const apiSlice = createApi({
     deletePopup: builder.mutation({
       query: (id) => ({ url: `/popups/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Popups'],
+    }),
+
+    // POST /popups/:id/seen  (members) — the popup was displayed; counts toward its frequency
+    markPopupSeen: builder.mutation({
+      query: ({ id, page }) => ({ url: `/popups/${id}/seen`, method: 'POST', body: { page } }),
+    }),
+
+    // ── REDEEM BONUS CODES ────────────────────────────────────────────────────
+    // GET /redeem-codes  (admin: own codes, super admin: all)
+    getRedeemCodes: builder.query({
+      query: () => '/redeem-codes',
+      providesTags: ['RedeemCodes'],
+    }),
+
+    // GET /redeem-codes/summary  (super admin) — total budget, claimed and left
+    getRedeemSummary: builder.query({
+      query: () => '/redeem-codes/summary',
+      providesTags: ['RedeemCodes'],
+    }),
+
+    // POST /redeem-codes  (admin, super admin) — { code?, amount, prizeCount, allowedVipLevels }
+    createRedeemCode: builder.mutation({
+      query: (body) => ({ url: '/redeem-codes', method: 'POST', body }),
+      invalidatesTags: ['RedeemCodes'],
+    }),
+
+    // PATCH /redeem-codes/:id/status  (admin, super admin) — { isActive }
+    setRedeemCodeStatus: builder.mutation({
+      query: ({ id, isActive }) => ({ url: `/redeem-codes/${id}/status`, method: 'PATCH', body: { isActive } }),
+      invalidatesTags: ['RedeemCodes'],
+    }),
+
+    // GET /redeem-codes/:id/claims  (super admin) — every member who claimed, with their details
+    getRedeemCodeClaims: builder.query({
+      query: (id) => `/redeem-codes/${id}/claims`,
+      providesTags: ['RedeemCodes'],
+    }),
+
+    // POST /redeem-codes/claim  (members) — { code }
+    claimRedeemCode: builder.mutation({
+      query: (body) => ({ url: '/redeem-codes/claim', method: 'POST', body }),
+      invalidatesTags: ['RedeemCodes', 'Wallet', 'Transactions'],
+    }),
+
+    // GET /deleted-items?kind=all|products|...  (super admin) — soft-deleted records
+    getDeletedItems: builder.query({
+      query: (kind = 'all') => `/deleted-items?kind=${encodeURIComponent(kind)}`,
+      providesTags: ['DeletedItems'],
+    }),
+
+    // DELETE /deleted-items/:kind/:id  (super admin) — remove a soft-deleted record for good
+    permanentlyDeleteItem: builder.mutation({
+      query: ({ kind, id }) => ({ url: `/deleted-items/${kind}/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['DeletedItems'],
+    }),
+
+    // GET /redeem-codes/my-claims  (members) — codes this member has claimed
+    getMyRedeemClaims: builder.query({
+      query: () => '/redeem-codes/my-claims',
+      providesTags: ['RedeemCodes'],
     }),
 
     // ── CATEGORIES ────────────────────────────────────────────────────────────
@@ -786,6 +846,18 @@ export const {
   useCreatePopupMutation,
   useUpdatePopupMutation,
   useDeletePopupMutation,
+  useMarkPopupSeenMutation,
+  // Redeem bonus codes
+  useGetRedeemCodesQuery,
+  useGetRedeemSummaryQuery,
+  useCreateRedeemCodeMutation,
+  useSetRedeemCodeStatusMutation,
+  useGetRedeemCodeClaimsQuery,
+  useClaimRedeemCodeMutation,
+  useGetMyRedeemClaimsQuery,
+  // Deleted items (super admin)
+  useGetDeletedItemsQuery,
+  usePermanentlyDeleteItemMutation,
   useGetMyCommunityPostsQuery,
   useGetPendingCommunityPostsQuery,
   useDecideCommunityPostMutation,

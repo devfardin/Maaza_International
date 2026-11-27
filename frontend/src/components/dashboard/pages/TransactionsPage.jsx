@@ -10,7 +10,7 @@ import PageLoader from '@/components/shared/PageLoader';
 import { useI18n } from '@/lib/i18n';
 import PageTitle from '../PageTitle';
 
-const CREDIT_TYPES = ['deposit', 'daily_checkin', 'salary', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus'];
+const CREDIT_TYPES = ['deposit', 'daily_checkin', 'salary', 'profit', 'commission', 'new_user_bonus', 'withdrawal_refund', 'invitation_bonus', 'upgrade_bonus', 'redeem_bonus'];
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -20,6 +20,7 @@ const FILTERS = [
   { value: 'new_user_bonus', label: 'Welcome bonus' },
   { value: 'invitation_bonus', label: 'Invitation bonus' },
   { value: 'upgrade_bonus', label: 'Upgrade bonus' },
+  { value: 'redeem_bonus', label: 'Redeem bonus' },
   { value: 'withdrawal', label: 'Withdrawal' },
   { value: 'withdrawal_refund', label: 'Refund' },
   { value: 'product_purchase', label: 'Purchase' },

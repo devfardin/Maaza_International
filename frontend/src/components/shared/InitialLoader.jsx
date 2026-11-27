@@ -1,44 +1,71 @@
 'use client';
-// Full-screen branded loader shown while the website first loads.
+// The ONE full-screen loader. It covers the site from the first paint until the page has loaded
+// AND the signed-in profile is known, so members and admins never see a second loader.
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import Logo from '@/components/shared/Logo';
+
+const MIN_SHOW_MS = 700;   // keep the brand on screen long enough to read, avoids a flicker
+const MAX_WAIT_MS = 10000; // never block the screen longer than this, even if a request hangs
 
 export default function InitialLoader() {
+  const token = useSelector((s) => s.auth.token);
+  const user = useSelector((s) => s.auth.user);
+
+  const [minElapsed, setMinElapsed] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [leaving, setLeaving] = useState(false);
+
+  // A signed-in visitor is ready once the profile is in Redux. Logged-out visitors don't need one.
+  const authReady = !token || !!user;
+  const ready = (minElapsed && pageLoaded && authReady) || timedOut;
 
   useEffect(() => {
-    let hideTimer;
-    const finish = () => {
-      // keep it up for a short moment so the brand is visible, then fade out
-      hideTimer = setTimeout(() => {
-        setLeaving(true);
-        setTimeout(() => setVisible(false), 350);
-      }, 450);
-    };
+    const minTimer = setTimeout(() => setMinElapsed(true), MIN_SHOW_MS);
+    const maxTimer = setTimeout(() => setTimedOut(true), MAX_WAIT_MS);
 
-    if (document.readyState === 'complete') finish();
-    else window.addEventListener('load', finish, { once: true });
+    const onLoad = () => setPageLoaded(true);
+    if (document.readyState === 'complete') onLoad();
+    else window.addEventListener('load', onLoad, { once: true });
 
     return () => {
-      window.removeEventListener('load', finish);
-      clearTimeout(hideTimer);
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+      window.removeEventListener('load', onLoad);
     };
   }, []);
 
+  useEffect(() => {
+    if (!ready) return undefined;
+    const hide = setTimeout(() => setVisible(false), 400);
+    return () => clearTimeout(hide);
+  }, [ready]);
+
+  // once ready, the overlay fades out (leaving) and is removed
+  const leaving = ready;
   if (!visible) return null;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#f5f8f5] transition-opacity duration-300 ${leaving ? 'opacity-0' : 'opacity-100'}`}
+      aria-label="Loading Maaza International"
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-white via-harvest-50 to-harvest-100 transition-opacity duration-400 ${leaving ? 'opacity-0' : 'opacity-100'}`}
     >
-      <span className="w-16 h-16 rounded-2xl bg-gradient-to-br from-lime-300 to-harvest-700 text-white text-3xl grid place-items-center shadow-lg animate-pulse">✦</span>
-      <p className="mt-4 font-extrabold text-harvest-900">Maaza International</p>
-      <div className="mt-5 h-1 w-40 overflow-hidden rounded-full bg-harvest-100">
-        <div className="h-full w-1/2 rounded-full bg-harvest-600 animate-[loadbar_1.2s_ease-in-out_infinite]" />
+      <div className="flex flex-col items-center">
+        <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-harvest-100">
+          <Logo width={150} height="auto" />
+        </div>
+
+        <div className="mt-8 h-1 w-44 overflow-hidden rounded-full bg-harvest-100">
+          <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-harvest-500 to-harvest-700 animate-[loadbar_1.4s_ease-in-out_infinite]" />
+        </div>
+
+        <p className="mt-4 text-xs font-medium tracking-wide text-slate-500">Preparing your workspace…</p>
       </div>
-      <style>{`@keyframes loadbar { 0% { transform: translateX(-100%);} 100% { transform: translateX(200%);} }`}</style>
+
+      <style>{`@keyframes loadbar { 0% { transform: translateX(-120%);} 100% { transform: translateX(260%);} }`}</style>
     </div>
   );
 }

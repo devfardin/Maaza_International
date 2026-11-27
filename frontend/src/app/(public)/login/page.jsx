@@ -77,6 +77,9 @@ function LoginForm() {
       // Response shape: { success, message, data: { accessToken, refreshToken } }
       const result = await login({ phone, password }).unwrap();
 
+      // New login = new popup session: popups closed before (e.g. "every login") show again
+      sessionStorage.removeItem('dismissedPopups');
+
       dispatch(setCredentials({
         user:         null,
         accessToken:  result.data?.accessToken,

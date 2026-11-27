@@ -98,7 +98,7 @@ export default function MePage({ showPage }) {
   const services = [
     { page: 'purchased', icon: '📦', label: 'My Products' },
     { page: 'transactions', icon: '🏦', label: 'Funding Details' },
-    { page: 'tasks', icon: '🎁', label: 'Redeem Bonus' },
+    { page: 'redeem', icon: '🎁', label: 'Redeem Bonus' },
     { page: 'bank', icon: '💳', label: 'Bank Account' },
     { page: 'checkin', icon: '📅', label: 'Daily Check-in' },
     { page: 'referrals', icon: '🤝', label: 'Contract' },
@@ -272,11 +272,11 @@ export default function MePage({ showPage }) {
         <div className="border-anim rounded-xl bg-white border border-slate-100 overflow-hidden shadow-sm">
 
           {/* User profile header */}
-          <button
+          {/* <button
             onClick={() => showPage('profile')}
             className="flex w-full items-center gap-4 border-b border-slate-100 px-5 py-4 transition hover:bg-harvest-50 active:scale-[0.99]"
           >
-            {/* Avatar */}
+            
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-harvest-700 text-lg font-extrabold text-white shadow">
               {user?.avatar
                 ? <img src={user.avatar} alt={user?.name} className="h-full w-full rounded-full object-cover" />
@@ -284,13 +284,13 @@ export default function MePage({ showPage }) {
               }
 
             </span>
-            {/* Name + email */}
+           
             <span className="flex-1 text-left">
               <b className="block text-sm font-extrabold text-slate-800">{user?.name ?? 'My Profile'}</b>
               <small className="text-[11px] text-slate-400">Edit your personal details</small>
             </span>
             <span className="text-slate-300 text-lg">›</span>
-          </button>
+          </button> */}
 
           {/* Telegram channel */}
           <AccountRow

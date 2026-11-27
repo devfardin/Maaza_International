@@ -11,6 +11,7 @@ import { formatBDT } from '@/components/shared/money';
 import Link from 'next/link';
 import HandledRequestsCard from '@/components/admin/HandledRequestsCard';
 import MemberWalletsTable from '@/components/admin/MemberWalletsTable';
+import RedeemBonusCard from '@/components/admin/RedeemBonusCard';
 
 export default function AdminDashboardPage() {
   const user = useSelector((s) => s.auth.user);
@@ -80,6 +81,9 @@ export default function AdminDashboardPage() {
 
       {/* Requests this admin handled */}
       <HandledRequestsCard />
+
+      {/* Redeem bonus budget: total, claimed and left (super admin only) */}
+      {isSuper && <RedeemBonusCard />}
 
       {isSuper && <MemberWalletsTable />}
 

@@ -11,7 +11,7 @@ const transactionSchema = new Schema<TTransaction>(
         type: {
             type: String,
             enum: {
-                values: ["deposit", "withdrawal", "withdrawal_refund", "daily_checkin", "profit", "commission", "product_purchase", "new_user_bonus", "invitation_bonus", "upgrade_bonus", "wallet_exchange", "salary"],
+                values: ["deposit", "withdrawal", "withdrawal_refund", "daily_checkin", "profit", "commission", "product_purchase", "new_user_bonus", "invitation_bonus", "upgrade_bonus", "wallet_exchange", "salary", "redeem_bonus"],
                 message: "Invalid transaction type",
             },
             required: [true, "Transaction type is required"],

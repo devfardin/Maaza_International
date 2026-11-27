@@ -12,7 +12,6 @@ import { useDispatch, useSelector }        from 'react-redux';
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
 import { useGetMeQuery }                   from '@/redux/features/apiSlice';
 import { clearAuthCookies, setAuthCookies } from '@/lib/authCookies';
-import PageLoader from '@/components/shared/PageLoader';
 import { setUser, logout }                 from '@/redux/features/authSlice';
 import Sidebar                             from '@/components/dashboard/Sidebar';
 import Header                              from '@/components/dashboard/Header';
@@ -84,14 +83,8 @@ function DashboardInner({ children }) {
 
   // Only a confirmed member gets the member shell. Admins are sent to /admin and never
   // see member pages (tasks, community, ...) — not even for a moment.
-  if (user?.role !== 'user') {
-    return (
-      <PageLoader
-        label={user && user.role !== 'user' ? 'Opening the admin panel…' : 'Loading your dashboard…'}
-        className="min-h-screen"
-      />
-    );
-  }
+  // Nothing is drawn here while the profile loads: the single InitialLoader covers the screen.
+  if (user?.role !== 'user') return null;
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[248px_minmax(0,1fr)] bg-[#f5f8f5]">

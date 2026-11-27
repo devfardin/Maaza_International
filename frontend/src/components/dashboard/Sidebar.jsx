@@ -23,6 +23,7 @@ const accountNav = [
   { page: 'withdraw',     icon: '↗', key: 'nav.withdrawals' },
   { page: 'transactions', icon: '◈', key: 'nav.transactions' },
   { page: 'bank',         icon: '▤', key: 'nav.bank' },
+  { page: 'redeem',       icon: '🎁', key: 'nav.redeem' },
   { page: 'referrals',    icon: '♧', key: 'nav.referrals' },
   { page: 'profile',      icon: '◉', key: 'nav.profile' },
 ];

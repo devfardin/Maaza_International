@@ -4,7 +4,7 @@ import { useGetAllTransactionsQuery } from '@/redux/features/apiSlice';
 import DateRangeFilter from '@/components/shared/DateRangeFilter';
 import { inDateRange } from '@/lib/dates';
 
-const TYPES = ['all', 'deposit', 'withdrawal', 'product_purchase', 'profit', 'commission', 'invitation_bonus', 'upgrade_bonus', 'new_user_bonus', 'daily_checkin', 'salary', 'wallet_exchange'];
+const TYPES = ['all', 'deposit', 'withdrawal', 'product_purchase', 'profit', 'commission', 'invitation_bonus', 'upgrade_bonus', 'new_user_bonus', 'daily_checkin', 'salary', 'wallet_exchange', 'redeem_bonus'];
 const bdt = (amount) => `৳${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const label = (t) => t.replace(/_/g, ' ');
 

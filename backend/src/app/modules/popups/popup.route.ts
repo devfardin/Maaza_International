@@ -12,6 +12,14 @@ const ALL_ROLES = [USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.user] as co
 // Members: popups for one dashboard page (?page=home) — declared before '/:id'
 router.get('/active', auth(...ALL_ROLES), PopupControllers.getActivePopups);
 
+// Members: record that a popup was shown to them
+router.post(
+    '/:id/seen',
+    auth(...ALL_ROLES),
+    validationRequest(PopupValidations.markSeenValidation),
+    PopupControllers.markPopupSeen,
+);
+
 // Super admin: every popup
 router.get('/admin/all', auth(USER_ROLE.super_admin), PopupControllers.getAllPopups);
 
