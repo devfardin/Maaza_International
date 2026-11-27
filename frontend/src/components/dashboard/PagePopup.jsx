@@ -41,13 +41,13 @@ export default function PagePopup({ page }) {
   const hasBody = current.description || current.bodyImage;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-5" onClick={dismiss}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-0 sm:p-5" onClick={dismiss}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={current.title}
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-md max-h-[90dvh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl"
+        className="flex w-full max-w-md max-h-[90dvh] flex-col overflow-hidden rounded-xl bg-white shadow-xl m-1"
       >
         {/* Header image — fixed at the top */}
         <div className="relative shrink-0">
